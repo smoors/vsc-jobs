@@ -1,0 +1,18 @@
+#!/usr/bin/python
+
+from PBSQuery import PBSQuery
+
+p = PBSQuery()
+queues=p.getqueues()
+
+for name,queue in queues.items():
+    if not queue.is_enabled():
+        continue
+    
+    if queue['queue_type'] == 'Route':
+        print "%s\n\troutes %s"%(name,queue['route_destinations'])
+    else:
+        ## execution
+        print "%s\n\twalltime %s (max %s)"%(name,queue['resources_default.walltime'],queue['resources_max.walltime'])
+
+

@@ -1,0 +1,118 @@
+#!/usr/bin/python
+
+import getopt, sys, re
+from PBSQuery import PBSQuery
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "doxfuianr:")
+except getopt.GetoptError, err:
+    print err
+    sys.exit(1)
+    
+states=["down","offline","free","job-exclusive","state-unknown","idle"]
+state=[]
+nagios=False
+regex=None
+filteridle=False
+
+for o, a in opts:
+    if o == "-n":
+        nagios=True
+    elif o == "-r":
+        regex=re.compile(r"%s"%a)
+    elif o == "-d":
+        state.append(states[0])
+    elif o == "-o":
+        state.append(states[1])
+    elif o == "-f":
+        state.append(states[2])
+    elif o == "-x":
+        state.append(states[3])
+    elif o == "-u":
+        state.append(states[4])
+    elif o == "-i":
+        ## these are free nodes that have no jobs
+        if not states[2] in states:
+            state.append(states[2])
+        state.append(states[5])
+        filteridle=True
+
+  
+p = PBSQuery()
+pp=p.getnodes(['state'])
+nodes=pp.keys()
+nodes.sort()
+if filteridle:
+    ## replace free with idle if no jobs
+    for n in nodes:
+        if (pp[n]['state'] == states[2]) and (not pp[n].has_key('jobs')):
+            pp[n]['state']='idle'
+
+
+ans=[]
+
+##
+## WARNING first, since that is the one that gives dependency on others
+##
+nagiosstatesorder=['WARNING','CRITICAL','OK']
+nagiosstates={
+    'CRITICAL':re.compile(r"%s|%s"%(states[0],states[4])),
+    'WARNING':re.compile(r"%s"%(states[1])),
+    'OK':re.compile(r"%s|%s|%s"%(states[2],states[3],states[5]))
+    }
+nagiosexit={
+    'CRITICAL':2,
+    'WARNING':1,
+    'OK':0
+    }
+
+if regex:
+    node=None
+    for n in nodes:
+        if (not node) and regex.search(n):
+            node=n
+    if not node:
+        state='regexp_failed'
+    else:
+        state=pp[node]['state']
+
+    #print "%s %s"%(state,node)
+    
+    nagstate=None
+    for nstat in nagiosstatesorder:
+        nreg=nagiosstates[nstat]
+        if (not nagstate) and nreg.search(state):
+            nagstate=nstat
+    if not nagstate:
+        nagstate="CRITICAL"
+    
+    if nagios:
+        txt="show_nodes %s - %s"%(nagstate,state)
+        print txt
+        sys.exit(nagiosexit[nagstate])
+    else:
+        txt="%s %s"%(nagstate,state)
+        print txt
+else:
+    if nagios:
+        txt='show_nodes | '
+        for s in states:
+            reg=re.compile(r""+s)
+            tmp=0
+            for n in nodes:
+                if reg.search(pp[n]['state']):
+                    tmp+=1
+            txt+="%s=%s "%(s,tmp)
+        txt+="total=%s"%(len(nodes))
+
+        print txt
+    else:
+        regexp="|".join(state)
+        reg=re.compile(r""+regexp)
+        for n in nodes:
+            if reg.search(pp[n]['state']):
+                ans.append(n)
+            
+        print ' '.join(ans)
+
+

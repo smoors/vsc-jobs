@@ -1,0 +1,109 @@
+#!/usr/bin/python
+
+## this does something interesting with maui showstats and diagnose
+
+import getopt, sys, re
+
+allowedusers=None
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "dnu:g:")
+except getopt.GetoptError, err:
+    print err
+    sys.exit(2)
+
+nagios=False
+detailed=False
+
+for o, a in opts:
+    if o == "-n":
+        nagios=True
+    if o == "-d":
+        detailed=True
+
+try:
+    from subprocess import Popen,PIPE
+
+    cmd="showstats"
+    showstats = Popen([cmd], stdout=PIPE).communicate()[0]
+    
+except Exception, err:
+    print "Failed running %s with error %s"%(cmd,err)
+
+    sys.exit(2)
+
+
+#reg_prochours=re.compile(r"^.*?ProcHours\s*:\s+(?P<dedicatedprochour>\d+(?:\.\d+)?)/(?P<totalprochour>\d+(?:\.\d+)?)\s+\((?P<longtermeff>\d+(?:\.\d+)?)%\)")
+reg_prochours=re.compile(r"^.*?ProcHours\s*:\s+(?P<dedicatedprochour>\d+(?:\.\d+)?)(?P<dunit>K|M)?/(?P<totalprochour>\d+(?:\.\d+)?)(?P<tunit>K|M)?\s+\((?P<longtermeff>\d+(?:\.\d+)?)%\)")
+reg_procs=re.compile(r"^.*?Procs\s*:\s+(?P<activeproc>\d+(?:\.\d+)?)/(?P<totalproc>\d+(?:\.\d+)?)\s+\((?P<shorttermeff>\d+(?:\.\d+)?)%\)")
+
+lte=None
+ste=None
+
+def myunit(du=None):
+    if du:
+        if du == 'K':
+            dui=1000
+        elif du == 'M':
+            dui=1000*1000
+    else:
+        dui=1
+    return dui
+
+
+for l in showstats.split('\n'):
+    r=reg_prochours.search(l)
+    if r:
+        du=myunit(r.group('dunit'))
+        tu=myunit(r.group('tunit'))
+        
+        dph=float(r.group('dedicatedprochour'))*du
+        tph=float(r.group('totalprochour'))*tu
+        
+        lte=r.group('longtermeff')        
+    r=reg_procs.search(l)
+    if r:
+        ap=r.group('activeproc')
+        tp=r.group('totalproc')
+        ste=r.group('shorttermeff')        
+
+if not (lte and ste):
+    if nagios:
+        print "show_stats UNKNOWN"
+    else:
+        print "show_stats regexp failed"
+        
+    sys.exit(3)
+
+
+useint=True
+if useint:
+    dph=int(round(float(dph)))
+    tph=int(round(float(tph)))
+    ste=int(round(float(ste)))
+    lte=int(round(float(lte)))
+    ap=int(round(float(ap)))
+    tp=int(round(float(tp)))
+
+
+if nagios:
+    header = "show_stats OK"
+    summ = "short %s long %s"%(ste,lte)
+    summary = "STE=%s LTE=%s DPH=%s TPH=%s AP=%s TP=%s"%(ste,lte,dph,tph,ap,tp)
+
+    msg="%s - %s | %s"%(header,summ,summary)
+
+    print msg
+    sys.exit(0)
+else:
+    msg="Shortterm/Longterm efficiency %s/%s\n"%(ste,lte)
+    msg+="Dedicate/total prochours %s/%s\n"%(dph,tph)
+    msg+="Active/Total procs %s/%s"%(ap,tp)
+    
+    
+    print msg
+    sys.exit(0)
+
+if nagios:
+    print "show_stats UNKNOWN"
+    sys.exit(3)
