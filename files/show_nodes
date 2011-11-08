@@ -4,12 +4,12 @@ import getopt, sys, re
 from PBSQuery import PBSQuery
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "doxfuianr:")
+    opts, args = getopt.getopt(sys.argv[1:], "doxfuianbr:")
 except getopt.GetoptError, err:
     print err
     sys.exit(1)
     
-states=["down","offline","free","job-exclusive","state-unknown","idle"]
+states=["down","offline","free","job-exclusive","state-unknown","idle","bad"]
 state=[]
 nagios=False
 regex=None
@@ -30,6 +30,8 @@ for o, a in opts:
         state.append(states[3])
     elif o == "-u":
         state.append(states[4])
+    elif o == "-b":
+        state.append(states[6])
     elif o == "-i":
         ## these are free nodes that have no jobs
         if not states[2] in states:
@@ -47,7 +49,20 @@ if filteridle:
     for n in nodes:
         if (pp[n]['state'] == states[2]) and (not pp[n].has_key('jobs')):
             pp[n]['state']='idle'
-
+        
+## sanity check
+jobreg=re.compile(r"\w+/\w+(\.\w+)+")
+for n in nodes:
+    if not n.startswith('node531'): continue
+    if pp[n].has_key('jobs'):
+        jobs=[jobreg.search(x.strip()) for x in pp[n]['jobs'].split(',')]
+        try:
+            jobs.index(None)
+            pp[n]['state']='bad'
+        except:
+            pass
+        
+            
 
 ans=[]
 
@@ -56,7 +71,7 @@ ans=[]
 ##
 nagiosstatesorder=['WARNING','CRITICAL','OK']
 nagiosstates={
-    'CRITICAL':re.compile(r"%s|%s"%(states[0],states[4])),
+    'CRITICAL':re.compile(r"%s|%s|%s"%(states[0],states[4],states[6])),
     'WARNING':re.compile(r"%s"%(states[1])),
     'OK':re.compile(r"%s|%s|%s"%(states[2],states[3],states[5]))
     }
@@ -95,17 +110,25 @@ if regex:
         print txt
 else:
     if nagios:
-        txt='show_nodes | '
+        bad='OK'
+        ec=0
+        header='show_nodes '
+        txt=''
         for s in states:
             reg=re.compile(r""+s)
             tmp=0
             for n in nodes:
                 if reg.search(pp[n]['state']):
                     tmp+=1
+            if s in ('bad',) and tmp > 0:
+                bad='CRITICAL - %s bad nodes'%tmp
+                ec=2
             txt+="%s=%s "%(s,tmp)
         txt+="total=%s"%(len(nodes))
 
-        print txt
+        print "%s %s | %s"%(header,bad,txt)
+        sys.exit(ec)
+        
     else:
         regexp="|".join(state)
         reg=re.compile(r""+regexp)
