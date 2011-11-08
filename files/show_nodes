@@ -8,7 +8,7 @@ try:
 except getopt.GetoptError, err:
     print err
     sys.exit(1)
-    
+
 states=["down","offline","free","job-exclusive","state-unknown","idle","bad"]
 state=[]
 nagios=False
@@ -39,7 +39,7 @@ for o, a in opts:
         state.append(states[5])
         filteridle=True
 
-  
+
 p = PBSQuery()
 pp=p.getnodes(['state'])
 nodes=pp.keys()
@@ -51,7 +51,8 @@ if filteridle:
             pp[n]['state']='idle'
 
 ## sanity check
-jobreg=re.compile(r"\w+/\w+(\.\w+)+")
+## match array jobs!
+jobreg=re.compile(r"\w+/\w+(\.|\w|\[|\])+")
 for n in nodes:
     if pp[n].has_key('jobs'):
         jobs=[jobreg.search(x.strip()) for x in pp[n]['jobs']]
@@ -60,7 +61,7 @@ for n in nodes:
             pp[n]['state'].append('bad')
         except:
             pass
-        
+
 ans=[]
 
 ##
@@ -98,14 +99,14 @@ if regex:
         state=pp[node]['state']
 
     #print "%s %s"%(state,node)
-    
+
     nagstate=None
     for nstat in nagiosstatesorder:
         if (not nagstate) and matchnagiosstate(state,nstat):
             nagstate=nstat
     if not nagstate:
         nagstate="CRITICAL"
-    
+
     if nagios:
         txt="show_nodes %s - %s"%(nagstate,",".join(state))
         print txt
@@ -133,17 +134,17 @@ else:
 
         print "%s %s | %s"%(header,bad,txt)
         sys.exit(ec)
-        
+
     else:
         for n in nodes:
-            if len(state) == 0: 
+            if len(state) == 0:
                 ans.append(n)
                 continue
             for s in state:
                 if s in pp[n]['state']:
                     ans.append(n)
                     break
-            
+
         print ' '.join(ans)
 
 
