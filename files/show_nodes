@@ -47,23 +47,20 @@ nodes.sort()
 if filteridle:
     ## replace free with idle if no jobs
     for n in nodes:
-        if (pp[n]['state'] == states[2]) and (not pp[n].has_key('jobs')):
+        if (states[2] in pp[n]['state']) and (not pp[n].has_key('jobs')):
             pp[n]['state']='idle'
-        
+
 ## sanity check
 jobreg=re.compile(r"\w+/\w+(\.\w+)+")
 for n in nodes:
-    if not n.startswith('node531'): continue
     if pp[n].has_key('jobs'):
-        jobs=[jobreg.search(x.strip()) for x in pp[n]['jobs'].split(',')]
+        jobs=[jobreg.search(x.strip()) for x in pp[n]['jobs']]
         try:
             jobs.index(None)
-            pp[n]['state']='bad'
+            pp[n]['state'].append('bad')
         except:
             pass
         
-            
-
 ans=[]
 
 ##
@@ -71,9 +68,9 @@ ans=[]
 ##
 nagiosstatesorder=['WARNING','CRITICAL','OK']
 nagiosstates={
-    'CRITICAL':re.compile(r"%s|%s|%s"%(states[0],states[4],states[6])),
-    'WARNING':re.compile(r"%s"%(states[1])),
-    'OK':re.compile(r"%s|%s|%s"%(states[2],states[3],states[5]))
+    'CRITICAL':[0,4,6],
+    'WARNING':[1],
+    'OK':[2,3,5]
     }
 nagiosexit={
     'CRITICAL':2,
@@ -81,13 +78,22 @@ nagiosexit={
     'OK':0
     }
 
+def matchnagiosstate(nodestates,nagstate):
+    """
+    Find out if a nodestate matches a nagios state
+    """
+    for stateidx in nagiosstates[nagstate]:
+        if states[stateidx] in nodestates:
+            return True
+    return False
+
 if regex:
     node=None
     for n in nodes:
         if (not node) and regex.search(n):
             node=n
     if not node:
-        state='regexp_failed'
+        state=['regexp_failed']
     else:
         state=pp[node]['state']
 
@@ -95,18 +101,17 @@ if regex:
     
     nagstate=None
     for nstat in nagiosstatesorder:
-        nreg=nagiosstates[nstat]
-        if (not nagstate) and nreg.search(state):
+        if (not nagstate) and matchnagiosstate(state,nstat):
             nagstate=nstat
     if not nagstate:
         nagstate="CRITICAL"
     
     if nagios:
-        txt="show_nodes %s - %s"%(nagstate,state)
+        txt="show_nodes %s - %s"%(nagstate,",".join(state))
         print txt
         sys.exit(nagiosexit[nagstate])
     else:
-        txt="%s %s"%(nagstate,state)
+        txt="%s %s"%(nagstate,",".join(state))
         print txt
 else:
     if nagios:
@@ -118,7 +123,7 @@ else:
             reg=re.compile(r""+s)
             tmp=0
             for n in nodes:
-                if reg.search(pp[n]['state']):
+                if s in pp[n]['state']:
                     tmp+=1
             if s in ('bad',) and tmp > 0:
                 bad='CRITICAL - %s bad nodes'%tmp
@@ -130,11 +135,14 @@ else:
         sys.exit(ec)
         
     else:
-        regexp="|".join(state)
-        reg=re.compile(r""+regexp)
         for n in nodes:
-            if reg.search(pp[n]['state']):
+            if len(state) == 0: 
                 ans.append(n)
+                continue
+            for s in state:
+                if s in pp[n]['state']:
+                    ans.append(n)
+                    break
             
         print ' '.join(ans)
 

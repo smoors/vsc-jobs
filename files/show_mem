@@ -20,22 +20,21 @@ p = PBSQuery()
 pp=p.getnodes()
 ns={}
 
-regphys=re.compile(r",physmem=(\d+)(kb)?,")
+regphys=re.compile(r"(\d+)(kb)?")
 
 for n,nn in p.getnodes().items():
     if not nn.has_key('status'):
         #print "Node %s has no status field: %s"%(n,nn)
         continue
 
-
-    r=regphys.search(nn['status'])
+    r=regphys.search(nn['status']['physmem'][0])
     if not r:
         print "Node %s found with no physmem"%n
     sts=int(r.group(1))
     unit=r.group(2)
     if unit == 'kb':
         sts=sts*1024
-    np=int(nn['np'])
+    np=int(nn['np'][0])
     ns[n]={'np':np,'mem':sts,'avg':int(sts/np)}
 
 
@@ -47,20 +46,20 @@ toomuch={}
 
 js=p.getjobs()
 for n,j in js.items():
-    if not j['job_state'] == 'R': continue
+    if not j['job_state'][0] == 'R': continue
     
-    if reg_user.search(j['Job_Owner']):
-        user=reg_user.search(j['Job_Owner']).group(1)
+    if reg_user.search(j['Job_Owner'][0]):
+        user=reg_user.search(j['Job_Owner'][0]).group(1)
     else:
         print "Job %s has not jobwoner field"%n
         continue
     
 
-    if not j.has_key('resources_used.mem'):
+    if not (j.has_key('resources_used') and j['resources_used'].has_key('mem')):
         print "Job %s has no resources_used.mem field."%n
         continue
     
-    r=regmem.search(j['resources_used.mem'])
+    r=regmem.search(j['resources_used']['mem'][0])
     if not r:
         print "Job %s found with no mem"%n
     mem=int(r.group(1))
@@ -70,7 +69,7 @@ for n,j in js.items():
 
     exh={}
     cores=0
-    for e in j['exec_host'].split('+'):
+    for e in j['exec_host'][0].split('+'):
         nam=e.split('/')[0]
         if not exh.has_key(nam):
             exh[nam]=0

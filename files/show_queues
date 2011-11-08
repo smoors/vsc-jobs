@@ -9,10 +9,10 @@ for name,queue in queues.items():
     if not queue.is_enabled():
         continue
     
-    if queue['queue_type'] == 'Route':
-        print "%s\n\troutes %s"%(name,queue['route_destinations'])
+    if queue['queue_type'][0] == 'Route':
+        print "%s\n\troutes %s"%(name,queue['route_destinations'][0])
     else:
         ## execution
-        print "%s\n\twalltime %s (max %s)"%(name,queue['resources_default.walltime'],queue['resources_max.walltime'])
+        print "%s\n\twalltime %s (max %s)"%(name,queue['resources_default']['walltime'][0],queue['resources_max']['walltime'][0])
 
 

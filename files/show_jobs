@@ -62,11 +62,11 @@ reg_walltime=re.compile(r"((((?P<day>\d+):)?(?P<hour>\d+):)?(?P<min>\d+):)?(?P<s
 res={}
 
 for n,j in js.items():
-    if reg_user.search(j['Job_Owner']):
-        user=reg_user.search(j['Job_Owner']).group(1)
+    if reg_user.search(j['Job_Owner'][0]):
+        user=reg_user.search(j['Job_Owner'][0]).group(1)
     else:
         if not nagios:
-            print "No user found for jobowner %s"%j['Job_Owner']
+            print "No user found for jobowner %s"%j['Job_Owner'][0]
         continue
 
     if allowedusers:
@@ -78,8 +78,8 @@ for n,j in js.items():
 
     ## requested walltime
     totalwallsec=0
-    if j.has_key('Resource_List.walltime'):
-        m=reg_walltime.search(j['Resource_List.walltime'])
+    if j.has_key('Resource_List') and j['Resource_List'].has_key('walltime'):
+        m=reg_walltime.search(j['Resource_List']['walltime'][0])
         if m:
             totalwallsec+=int(m.group('sec'))
             if m.group('min'):
@@ -98,13 +98,13 @@ for n,j in js.items():
             print j
         
     m=None
-    if j.has_key('Resource_List.neednodes'):
-        m=nod_cor.match(j['Resource_List.neednodes'])
+    if j.has_key('Resource_List') and j['Resource_List'].has_key('neednodes'):
+        m=nod_cor.match(j['Resource_List']['neednodes'][0])
         if not m:
-            if nod_cor2.match(j['Resource_List.neednodes']):
+            if nod_cor2.match(j['Resource_List']['neednodes'][0]):
                 m=nod_cor.match("1")
-    elif j.has_key('Resource_List.nodes'):
-        m=nod_cor.match(j['Resource_List.nodes'])
+    elif j.has_key('Resource_List') and j['Resource_List'].has_key('nodes'):
+        m=nod_cor.match(j['Resource_List']['nodes'][0])
         
         
     if m:
@@ -120,17 +120,18 @@ for n,j in js.items():
         res[user][9]+="%s "%n
         continue
     
-    if j['job_state'] == 'R':
+    if j['job_state'][0] in  ('R',):
         res[user][0]+=1
         res[user][1]+=n
         res[user][2]+=cn
         res[user][3]+=totalwallsec*cn
 
-    if j['job_state'] == 'Q' or j['job_state'] == 'H':
+    if j['job_state'][0] in ('Q','H',):
         res[user][4]+=1
         res[user][5]+=n
         res[user][6]+=cn
         res[user][7]+=totalwallsec*cn
+
 
 ans=[0,0,0,0,0,0,0,0,0,'']
 for user,tmp in res.items():
