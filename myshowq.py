@@ -13,7 +13,7 @@ Read showq pickle from $HOME/.showq.pickle
 -- forsee interface (autodetect special file)
 
 """
-maxage=60*15
+maxage=60*30 #60*15
 
 import sys,os,re,time,pwd,cPickle
 
