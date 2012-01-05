@@ -16,6 +16,9 @@ import sys
 import re
 
 DEFAULT_SERVER = "default"
+GENGAR_VMEM = 4096
+GASTLY_VMEM = 2304
+GULPIN_VMEM = 2250
 class PassThroughOptionParser(OptionParser):
     """
     "Pass-through" option parsing -- an OptionParser that ignores
@@ -47,7 +50,7 @@ def main(arguments=sys.argv):
     """
     #regexes needed here
     mailreg = re.compile("^#PBS -m .+")
-    vmemreg = re.compile('^#PBS -l .*?vmem=')
+    vmemreg = re.compile('^#PBS -l .*?vmem=(.*)')
     ppnreg = re.compile('^#PBS -l .*?nodes=.+?:ppn=(\d+)')
     serverreg = re.compile('.*@master[0-9]*\.([^.]*)\.gent\.vsc')
     
@@ -64,21 +67,27 @@ def main(arguments=sys.argv):
     (opts, args) = parser.parse_args(arguments)
 #    print "options:", opts
 #    print "args:", args
-
+    vmemDetected =False
+    ppnDetected = False
+    mailDetected = bool(opts.m)
+    serverDetected = False
+    opts.server = None
     #process appended results to l
     opts.vmem = None
     opts.ppn = None
     if opts.l:
         for arg in opts.l:
             for a in arg.split(','): #these options to l can be separated by a :
-                if not opts.vmem and a.startswith('vmem'): #only process first occurrence
+                if not vmemDetected and a.startswith('vmem'): #only process first occurrence
                     try:
                         opts.vmem = a.split('=')[1]
+                        vmemDetected = True
                     except: #safety for typo's on client side, will use default vmem then
-                        opts.vmem = False
+                        pass
                         
-                elif not opts.ppn and a.startswith('nodes'):
+                elif not ppnDetected and a.startswith('nodes'):
                     t = a.split('=')
+                    ppnDetected = True #we found the nodes specifier, so should be set now anyhow
                     try:
                         opts.ppn = int(t[2])
                     except:
@@ -88,12 +97,10 @@ def main(arguments=sys.argv):
     if opts.q:
         t = serverreg.match(opts.q)
         if t:
-            server = t
+            opts.server = t
+            serverDetected = True
                 
     #process stdin
-    mail = None
-    vmem = None
-    ppn = None
     preamble = True
     header = ""
     body = ""
@@ -107,53 +114,74 @@ def main(arguments=sys.argv):
         #if preamble:
         header += line 
         #check if this line is mail
-        if not mail: #if mail not yet found
-            mail = mailreg.match(line) #returns None if no match
-        if not vmem:
-            vmem = vmemreg.match(line)
-        if not ppn:
+        if not mailDetected: #if mail not yet found
+            opts.m = mailreg.match(line) #returns None if no match
+            mailDetected = bool(opts.m)
+        if not vmemDetected:
+            opts.vmem = vmemreg.match(line)
+            vmemDetected = bool(opts.vmem)
+            if vmemDetected:
+                opts.vmem = opts.vmem.group(1)
+        if not ppnDetected:
             t = ppnreg.match(line)
             if t:
-                ppn = t.group(0) #returns '' if no match, which evalutates to false
-        if server == DEFAULT_SERVER:
+                opts.ppn = t.group(0) #returns '' if no match, which evalutates to false
+                ppnDetected = bool(opts.ppn)
+        if not serverDetected:
             t = serverreg.match(line)
             if t:
-                server = t.group(0)
+                opts.server = t.group(0)
+                serverDetected = True
+                
 #        else:
 #            body += line 
 
     #combine results
     #vmem
-    if not opts.vmem and not vmem:
         
-        vmem = 1536 
-        #try to find the server if not set yet
-        if server == DEFAULT_SERVER:
-            try:
-                server = os.environ['PBS_DEFAULT']
-            except:
-                pass
-            
-        #compute vmem
-        if 'gengar' in server or DEFAULT_SERVER in server:
-            vmem = 4096 # in MB, ( 16G (RAM) + 16G (half of swap) ) / 8
-        elif 'gastly' in server or 'haunter' in server:
-            vmem = 2304 # in MB, ( 12G (RAM) + 6G (half of swap) ) / 8
-        elif 'gulpin' in server:
-            vmem =  2250 # in MB, ( 64G (RAM) + 8G (half of swap) ) / 32
-        elif 'dugtrio' in server:
-            vmem = None #dont set it if not found
+    tvmem = 1536 
+    #try to find the server if not set yet
+    if not serverDetected:
+        try:
+            opts.server = os.environ['PBS_DEFAULT']
+            serverDetected = bool(opts.server)
+        except:
+            pass
         
-        if vmem:
-            #compute real vmem needed
-            if opts.ppn:
-                vmem = vmem * opts.ppn
-            elif ppn:
-                vmem = vmem * int(ppn)
-            header += "# No vmem limit specified - added by submitfilter (server found: %s)\n#PBS -l vmem=%smb\n" % (server, vmem)
+    #set defaults
+    if not serverDetected:
+        opts.server = DEFAULT_SERVER
+    if not ppnDetected:
+        opts.ppn = 1
         
+    #compute vmem
+    if not serverDetected or 'gengar' in opts.server:
+        tvmem = GENGAR_VMEM # in MB, ( 16G (RAM) + 16G (half of swap) ) / 8
+    elif 'gastly' in opts.server or 'haunter' in opts.server:
+        tvmem = GASTLY_VMEM # in MB, ( 12G (RAM) + 6G (half of swap) ) / 8
+    elif 'gulpin' in opts.server:
+        tvmem =  GULPIN_VMEM # in MB, ( 64G (RAM) + 8G (half of swap) ) / 32
+    elif 'dugtrio' in opts.server:
+        tvmem = None #dont set it if not found
+        vmemDetected = True
+    
+    if not vmemDetected:
+        #compute real vmem needed
+        vmem = tvmem * int(opts.ppn)
+        header += "# No vmem limit specified - added by submitfilter (server found: %s)\n#PBS -l vmem=%smb\n" % (server, vmem)
+    else:
+        groupvmem = re.search('(\d+)', opts.vmem).group(1)
+        if groupvmem:
+            intvmem = int(groupvmem)
+        else:
+            intvmem = 0
+        if opts.vmem.endswith('gb'):
+            intvmem = intvmem * 8 
+        if intvmem > tvmem: #TODO: convert to gb sometimes 
+            #warn user that he's trying to request to much vmem
+            sys.stderr.write("Warning, requesting %s vmem, this is more then the default (%s)" % (intvmem,tvmem))
     #mail
-    if not opts.m and not mail:
+    if not mailDetected:
         header += "# No mail specified - added by submitfilter\n#PBS -m n\n"
     
     
@@ -163,6 +191,7 @@ def main(arguments=sys.argv):
     #print rest of stdin to stdout
     for line in iter(sys.stdin.readline, ''):
         sys.stdout.write(line)
+    #print ("#done")
     
 if __name__ == '__main__':
     #testOptionParser()

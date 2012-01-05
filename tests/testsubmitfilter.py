@@ -52,37 +52,40 @@ SCRIPT3="""#!/bin/sh
 #PBS -q short
 #PBS -m bea
 #"""
-GOOD_ARGS=['-m bea','-l vmem=1000mb','-l  nodes=1:ppn=7','-q short','-q  d short',
+GOOD_ARGS=['','-m bea','-l vmem=1000mb','-l  nodes=1:ppn=7','-q short','-q  d short',
       '-q short@gengar', '-q @blashort', '-q @blashort@gengar','-x ignorethis',
       '--ignorethis','--ignorethis da','-x','-h x']
 BAD_ARGS=['-m','-l'] #this should not occur, qsub checks this
 
-class TestSubmitfilter(unittest.TestCase):
-    
-    def runcmd(self,cmd):
-        start = datetime.datetime.now()
-        p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE, close_fds=True)
-        timedout = False
-        while p.poll() is None:
-            time.sleep(1)
-            if os.path.exists("/proc/%s" % (p.pid)):
-                now = datetime.datetime.now()
-                if (now - start).seconds > TIMEOUT:
-                    if timedout == False:
-                        os.kill(p.pid, signal.SIGTERM)
-                        self.fail("Timeout occured with cmd %s. took more than %i secs to complete." % (cmd, TIMEOUT))
-                        timedout = True
-                    else:
-                        os.kill(p.pid, signal.SIGKILL)
-        out = p.stdout.read().strip()
-        err = p.stderr.read().strip()
+
+def runcmd(cmd):
+    start = datetime.datetime.now()
+    p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE, close_fds=True)
+    timedout = False
+    while p.poll() is None:
+        time.sleep(1)
+        if os.path.exists("/proc/%s" % (p.pid)):
+            now = datetime.datetime.now()
+            if (now - start).seconds > TIMEOUT:
+                if timedout == False:
+                    os.kill(p.pid, signal.SIGTERM)
+                    self.fail("Timeout occured with cmd %s. took more than %i secs to complete." % (cmd, TIMEOUT))
+                    timedout = True
+                else:
+                    os.kill(p.pid, signal.SIGKILL)
+    out = p.stdout.read().strip()
+    err = p.stderr.read().strip()
 #        print "-"*9 + "\n" + out
 #        print "cmd %s, out: %s, err: %s "%(cmd,out,err)
-        return out,err
+    return out,err
+
+class TestSubmitfilter(unittest.TestCase):
+    
+
     
     def compareResults(self,input,args=""):
-        old = self.runcmd("""echo '%s' | ../files/submitfilter %s""" % (input,args))
-        new = self.runcmd("""echo '%s' | ../files/submitfilter.py %s""" % (input,args))
+        old = runcmd("""echo '%s' | ../files/submitfilter %s""" % (input,args))
+        new = runcmd("""echo '%s' | ../files/submitfilter.py %s""" % (input,args))
         pprint (list(difflib.Differ().compare(old[0].splitlines(1),new[0].splitlines(1))))
         return old[0].replace('\n','') == new[0].replace('\n','')
     
@@ -112,3 +115,7 @@ class TestSubmitfilter(unittest.TestCase):
             for arg in GOOD_ARGS:
                 print arg
                 self.assertTrue(self.compareResults(s,arg))
+                
+                
+
+#print runcmd("""echo "hello" | ../files/submitfilter.py """)
