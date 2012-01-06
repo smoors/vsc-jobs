@@ -17,8 +17,12 @@ import re
 
 DEFAULT_SERVER = "default"
 GENGAR_VMEM = 4096
+GENGAR_VMEM_WARNING = 47313 #more then this and the job won't start
 GASTLY_VMEM = 2304
+GASTLY_VMEM_WARNING = 23712 #same for haunter
 GULPIN_VMEM = 2250
+GULPIN_VMEM_WARNING = 80948
+DUGTRIO_VMEM_WARNING = 1395439 #total amount of ram in dugtrio cluster
 class PassThroughOptionParser(OptionParser):
     """
     "Pass-through" option parsing -- an OptionParser that ignores
@@ -157,12 +161,16 @@ def main(arguments=sys.argv):
     #compute vmem
     if not serverDetected or 'gengar' in opts.server:
         tvmem = GENGAR_VMEM # in MB, ( 16G (RAM) + 16G (half of swap) ) / 8
+        maxvmem =GENGAR_VMEM_WARNING
     elif 'gastly' in opts.server or 'haunter' in opts.server:
         tvmem = GASTLY_VMEM # in MB, ( 12G (RAM) + 6G (half of swap) ) / 8
+        maxvmem =GASTLY_VMEM_WARNING
     elif 'gulpin' in opts.server:
         tvmem =  GULPIN_VMEM # in MB, ( 64G (RAM) + 8G (half of swap) ) / 32
+        maxvmem =GULPIN_VMEM_WARNING
     elif 'dugtrio' in opts.server:
         tvmem = None #dont set it if not found
+        maxvmem = DUGTRIO_VMEM_WARNING
         vmemDetected = True
     
     if not vmemDetected:
@@ -177,9 +185,9 @@ def main(arguments=sys.argv):
             intvmem = 0
         if opts.vmem.endswith('gb'):
             intvmem = intvmem * 1024
-        if intvmem > tvmem: #TODO: convert to gb sometimes 
+        if intvmem > maxvmem: 
             #warn user that he's trying to request to much vmem
-            sys.stderr.write("Warning, requesting %s vmem, this is more then the default (%s)" % (intvmem,tvmem))
+            sys.stderr.write("Warning, requested %smB vmem per node, this is more then the available vmem (%smB), this job will never start\n" % (intvmem,maxvmem))
     #mail
     if not mailDetected:
         header += "# No mail specified - added by submitfilter\n#PBS -m n\n"
