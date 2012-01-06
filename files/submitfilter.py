@@ -105,17 +105,14 @@ def main(arguments=sys.argv):
             serverDetected = True
                 
     #process stdin
-    preamble = True
     header = ""
     body = ""
     for line in iter(sys.stdin.readline, ''):
         #check if we're still in the preamble
         if not line.startswith('#') and not line.strip() == "":
-            #preamble = False
             #jump out of loop here, we will print the rest later
             body = line #save this line first
             break 
-        #if preamble:
         header += line 
         #check if this line is mail
         if not mailDetected: #if mail not yet found
@@ -137,8 +134,6 @@ def main(arguments=sys.argv):
                 opts.server = t.group(0)
                 serverDetected = True
                 
-#        else:
-#            body += line 
 
     #combine results
     #vmem
@@ -151,6 +146,14 @@ def main(arguments=sys.argv):
             serverDetected = bool(opts.server)
         except:
             pass
+    # check whether VSC_NODE_PARTITION environment variable is set
+    # used for gulpin/dugtrio
+    try:
+        partition = os.environ['VSC_NODE_PARTITION']
+        if partition: #if set, add to header
+            header += "\n#PBS -W x=PARTITION:%s\n" % partition
+    except:
+        pass
         
     #set defaults
     if not serverDetected:
