@@ -176,7 +176,7 @@ def main(arguments=sys.argv):
         else:
             intvmem = 0
         if opts.vmem.endswith('gb'):
-            intvmem = intvmem * 8 
+            intvmem = intvmem * 1024
         if intvmem > tvmem: #TODO: convert to gb sometimes 
             #warn user that he's trying to request to much vmem
             sys.stderr.write("Warning, requesting %s vmem, this is more then the default (%s)" % (intvmem,tvmem))
