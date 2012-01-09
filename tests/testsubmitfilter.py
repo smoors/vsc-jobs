@@ -27,7 +27,52 @@ cd $VSC_HOME
 ##logs to stderr by default, redirect this to stdout
 ./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out 
 """
-
+SCRIPT5="""#!/bin/sh
+#
+#
+#PBS -N testrun
+#PBS -o output_testrun.txt
+#PBS -e error_testrun.txt
+#PBS -l walltime=11:25:00 
+#PBS -l nodes=1:ppn=5 
+#PBS -l vmem=500mb
+#PBS -m bea
+#PBS -q short
+#
+cd $VSC_HOME
+##logs to stderr by default, redirect this to stdout
+./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out 
+"""
+SCRIPT6="""#!/bin/sh
+#
+#
+#PBS -N testrun
+#PBS -o output_testrun.txt
+#PBS -e error_testrun.txt
+#PBS -l walltime=11:25:00 
+#PBS -l vmem=500mb #nodes=1:ppn=5 
+#PBS -m bea
+#PBS -q short
+#
+cd $VSC_HOME
+##logs to stderr by default, redirect this to stdout
+./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out 
+"""
+SCRIPT7="""#!/bin/sh
+#
+#
+#PBS -N testrun
+#PBS -o output_testrun.txt
+#PBS -e error_testrun.txt
+#PBS -l walltime=11:25:00 
+#PBS -l nodes=1:ppn=5  #blabla vmem=500mb  
+#PBS -m bea
+#PBS -q short
+#
+cd $VSC_HOME
+##logs to stderr by default, redirect this to stdout
+./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out 
+"""
 SCRIPT4="""#!/bin/sh
 #PBS -l walltime=11:25:00
 #PBS -m bea
@@ -87,7 +132,15 @@ class TestSubmitfilter(unittest.TestCase):
         old = runcmd("""echo '%s' | ../files/submitfilter %s""" % (input,args))
         new = runcmd("""echo '%s' | ../files/submitfilter.py %s""" % (input,args))
         pprint (list(difflib.Differ().compare(old[0].splitlines(1),new[0].splitlines(1))))
-        return old[0].replace('\n','') == new[0].replace('\n','')
+        old = old[0].replace('\n','')
+        new = new[0].replace('\n','')
+        for i in old:
+            if not i in new:
+                return False
+        for i in new:
+            if not i in old:
+                return False
+        return True    
     
     def testCLIOptions(self):
         for arg in GOOD_ARGS:
@@ -99,10 +152,15 @@ class TestSubmitfilter(unittest.TestCase):
         
     def testscript1(self):
         self.assertTrue(self.compareResults(SCRIPT1))
+    def testscript5(self):
+        self.assertTrue(self.compareResults(SCRIPT5))
+    def testscript6(self):
+        self.assertTrue(self.compareResults(SCRIPT6))
+    def testscript7(self):
+        self.assertTrue(self.compareResults(SCRIPT7))
         
     def testscript3(self):
-        #fails because order is wrong
-        #self.assertTrue(self.compareResults(SCRIPT3))
+        self.assertTrue(self.compareResults(SCRIPT3))
         pass
     
     def testscript2(self):
@@ -118,4 +176,4 @@ class TestSubmitfilter(unittest.TestCase):
                 
                 
 
-#print runcmd("""echo "hello" | ../files/submitfilter.py """)
+print runcmd("""echo "hello\n" | ../files/submitfilter.py -l vmem=1000mb """)
