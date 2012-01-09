@@ -77,6 +77,7 @@ def main(arguments=sys.argv):
     ppnDetected = False
     mailDetected = bool(opts.m)
     serverDetected = False
+    noVmemNeeded = False
     opts.server = None
     #process appended results to l
     opts.vmem = None
@@ -165,18 +166,18 @@ def main(arguments=sys.argv):
     elif re.search("\.dugtrio\.", opts.server):
         tvmem = None #dont set it if not found
         maxvmem = DUGTRIO_VMEM_WARNING
-        vmemDetected = True
+        noVmemNeeded = True 
     else:
         # backup, but should not occur
         tvmem = 1536
         maxvmem = 0
         sys.stderr.write("Warning: unknown server (%s) detected, see PBS_DEFAULT. This should not be happening...\n"%opts.server)
     
-    if not vmemDetected:
+    if not vmemDetected and not noVmemNeeded:
         #compute real vmem needed
         vmem = tvmem * int(opts.ppn)
         header += "# No vmem limit specified - added by submitfilter (server found: %s)\n#PBS -l vmem=%smb\n" % (opts.server, vmem)
-    else:
+    elif not noVmemNeeded:
         #parse detected vmem to check if to much was asked
         groupvmem = re.search('(\d+)', opts.vmem).group(1)
         if groupvmem:
