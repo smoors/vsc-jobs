@@ -188,7 +188,7 @@ def main(arguments=sys.argv):
             intvmem = intvmem * 1024
         if intvmem > maxvmem: 
             #warn user that he's trying to request to much vmem
-            sys.stderr.write("Warning, requested %smB vmem per node, this is more then the available vmem (%smB), this job will never start\n" % (intvmem,maxvmem))
+            sys.stderr.write("Warning, requested %sMB vmem per node, this is more then the available vmem (%sMB), this job will never start\n" % (intvmem,maxvmem))
     #mail
     if not mailDetected:
         header += "# No mail specified - added by submitfilter\n#PBS -m n\n"
