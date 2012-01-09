@@ -53,11 +53,14 @@ def main(arguments=sys.argv):
     main method
     """
     #regexes needed here
-    mailreg = re.compile("^#PBS -m .+")
-    vmemreg = re.compile('^#PBS -l .*?vmem=(.*)')
-    ppnreg = re.compile('^#PBS -l .*?nodes=.+?:ppn=(\d+)')
-    serverreg = re.compile('.*@master[0-9]*\.([^.]*)\.gent\.vsc')
-    
+    mailreg = re.compile("^#PBS\s+-m\s.+")
+    vmemreg = re.compile('^#PBS\s+-l\s+[^#]*?vmem=(?P<vmem>[^\s]*)')
+    ppnreg = re.compile('^#PBS\s+-l\s+[^#]*?nodes=.+?:ppn=(?P<ppn>\d+)')
+    serverreg = re.compile('.*@master[0-9]*\.(?P<server>[^.]*)\.gent\.vsc')
+    #optsppnreg = re.compile('nodes=(?P<nodes>\d+)[^:#,\s]ppn=(?P<ppn>\d+)')
+    optsppnreg = re.compile('.*?nodes=(?P<nodes>\d+)[^#,\s]*ppn=(?P<ppn>\d+)')
+
+    optsvmemreg = re.compile('vmem=(?P<vmem>[^#\s]*)')
     #parse command line options
     parser = PassThroughOptionParser() #ignore unknown options
     parser.add_option("-m", help="mail option")
@@ -78,24 +81,18 @@ def main(arguments=sys.argv):
     opts.server = None
     #process appended results to l
     opts.vmem = None
-    opts.ppn = None
+    opts.ppn = 1
     if opts.l:
         for arg in opts.l:
-            for a in arg.split(','): #these options to l can be separated by a :
-                if not vmemDetected and a.startswith('vmem'): #only process first occurrence
-                    try:
-                        opts.vmem = a.split('=')[1]
-                        vmemDetected = True
-                    except: #safety for typo's on client side, will use default vmem then
-                        pass
-                        
-                elif not ppnDetected and a.startswith('nodes'):
-                    t = a.split('=')
-                    ppnDetected = True #we found the nodes specifier, so should be set now anyhow
-                    try:
-                        opts.ppn = int(t[2])
-                    except:
-                        opts.ppn = 1
+            match = optsppnreg.match(arg)
+            if match:
+                opts.ppn = match.group("ppn")
+                ppnDetected = True
+            match = optsvmemreg.match(arg)
+            if match:
+                opts.vmem = match.group("vmem")
+                vmemDetected = True
+
                         
     #check for server in options
     if opts.q:
@@ -122,16 +119,16 @@ def main(arguments=sys.argv):
             opts.vmem = vmemreg.match(line)
             vmemDetected = bool(opts.vmem)
             if vmemDetected:
-                opts.vmem = opts.vmem.group(1)
+                opts.vmem = opts.vmem.group("vmem")
         if not ppnDetected:
             t = ppnreg.match(line)
             if t:
-                opts.ppn = t.group(0) #returns '' if no match, which evalutates to false
+                opts.ppn = t.group("ppn") #returns '' if no match, which evalutates to false
                 ppnDetected = bool(opts.ppn)
         if not serverDetected:
             t = serverreg.match(line)
             if t:
-                opts.server = t.group(0)
+                opts.server = t.group("server")
                 serverDetected = True
                 
 
@@ -181,6 +178,7 @@ def main(arguments=sys.argv):
         vmem = tvmem * int(opts.ppn)
         header += "# No vmem limit specified - added by submitfilter (server found: %s)\n#PBS -l vmem=%smb\n" % (server, vmem)
     else:
+        #parse detected vmem to check if to much was asked
         groupvmem = re.search('(\d+)', opts.vmem).group(1)
         if groupvmem:
             intvmem = int(groupvmem)
