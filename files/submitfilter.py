@@ -68,8 +68,6 @@ def main(arguments=sys.argv):
     parser.add_option("-q", help="queue/server option")
 #    parser.add_option("-h", help="dummy option to prevent printing help",action="count")
     parser.add_option("-l", help="some other options", action="append")
-
-    server = DEFAULT_SERVER
     
     #parser.add_option()
     (opts, args) = parser.parse_args(arguments)
@@ -136,7 +134,6 @@ def main(arguments=sys.argv):
     #combine results
     #vmem
         
-    tvmem = 1536 
     #try to find the server if not set yet
     if not serverDetected and os.environ.has_key('PBS_DEFAULT'):
         opts.server = os.environ['PBS_DEFAULT']
@@ -155,24 +152,29 @@ def main(arguments=sys.argv):
         opts.ppn = 1
         
     #compute vmem
-    if not serverDetected or 'gengar' in opts.server:
+    if not serverDetected or opts.server in ['gengar']:
         tvmem = GENGAR_VMEM # in MB, ( 16G (RAM) + 16G (half of swap) ) / 8
         maxvmem =GENGAR_VMEM_WARNING
-    elif 'gastly' in opts.server or 'haunter' in opts.server:
+    elif opts.server in ['gastly','haunter']:
         tvmem = GASTLY_VMEM # in MB, ( 12G (RAM) + 6G (half of swap) ) / 8
         maxvmem =GASTLY_VMEM_WARNING
-    elif 'gulpin' in opts.server:
+    elif opts.server in ['gulpin']:
         tvmem =  GULPIN_VMEM # in MB, ( 64G (RAM) + 8G (half of swap) ) / 32
         maxvmem =GULPIN_VMEM_WARNING
-    elif 'dugtrio' in opts.server:
+    elif opts.server in ['dugtrio']:
         tvmem = None #dont set it if not found
         maxvmem = DUGTRIO_VMEM_WARNING
         vmemDetected = True
+    else:
+        # backup, but should not occur
+        tvmem = 1536
+        maxvmem = 0
+        sys.stderr.write("Warning: unknown server (%s) detected, see PBS_DEFAULT. This should not be happening...\n"%opts.server)
     
     if not vmemDetected:
         #compute real vmem needed
         vmem = tvmem * int(opts.ppn)
-        header += "# No vmem limit specified - added by submitfilter (server found: %s)\n#PBS -l vmem=%smb\n" % (server, vmem)
+        header += "# No vmem limit specified - added by submitfilter (server found: %s)\n#PBS -l vmem=%smb\n" % (opts.server, vmem)
     else:
         #parse detected vmem to check if to much was asked
         groupvmem = re.search('(\d+)', opts.vmem).group(1)
@@ -184,7 +186,7 @@ def main(arguments=sys.argv):
             intvmem = intvmem * 1024
         if intvmem > maxvmem: 
             #warn user that he's trying to request to much vmem
-            sys.stderr.write("Warning, requested %sMB vmem per node, this is more then the available vmem (%sMB), this job will never start\n" % (intvmem,maxvmem))
+            sys.stderr.write("Warning, requested %sMB vmem per node, this is more then the available vmem (%sMB), this job will never start.\n" % (intvmem,maxvmem))
     #mail
     if not mailDetected:
         header += "# No mail specified - added by submitfilter\n#PBS -m n\n"
