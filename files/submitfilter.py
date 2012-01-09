@@ -154,7 +154,7 @@ def main(arguments=sys.argv):
         
     
     #compute vmem
-    if not serverDetected or re.search("\.gengar\.", opts.server):
+    if not serverDetected or re.search("\.gengar\.|^default$", opts.server):
         tvmem = GENGAR_VMEM # in MB, ( 16G (RAM) + 16G (half of swap) ) / 8
         maxvmem =GENGAR_VMEM_WARNING
     elif re.search("\.(gastly|haunter)\.", opts.server):
