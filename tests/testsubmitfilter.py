@@ -12,7 +12,7 @@ import difflib
 from pprint import pprint
 TIMEOUT = 10
 
-SCRIPT1="""#!/bin/sh
+SCRIPTS = ["""#!/bin/sh
 #
 #
 #PBS -N testrun
@@ -26,8 +26,8 @@ SCRIPT1="""#!/bin/sh
 cd $VSC_HOME
 ##logs to stderr by default, redirect this to stdout
 ./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out 
-"""
-SCRIPT5="""#!/bin/sh
+""",
+"""#!/bin/sh
 #
 #
 #PBS -N testrun
@@ -42,8 +42,8 @@ SCRIPT5="""#!/bin/sh
 cd $VSC_HOME
 ##logs to stderr by default, redirect this to stdout
 ./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out 
-"""
-SCRIPT6="""#!/bin/sh
+""",
+"""#!/bin/sh
 #
 #
 #PBS -N testrun
@@ -57,8 +57,8 @@ SCRIPT6="""#!/bin/sh
 cd $VSC_HOME
 ##logs to stderr by default, redirect this to stdout
 ./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out 
-"""
-SCRIPT7="""#!/bin/sh
+""",
+"""#!/bin/sh
 #
 #
 #PBS -N testrun
@@ -72,14 +72,23 @@ SCRIPT7="""#!/bin/sh
 cd $VSC_HOME
 ##logs to stderr by default, redirect this to stdout
 ./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out 
-"""
-SCRIPT4="""#!/bin/sh
+""",
+"""#!/bin/sh
 #PBS -l walltime=11:25:00
 #PBS -m bea
 #
 cd $VSC_HOME 
 """
-SCRIPT2="""#!/bin/sh
+,
+"""#!/bin/sh
+#PBS -l walltime=11:25:00 
+##PBS -l vmem=500mb
+#PBS -q short
+#PBS -m bea
+#""",
+]
+#don't test this, is bug in original
+SCRIPTS2 = """#!/bin/sh 
 #PBS -l walltime=11:25:00 
 #PBS -l vmem=500mb
 #PBS -q short
@@ -91,12 +100,8 @@ cd $VSC_HOME
 
 #PBS -m bea
 """
-SCRIPT3="""#!/bin/sh
-#PBS -l walltime=11:25:00 
-##PBS -l vmem=500mb
-#PBS -q short
-#PBS -m bea
-#"""
+SERVERS = ['gengar','haunter','gulpin','gastly','dugtrio']
+BAD_SERVERS = ['nogengar','haunterdoesntexist','','blabla','server']
 GOOD_ARGS=['','-m bea','-l vmem=1000mb','-l  nodes=1:ppn=7','-q short','-q  d short',
       '-q short@gengar', '-q @blashort', '-q @blashort@gengar','-x ignorethis',
       '--ignorethis','--ignorethis da','-x','-h x']
@@ -149,27 +154,23 @@ class TestSubmitfilter(unittest.TestCase):
     
     def testempty(self):
         self.assertTrue(self.compareResults(""))
-        
-    def testscript1(self):
-        self.assertTrue(self.compareResults(SCRIPT1))
-    def testscript5(self):
-        self.assertTrue(self.compareResults(SCRIPT5))
-    def testscript6(self):
-        self.assertTrue(self.compareResults(SCRIPT6))
-    def testscript7(self):
-        self.assertTrue(self.compareResults(SCRIPT7))
-        
-    def testscript3(self):
-        self.assertTrue(self.compareResults(SCRIPT3))
-        pass
     
-    def testscript2(self):
-        #fails because in new we check for the end of the preamble 
-        #self.assertTrue(self.compareResults(SCRIPT2))
-        pass
+        
+    def testscripts(self):
+        for script in SCRIPTS:
+            os.environ['PBS_DEFAULT'] = "zever"
+            del os.environ['PBS_DEFAULT']
+            self.assertTrue(self.compareResults(script))
+            for i in SERVERS:
+                os.environ['PBS_DEFAULT'] = i
+                self.assertTrue(self.compareResults(script))
+            for i in BAD_SERVERS:
+                os.environ['PBS_DEFAULT'] = i
+                self.assertTrue(self.compareResults(script))
+
     
     def testCombined(self):
-        for s in [SCRIPT1]:
+        for s in SCRIPTS:
             for arg in GOOD_ARGS:
                 print arg
                 self.assertTrue(self.compareResults(s,arg))
