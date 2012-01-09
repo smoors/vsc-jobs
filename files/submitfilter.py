@@ -14,6 +14,7 @@ from optparse import OptionParser, BadOptionError
 import optparse
 import sys
 import re
+import os
 
 DEFAULT_SERVER = "default"
 GENGAR_VMEM = 4096
@@ -137,20 +138,15 @@ def main(arguments=sys.argv):
         
     tvmem = 1536 
     #try to find the server if not set yet
-    if not serverDetected:
-        try:
-            opts.server = os.environ['PBS_DEFAULT']
-            serverDetected = bool(opts.server)
-        except:
-            pass
+    if not serverDetected and os.environ.has_key('PBS_DEFAULT'):
+        opts.server = os.environ['PBS_DEFAULT']
+        serverDetected = True
+        
     # check whether VSC_NODE_PARTITION environment variable is set
     # used for gulpin/dugtrio
-    try:
-        partition = os.environ['VSC_NODE_PARTITION']
-        if partition: #if set, add to header
-            header += "\n#PBS -W x=PARTITION:%s\n" % partition
-    except:
-        pass
+    
+    if os.environ.has_key('VSC_NODE_PARTITION'):
+        header += "\n#PBS -W x=PARTITION:%s\n" % os.environ['VSC_NODE_PARTITION']
         
     #set defaults
     if not serverDetected:
