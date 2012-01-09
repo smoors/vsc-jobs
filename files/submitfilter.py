@@ -151,17 +151,18 @@ def main(arguments=sys.argv):
     if not ppnDetected:
         opts.ppn = 1
         
+    
     #compute vmem
-    if not serverDetected or opts.server in ['gengar']:
+    if not serverDetected or re.search("\.gengar\.", opts.server):
         tvmem = GENGAR_VMEM # in MB, ( 16G (RAM) + 16G (half of swap) ) / 8
         maxvmem =GENGAR_VMEM_WARNING
-    elif opts.server in ['gastly','haunter']:
+    elif re.search("\.(gastly|haunter)\.", opts.server):
         tvmem = GASTLY_VMEM # in MB, ( 12G (RAM) + 6G (half of swap) ) / 8
         maxvmem =GASTLY_VMEM_WARNING
-    elif opts.server in ['gulpin']:
+    elif re.search("\.gulpin\.", opts.server):
         tvmem =  GULPIN_VMEM # in MB, ( 64G (RAM) + 8G (half of swap) ) / 32
         maxvmem =GULPIN_VMEM_WARNING
-    elif opts.server in ['dugtrio']:
+    elif re.search("\.dugtrio\.", opts.server):
         tvmem = None #dont set it if not found
         maxvmem = DUGTRIO_VMEM_WARNING
         vmemDetected = True
