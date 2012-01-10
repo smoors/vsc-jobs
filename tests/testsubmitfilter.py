@@ -115,7 +115,7 @@ BAD_SERVERS = ['nogengar',"master1.gengar2.gent.vsc",'node035.gengar.gent.vsc'
                ,'haunterdoesntexist','','blabla','server','master.gent.vsc',
                'master..gent.vsc','master.haunterdoesntexist.gent.vsc',
                'mastergent.vsc']
-GOOD_ARGS=['','-m bea','-l vmem=1000mb','-l  nodes=1:ppn=7','-q short','-q  d short',
+GOOD_ARGS=['',"-d 'blabla' jobnaam", '-m bea','-l vmem=1000mb','-l  nodes=1:ppn=7','-q short','-q  d short',
       '-q short@gengar', '-q @blashort', '-q @blashort@gengar','-x ignorethis',
       '--ignorethis','--ignorethis da','-x','-h x']
 BAD_ARGS=['-m','-l'] #this should not occur, qsub checks this
@@ -216,4 +216,4 @@ class TestSubmitfilter(unittest.TestCase):
                 
                 
 
-print runcmd("""echo "hello\n" | ../files/submitfilter.py -l vmem=1000mb """)
+print runcmd("""echo "hello\n" | ../files/submitfilter -l vmem=1000mb """)

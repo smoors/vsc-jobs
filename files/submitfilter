@@ -43,10 +43,48 @@ class PassThroughOptionParser(OptionParser):
             self.largs.append(err.opt_str)
 
     def _process_short_opts(self, rargs, values):
-        try:
-            OptionParser._process_short_opts(self, rargs, values)
-        except BadOptionError, err:
-            self.largs.append(err.opt_str)
+        #implementation from recent optparser
+        arg = rargs.pop(0)
+        stop = False
+        i = 1
+        for ch in arg[1:]:
+            opt = "-" + ch
+            option = self._short_opt.get(opt)
+            i += 1                      # we have consumed a character
+
+            if not option:
+                #Changed by Jens: don't fail here, just append to largs
+                #                raise BadOptionError(opt)
+                self.largs.append(opt)
+                return
+            if option.takes_value():
+                # Any characters left in arg?  Pretend they're the
+                # next arg, and stop consuming characters of arg.
+                if i < len(arg):
+                    rargs.insert(0, arg[i:])
+                    stop = True
+
+                nargs = option.nargs
+                if len(rargs) < nargs:
+                    if nargs == 1:
+                        self.error(_("%s option requires an argument") % opt)
+                    else:
+                        self.error(_("%s option requires %d arguments")
+                                   % (opt, nargs))
+                elif nargs == 1:
+                    value = rargs.pop(0)
+                else:
+                    value = tuple(rargs[0:nargs])
+                    del rargs[0:nargs]
+
+            else:                       # option doesn't take a value
+                value = None
+
+            option.process(opt, value, values, self)
+
+            if stop:
+                break
+
 
 
 def main(arguments=sys.argv):
