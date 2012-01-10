@@ -57,6 +57,28 @@ cd $VSC_HOME
 cd $VSC_HOME
 ##logs to stderr by default, redirect this to stdout
 ./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out 
+"""
+,
+"""#!/bin/sh
+#PBS -l walltime=11:25:00 
+##PBS -l vmem=500mb
+#PBS -q short
+#PBS -m bea
+#
+""",
+]
+#test these with the ignore constant, since there's  bugs  in the old filter
+SCRIPTS2 = ["""#!/bin/sh 
+#PBS -l walltime=11:25:00 
+#PBS -l vmem=500mb
+#PBS -q short
+#
+
+cd $VSC_HOME
+##logs to stderr by default, redirect this to stdout
+./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out 
+
+#PBS -m bea
 """,
 """#!/bin/sh
 #
@@ -78,30 +100,21 @@ cd $VSC_HOME
 #PBS -m bea
 #
 cd $VSC_HOME 
-"""
-,
-"""#!/bin/sh
-#PBS -l walltime=11:25:00 
-##PBS -l vmem=500mb
-#PBS -q short
-#PBS -m bea
-#""",
+""",
 ]
-#don't test this, is bug in original
-SCRIPTS2 = """#!/bin/sh 
-#PBS -l walltime=11:25:00 
-#PBS -l vmem=500mb
-#PBS -q short
-#
-
-cd $VSC_HOME
-##logs to stderr by default, redirect this to stdout
-./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out 
-
-#PBS -m bea
-"""
-SERVERS = ['gengar','haunter','gulpin','gastly','dugtrio']
-BAD_SERVERS = ['nogengar','haunterdoesntexist','','blabla','server']
+#ignore these lines, they are wrong in the old filter
+#TODO: check things without this first
+IGNORE= ["#PBS -l vmem=20480mb","#PBS -l vmem=28672mb",
+         "# No mail specified - added by submitfilter",
+         "#PBS -m n"]
+        #master[0-9]*\.([^.]*)\.gent\.vsc
+SERVERS = ['master1.gengar.gent.vsc','master5.haunter.gent.vsc',
+           'master9.gulpin.gent.vsc','master3.gastly.gent.vsc',
+           'master11.dugtrio.gent.vsc']
+BAD_SERVERS = ['nogengar',"master1.gengar2.gent.vsc",'node035.gengar.gent.vsc'
+               ,'haunterdoesntexist','','blabla','server','master.gent.vsc',
+               'master..gent.vsc','master.haunterdoesntexist.gent.vsc',
+               'mastergent.vsc']
 GOOD_ARGS=['','-m bea','-l vmem=1000mb','-l  nodes=1:ppn=7','-q short','-q  d short',
       '-q short@gengar', '-q @blashort', '-q @blashort@gengar','-x ignorethis',
       '--ignorethis','--ignorethis da','-x','-h x']
@@ -133,17 +146,27 @@ class TestSubmitfilter(unittest.TestCase):
     
 
     
-    def compareResults(self,input,args=""):
-        old = runcmd("""echo '%s' | ../files/submitfilter %s""" % (input,args))
+    def compareResults(self,input,args="",ignore=""):
+        old = runcmd("""echo '%s' | ../files/submitfilter.old %s""" % (input,args))
         new = runcmd("""echo '%s' | ../files/submitfilter.py %s""" % (input,args))
-        pprint (list(difflib.Differ().compare(old[0].splitlines(1),new[0].splitlines(1))))
-        old = old[0].replace('\n','')
-        new = new[0].replace('\n','')
+        old = old[0].splitlines()
+        new = new[0].splitlines()
+        pprint (list(difflib.Differ().compare(old,new)))
+
+        #don't fail on '' and #
+        new.append('#')
+        new.append('')
+        new.extend(ignore)
+        old.append('#')
+        old.append('')    
+        old.extend(ignore)
         for i in old:
             if not i in new:
+                print "%s not in new" % i
                 return False
         for i in new:
             if not i in old:
+                print "%s not in old" % i
                 return False
         return True    
     
@@ -157,18 +180,34 @@ class TestSubmitfilter(unittest.TestCase):
     
         
     def testscripts(self):
+
+        os.environ['PBS_DEFAULT'] = "zever"
         for script in SCRIPTS:
-            os.environ['PBS_DEFAULT'] = "zever"
             del os.environ['PBS_DEFAULT']
             self.assertTrue(self.compareResults(script))
             for i in SERVERS:
+                print i
                 os.environ['PBS_DEFAULT'] = i
                 self.assertTrue(self.compareResults(script))
             for i in BAD_SERVERS:
+                print i
                 os.environ['PBS_DEFAULT'] = i
                 self.assertTrue(self.compareResults(script))
 
-    
+    def testscipts2(self):
+        os.environ['PBS_DEFAULT'] = "zever"
+        for script in SCRIPTS2:
+            del os.environ['PBS_DEFAULT']
+            self.assertTrue(self.compareResults(script,ignore=IGNORE))
+            for i in SERVERS:
+                print i
+                os.environ['PBS_DEFAULT'] = i
+                self.assertTrue(self.compareResults(script,ignore=IGNORE))
+            for i in BAD_SERVERS:
+                print i
+                os.environ['PBS_DEFAULT'] = i
+                self.assertTrue(self.compareResults(script,ignore=IGNORE))
+                
     def testCombined(self):
         for s in SCRIPTS:
             for arg in GOOD_ARGS:
