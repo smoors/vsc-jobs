@@ -37,7 +37,7 @@ rm -rf %{buildroot}
 /usr/bin/show_queues
 /usr/bin/pbsmon
 /usr/bin/show_mem
-/var/spool/pbs/submitfilter
+/var/spool/pbs/submitfilter.py
 
 %changelog
 * Tue Jan 10 2012 Jens Timmerman <jens.timmerman@gmail.com>
