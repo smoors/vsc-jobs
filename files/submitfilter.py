@@ -57,7 +57,7 @@ def main(arguments=sys.argv):
     mailreg = re.compile("^#PBS\s+-m\s.+")
     vmemreg = re.compile('^#PBS\s+-l\s+[^#]*?vmem=(?P<vmem>[^\s]*)')
     ppnreg = re.compile('^#PBS\s+-l\s+[^#]*?nodes=.+?:ppn=(?P<ppn>\d+)')
-    serverreg = re.compile('.*@master[0-9]*\.(?P<server>[^.]*)\.gent\.vsc')
+    serverreg = re.compile('.*master[0-9]*\.(?P<server>[^.]*)\.gent\.vsc')
     #optsppnreg = re.compile('nodes=(?P<nodes>\d+)[^:#,\s]ppn=(?P<ppn>\d+)')
     optsppnreg = re.compile('.*?nodes=(?P<nodes>\d+)[^#,\s]*ppn=(?P<ppn>\d+)')
 
@@ -137,8 +137,10 @@ def main(arguments=sys.argv):
         
     #try to find the server if not set yet
     if not serverDetected and os.environ.has_key('PBS_DEFAULT'):
-        opts.server = os.environ['PBS_DEFAULT']
-        serverDetected = True
+        t = serverreg.match(os.environ['PBS_DEFAULT'])
+        if t:
+            opts.server = t.group("server")
+            serverDetected = bool(opts.server) #opts.server can also be the empty string
         
     # check whether VSC_NODE_PARTITION environment variable is set
     # used for gulpin/dugtrio
@@ -154,16 +156,16 @@ def main(arguments=sys.argv):
         
     
     #compute vmem
-    if not serverDetected or re.search("\.gengar\.|^default$", opts.server):
+    if not serverDetected or opts.server in ["gengar","default"]:
         tvmem = GENGAR_VMEM # in MB, ( 16G (RAM) + 16G (half of swap) ) / 8
         maxvmem =GENGAR_VMEM_WARNING
-    elif re.search("\.(gastly|haunter)\.", opts.server):
+    elif opts.server in ["gastly","haunter"]:
         tvmem = GASTLY_VMEM # in MB, ( 12G (RAM) + 6G (half of swap) ) / 8
         maxvmem =GASTLY_VMEM_WARNING
-    elif re.search("\.gulpin\.", opts.server):
+    elif opts.server in ["gulpin"]:
         tvmem =  GULPIN_VMEM # in MB, ( 64G (RAM) + 8G (half of swap) ) / 32
         maxvmem =GULPIN_VMEM_WARNING
-    elif re.search("\.dugtrio\.", opts.server):
+    elif opts.server in ["dugtrio"]:
         tvmem = None #dont set it if not found
         maxvmem = DUGTRIO_VMEM_WARNING
         noVmemNeeded = True 
