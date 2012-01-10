@@ -1,13 +1,13 @@
 Summary: ugent pbsscripts
 Name: pbsscripts-ugent
 Version: 0.5
-Release: 2
+Release: 3
 License: GPL
 Group: Applications/System
 Source: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 %description
-Extra scripts for pbs interaction. (show_jobs, pbsmon, ...)
+Extra scripts for pbs interaction. (show_jobs, pbsmon, submitfilter, ...)
 
 %prep
 %setup -q
@@ -23,7 +23,7 @@ install show_nodes $RPM_BUILD_ROOT/usr/bin/
 install show_queues $RPM_BUILD_ROOT/usr/bin/
 install pbsmon $RPM_BUILD_ROOT/usr/bin/
 install show_mem $RPM_BUILD_ROOT/usr/bin/
-install submitfilter $RPM_BUILD_ROOT/var/spool/pbs/
+install submitfilter.py $RPM_BUILD_ROOT/var/spool/pbs/
 
 
 %clean
@@ -40,6 +40,10 @@ rm -rf %{buildroot}
 /var/spool/pbs/submitfilter
 
 %changelog
+* Tue Jan 10 2012 Jens Timmerman <jens.timmerman@gmail.com>
+- replaced submitfilter with python implementation, this fixes:
+- submitfilter not giving priority to command line options (for ppn)
+- submitfilter not detecting en of of header
 * Thu May 12 2011 Wouter Depypere <wouter.depypere@ugent.be>
 - first version
 
