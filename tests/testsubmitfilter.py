@@ -148,7 +148,7 @@ class TestSubmitfilter(unittest.TestCase):
     
     def compareResults(self,input,args="",ignore=""):
         old = runcmd("""echo '%s' | ../files/submitfilter.old %s""" % (input,args))
-        new = runcmd("""echo '%s' | ../files/submitfilter.py %s""" % (input,args))
+        new = runcmd("""echo '%s' | ../files/submitfilter %s""" % (input,args))
         old = old[0].splitlines()
         new = new[0].splitlines()
         pprint (list(difflib.Differ().compare(old,new)))
