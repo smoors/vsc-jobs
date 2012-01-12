@@ -16,17 +16,22 @@ import string
 import re
 from math import ceil
 import pbs
+from PBSQuery import PBSQuery
 
-regphysmem=re.compile(r"physmem=(\d+)((?:k|m|g)b)",re.I)
-regtotmem=re.compile(r"totmem=(\d+)((?:k|m|g)b)",re.I)
-regsize=re.compile(r"size=\d+(?:k|m|g)b:(\d+)((?:k|m|g)b)",re.I)
+regbyte=re.compile(r"^\s*(?P<value>\d+)(?P<byte>(?:k|m|g)b)\s*$",re.I)
 kb=1024
 mb=1024*1024
 gb=1024*1024*1024
+def str2byte(txt):
+  ## converts string like 100kb to float value in byte
+  exec("p=float(%s)")%regbyte.sub(r'\g<value>*\g<byte>',txt).lower()
+  return p
+
 
 re_host = re.compile(r"(?P<name>\d+)")
 
 pbs_ND_free_and_job = 'partial'
+pbs_ND_down_on_error = 'downerror'
 
 translate_state = {
     pbs.ND_free             : '_',
@@ -39,13 +44,14 @@ translate_state = {
     pbs.ND_state_unknown    : '?',   
     pbs.ND_timeshared       : 'T',
     pbs.ND_cluster          : 'C',
-    pbs_ND_free_and_job     : 'j'
+    pbs_ND_free_and_job     : 'j',
+    pbs_ND_down_on_error    : 'x',
 }
 
 
 
 def display_cluster_status(nl, sl):
-
+  
   # Thanks to Daniel Olson, we have now code that can handle
   # 2 and 3 digit hostname numbers
   #
@@ -103,15 +109,11 @@ def display_cluster_status(nl, sl):
                pbs.ND_offline,
                pbs_ND_free_and_job,
                pbs.ND_down,
+               pbs_ND_down_on_error,
                pbs.ND_free]
   for key in keys_show+keys_others:
     value = translate_state[key]
-    if key in [pbs.ND_busy,
-               pbs.ND_reserve,
-               pbs.ND_timeshared,
-               pbs.ND_job_sharing,
-               pbs.ND_state_unknown,
-               pbs.ND_cluster]:
+    if key in keys_others:
         other += sl.count(value)
     else:
         if key == "job-exclusive":
@@ -149,64 +151,44 @@ def main():
   node_list  = []
   node_nr    = 0
 
-  if len(sys.argv) > 1:
-    pbs_server = sys.argv[1]
-  else:
-    pbs_server = pbs.pbs_default()
-    if not pbs_server:
-      print "No default pbs server, usage: pbsmon [server] "
-      sys.exit(1)
-
-  con = pbs.pbs_connect(pbs_server)
-  if con < 0:
-     errno, text = pbs.error()
-     print errno, text
-     sys.exit(1)
-
-  # We are only interested in the state and jobs of a node
-  #
-  attrl = pbs.new_attrl(2);
-  attrl[0].name='state'
-  attrl[1].name = 'jobs'
-
-
-  nodes = pbs.pbs_statnode(con, "", attrl, "NULL")
-
-  # Some is het None dan weer NULL, beats me
-  #
+  p = PBSQuery()
+  pp=p.getnodes(['state'])
+  nodes=pp.keys()
+  nodes.sort()
   for node in nodes:
-
-    # display_node_status(batch_info)
-    node_attr = node.attribs
-
-
     # A node can have serveral states, huh. We are only
     # interested in first entry.
     #
-    temp = string.splitfields(node_attr[0].value, ',')
-    state = temp[0]
+    state = pp[node]['state'][0]
 
     # look if on a free node a job is scheduled, then mark it
     # as other state
     #
+    addstate=translate_state[state]
     if state == pbs.ND_free:
-      if len([x for x in node_attr if x.name == 'jobs']):
-        state_list.append(translate_state[pbs_ND_free_and_job])
-      else:
-        state_list.append(translate_state[state])
-    else:
-      state_list.append(translate_state[state])
+      if pp[node].has_keys('jobs'):
+        addstate=translate_state[pbs_ND_free_and_job]
+    elif state == pbs.ND_down:
+      if pp[node].has_key('error'):
+        addstate=translate_state[pbs_ND_down_on_error]
 
+    state_list.append(addstate)
+
+    ## down_on_error is also down
     if not state in (pbs.ND_down,pbs.ND_offline):
-      cores=node_attr[1].value
-      det=' '.join( [x.value for x in node_attr])
-      rp=regphysmem.search(det)
-      rt=regtotmem.search(det)
-      rs=regsize.search(det)
+      cores=pp[node]['np'][0]
+      rp=pp[node]['status'].get('physmem',None)
+      rt=pp[node]['status'].get('totmem',None)
+      rs=pp[node]['status'].get('size',None)
       if rp and rt and rs:
-        exec("p=float(rp.group(1))*%s"%rp.group(2).lower())
-        exec("t=float(rt.group(1))*%s"%rt.group(2).lower())
-        exec("s=float(rs.group(1))*%s"%rs.group(2).lower())
+        ## 'physmem': ['66103784kb']
+        p=str2byte(rp[0])
+        ## 'totmem': ['82891700kb']
+        t=str2byte(rt[0])
+        ## 'size': ['539214180kb:539416640kb']
+        ## - use 2nd field
+        s=str2byte(rs[0].split(':')[1])
+
         ## round mem to 1 gb, size to 5gb
         pmem=ceil(10*p/gb)/10
         tmem=ceil(10*t/gb)/10
@@ -216,7 +198,7 @@ def main():
         if not typ in types:
           types.append(typ)
         
-    result = re_host.search(node.name)
+    result = re_host.search(node)
     if result:
       node_list.append( result.group('name') )
     else:

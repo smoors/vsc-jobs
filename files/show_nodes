@@ -4,12 +4,12 @@ import getopt, sys, re
 from PBSQuery import PBSQuery
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "doxfuianbr:")
+    opts, args = getopt.getopt(sys.argv[1:], "doxfuianber:")
 except getopt.GetoptError, err:
     print err
     sys.exit(1)
 
-states=["down","offline","free","job-exclusive","state-unknown","idle","bad"]
+states=["down","offline","free","job-exclusive","state-unknown","idle","bad","error"]
 state=[]
 nagios=False
 regex=None
@@ -32,6 +32,8 @@ for o, a in opts:
         state.append(states[4])
     elif o == "-b":
         state.append(states[6])
+    elif o == "-e":
+        state.append(states[7])
     elif o == "-i":
         ## these are free nodes that have no jobs
         if not states[2] in states:
@@ -61,6 +63,10 @@ for n in nodes:
             pp[n]['state'].append('bad')
         except:
             pass
+for n in nodes:
+    if pp[n].has_key('error'):
+        pp[n]['state'].append('error')
+
 
 ans=[]
 
@@ -69,7 +75,7 @@ ans=[]
 ##
 nagiosstatesorder=['WARNING','CRITICAL','OK']
 nagiosstates={
-    'CRITICAL':[0,4,6],
+    'CRITICAL':[0,4,6,7],
     'WARNING':[1],
     'OK':[2,3,5]
     }
