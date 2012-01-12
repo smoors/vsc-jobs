@@ -170,7 +170,7 @@ def main():
         #
         addstate = translate_state[state]
         if state == pbs.ND_free:
-            if pp[node].has_keys('jobs'):
+            if pp[node].has_key('jobs'):
                 addstate = translate_state[pbs_ND_free_and_job]
         elif state == pbs.ND_down:
             if pp[node].has_key('error'):
