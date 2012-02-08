@@ -1,7 +1,7 @@
 Summary: ugent pbsscripts
 Name: pbsscripts-ugent
-Version: 0.6
-Release: 3
+Version: 0.7
+Release: 1
 License: GPL
 Group: Applications/System
 Source: %{name}-%{version}.tar.gz
@@ -40,6 +40,8 @@ rm -rf %{buildroot}
 /var/spool/pbs/submitfilter
 
 %changelog
+* Wed Feb 08 2012 Jens Timmerman <jens.timmerman@gmail.com>
+- added support for b,tb,w,kw,mw,gw and tw as suffix for vmem specification.
 * Tue Jan 10 2012 Jens Timmerman <jens.timmerman@gmail.com>
 - replaced submitfilter with python implementation, this fixes:
 - submitfilter not giving priority to command line options (for ppn)

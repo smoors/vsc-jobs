@@ -65,7 +65,63 @@ cd $VSC_HOME
 #PBS -q short
 #PBS -m bea
 #
+""","""#!/bin/sh
+#PBS -l walltime=11:25:00 
+#PBS -l vmem=500
+#PBS -q short
+#PBS -m bea
+#
 """,
+"""#!/bin/sh
+#PBS -l walltime=11:25:00 
+#PBS -l vmem=500b
+#PBS -q short
+#PBS -m bea
+#
+""","""#!/bin/sh
+#PBS -l walltime=11:25:00 
+#PBS -l vmem=500kb
+#PBS -q short
+#PBS -m bea
+#
+""","""#!/bin/sh
+#PBS -l walltime=11:25:00 
+#PBS -l vmem=500mb
+#PBS -q short
+#PBS -m bea
+#
+""","""#!/bin/sh
+#PBS -l walltime=11:25:00 
+#PBS -l vmem=500gb
+#PBS -q short
+#PBS -m bea
+#
+""",
+"""#!/bin/sh
+#PBS -l walltime=11:25:00 
+#PBS -l vmem=500w
+#PBS -q short
+#PBS -m bea
+#
+""","""#!/bin/sh
+#PBS -l walltime=11:25:00 
+#PBS -l vmem=500kw
+#PBS -q short
+#PBS -m bea
+#
+""","""#!/bin/sh
+#PBS -l walltime=11:25:00 
+#PBS -l vmem=500mw
+#PBS -q short
+#PBS -m bea
+#
+""","""#!/bin/sh
+#PBS -l walltime=11:25:00 
+#PBS -l vmem=500gw
+#PBS -q short
+#PBS -m bea
+#
+"""
 ]
 #test these with the ignore constant, since there's  bugs  in the old filter
 SCRIPTS2 = ["""#!/bin/sh 
@@ -119,6 +175,9 @@ GOOD_ARGS=['',"-d 'blabla' jobnaam", '-m bea','-l vmem=1000mb','-l  nodes=1:ppn=
       '-q short@gengar', '-q @blashort', '-q @blashort@gengar','-x ignorethis',
       '--ignorethis','--ignorethis da','-x','-h x']
 BAD_ARGS=['-m','-l'] #this should not occur, qsub checks this
+SUFFIXES_ARGS = ['-l vmem=1000mb','-l vmem=1000gb','-l vmem=1000','-l vmem=1000b'
+                 ,'-l vmem=1000tw','-l vmem=1000gw','-l vmem=1000mw','-l vmem=1000kb'
+                 ,'-l vmem=1000kw']
 
 
 def runcmd(cmd):
@@ -149,10 +208,15 @@ class TestSubmitfilter(unittest.TestCase):
     def compareResults(self,input,args="",ignore=""):
         old = runcmd("""echo '%s' | ../files/submitfilter.old %s""" % (input,args))
         new = runcmd("""echo '%s' | ../files/submitfilter %s""" % (input,args))
+        if new[1]:
+            print "stderr new: %s" % new[1]
+        if old[1]:
+            print "stderr old: %s" % old[1]
+
         old = old[0].splitlines()
         new = new[0].splitlines()
         pprint (list(difflib.Differ().compare(old,new)))
-
+        
         #don't fail on '' and #
         new.append('#')
         new.append('')
@@ -195,6 +259,10 @@ class TestSubmitfilter(unittest.TestCase):
                 self.assertTrue(self.compareResults(script))
 
     def testscipts2(self):
+        """
+        compares old submitfilter with new one
+        but ignores certain bugs in the old script
+        """
         os.environ['PBS_DEFAULT'] = "zever"
         for script in SCRIPTS2:
             del os.environ['PBS_DEFAULT']
@@ -213,6 +281,13 @@ class TestSubmitfilter(unittest.TestCase):
             for arg in GOOD_ARGS:
                 print arg
                 self.assertTrue(self.compareResults(s,arg))
+                
+    def testSuffixes(self):
+        for s in SCRIPTS:
+            for arg in SUFFIXES_ARGS:
+                print arg
+                self.assertTrue(self.compareResults(s,arg))
+         
                 
                 
 

@@ -17,13 +17,17 @@ import re
 import os
 
 DEFAULT_SERVER = "default"
-GENGAR_VMEM = 4096
-GENGAR_VMEM_WARNING = 47313 #more then this and the job won't start
-GASTLY_VMEM = 2304
-GASTLY_VMEM_WARNING = 23712 #same for haunter
-GULPIN_VMEM = 2250
-GULPIN_VMEM_WARNING = 80948
-DUGTRIO_VMEM_WARNING = 1395439 #total amount of ram in dugtrio cluster
+#these amounts are in bytes
+GENGAR_VMEM = 4096 <<20
+GENGAR_VMEM_WARNING = 47313<<20 #more then this and the job won't start
+GASTLY_VMEM = 2304<<20
+GASTLY_VMEM_WARNING = 23712<<20 #same for haunter
+GULPIN_VMEM = 2250<<20
+GULPIN_VMEM_WARNING = 80948<<20
+DUGTRIO_VMEM_WARNING = 1395439<<20 #total amount of ram in dugtrio cluster
+
+MIN_VMEM = 1536<<20 #minimum amount of ram in our machines.
+
 class PassThroughOptionParser(OptionParser):
     """
     "Pass-through" option parsing -- an OptionParser that ignores
@@ -209,26 +213,37 @@ def main(arguments=sys.argv):
         noVmemNeeded = True 
     else:
         # backup, but should not occur
-        tvmem = 1536
+        tvmem = MIN_VMEM
         maxvmem = 0
         sys.stderr.write("Warning: unknown server (%s) detected, see PBS_DEFAULT. This should not be happening...\n"%opts.server)
     
     if not vmemDetected and not noVmemNeeded:
         #compute real vmem needed
-        vmem = tvmem * int(opts.ppn)
+        vmem = tvmem * int(opts.ppn) >> 20 #change to mb
         header += "# No vmem limit specified - added by submitfilter (server found: %s)\n#PBS -l vmem=%smb\n" % (opts.server, vmem)
     elif not noVmemNeeded:
         #parse detected vmem to check if to much was asked
-        groupvmem = re.search('(\d+)', opts.vmem).group(1)
-        if groupvmem:
-            intvmem = int(groupvmem)
+        groupvmem = re.search('(\d+)(.*)', opts.vmem)
+        intvmem = groupvmem.group(1)
+        if intvmem:
+            intvmem = int(intvmem)
         else:
             intvmem = 0
-        if opts.vmem.endswith('gb'):
-            intvmem = intvmem * 1024
+        suffix=groupvmem.group(2)
+        if suffix:
+            reqvmem = suffix.lower()
+            if reqvmem.endswith('tb') or reqvmem.endswith('tw'):
+                intvmem = intvmem << 40
+            if reqvmem.endswith('gb') or reqvmem.endswith('gw'):
+                intvmem = intvmem << 30
+            if reqvmem.endswith('mb') or reqvmem.endswith('mw'):
+                intvmem = intvmem << 20
+            if reqvmem.endswith('kb') or reqvmem.endswith('kw'):
+                intvmem = intvmem << 10
+            
         if intvmem > maxvmem: 
             #warn user that he's trying to request to much vmem
-            sys.stderr.write("Warning, requested %sMB vmem per node, this is more then the available vmem (%sMB), this job will never start.\n" % (intvmem,maxvmem))
+            sys.stderr.write("Warning, requested %sb vmem per node, this is more then the available vmem (%sb), this job will never start.\n" % (intvmem,maxvmem))
     #mail
     if not mailDetected:
         header += "# No mail specified - added by submitfilter\n#PBS -m n\n"
