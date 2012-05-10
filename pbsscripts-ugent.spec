@@ -1,7 +1,7 @@
 Summary: ugent pbsscripts
 Name: pbsscripts-ugent
-Version: 0.7
-Release: 2
+Version: 0.8
+Release: 1
 License: GPL
 Group: Applications/System
 Source: %{name}-%{version}.tar.gz
