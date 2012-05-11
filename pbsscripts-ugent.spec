@@ -11,6 +11,10 @@ Requires: python-vsc-packages-utils >= 0.6.0
 %description
 Extra scripts for pbs interaction. (show_jobs, pbsmon, submitfilter, ...)
 
+#fix for pyo and pyc files in /usr/bin
+#ghosting these doesn't work because they're not present in RHEL6
+%define _unpackaged_files_terminate_build 0
+
 %prep
 %setup -q
 
