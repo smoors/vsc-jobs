@@ -41,6 +41,10 @@ rm -rf %{buildroot}
 /usr/bin/mdiag.py
 /var/spool/pbs/submitfilter
 
+
+%ghost /usr/bin/*.pyo
+%ghost /usr/bin/*.pyc
+
 %changelog
 * Fri May 11 2012 Jens Timmerman <jens.timmerman@gmail.com>
 - Added mdiag option for show_nodes
