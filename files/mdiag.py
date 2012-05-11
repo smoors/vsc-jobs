@@ -17,11 +17,11 @@ class Query(object):
         
         returns a dict of nodes, with a 'status' field which is a dict of statusses
         """
-        input, err = Command("mdiag -n --format=xml").run()
+        xml, err = Command("mdiag -n --format=xml").run()
         if err:
             print "Error occured running mdiag -n: %s" % err
         #build tree
-        tree = etree.fromstring(input)
+        tree = etree.fromstring(xml)
         nodes = {}
         for node in tree:
             nodes[node.get("NODEID")] = {'status' : {'state': node.get("NODESTATE"), 'size':node.get("RAMEM")}}
