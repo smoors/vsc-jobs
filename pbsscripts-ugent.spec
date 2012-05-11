@@ -9,6 +9,10 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 %description
 Extra scripts for pbs interaction. (show_jobs, pbsmon, submitfilter, ...)
 
+#fix for pyo and pyc files in /usr/bin
+#ghosting these doesn't work because they're not present in RHEL6
+%define _unpackaged_files_terminate_build 0
+
 %prep
 %setup -q
 
@@ -41,9 +45,6 @@ rm -rf %{buildroot}
 /usr/bin/mdiag.py
 /var/spool/pbs/submitfilter
 
-
-%ghost /usr/bin/mdiag.pyo
-%ghost /usr/bin/mdiag.pyc
 
 %changelog
 * Thu May 24 2012 Jens Timmerman <jens.timmerman@gmail.com>
