@@ -41,6 +41,10 @@ rm -rf %{buildroot}
 /usr/bin/mdiag.py
 /var/spool/pbs/submitfilter
 
+
+%ghost /usr/bin/*.pyo
+%ghost /usr/bin/*.pyc
+
 %changelog
 * Thu May 24 2012 Jens Timmerman <jens.timmerman@gmail.com>
 - Submitfilter: changed they way vmem etc is computed, taking new swap into account.
