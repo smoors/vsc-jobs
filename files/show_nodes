@@ -42,8 +42,35 @@ for o, a in opts:
         state.append(states[5])
         filteridle = True
     elif o == "-m": #use mdiag instead of pbs
-        import mdiag
-        p = mdiag.Query()
+        from lxml import etree
+        from vsc.utils.run import Command
+
+
+        class Query(object):
+            """
+            Implements something similar to PBSQuery
+            """
+
+            def __init__(self, state=None):
+                """constructor"""
+                pass
+
+            def getnodes(self):
+                """Similar to getnodes from PBSQuery
+                
+                returns a dict of nodes, with a 'status' field which is a dict of statusses
+                """
+                xml, err = Command("mdiag -n --format=xml").run()
+                if err:
+                    print "Error occured running mdiag -n: %s" % err
+                #build tree
+                tree = etree.fromstring(xml)
+                nodes = {}
+                for node in tree:
+                    nodes[node.get("NODEID")] = {'status' : {'state': node.get("NODESTATE"), 'size':node.get("RAMEM")}}
+                #TODO: sort
+                print nodes
+        p = Query()
 
 
 pp = p.getnodes(['state'])
