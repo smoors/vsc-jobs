@@ -4,7 +4,7 @@ import getopt, sys, re
 from PBSQuery import PBSQuery
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "doxfuianber:")
+    opts, args = getopt.getopt(sys.argv[1:], "doxfuianbemr:")
 except getopt.GetoptError, err:
     print err
     sys.exit(1)
@@ -14,6 +14,7 @@ state = []
 nagios = False
 regex = None
 filteridle = False
+p = PBSQuery()
 
 for o, a in opts:
     if o == "-n":
@@ -40,9 +41,11 @@ for o, a in opts:
             state.append(states[2])
         state.append(states[5])
         filteridle = True
+    elif o == "-m": #use mdiag instead of pbs
+        import mdiag
+        p = mdiag.Query()
 
 
-p = PBSQuery()
 pp = p.getnodes(['state'])
 nodes = pp.keys()
 nodes.sort()
