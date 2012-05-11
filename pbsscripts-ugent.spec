@@ -25,6 +25,7 @@ install show_nodes $RPM_BUILD_ROOT/usr/bin/
 install show_queues $RPM_BUILD_ROOT/usr/bin/
 install pbsmon $RPM_BUILD_ROOT/usr/bin/
 install show_mem $RPM_BUILD_ROOT/usr/bin/
+install mdiag.py $RPM_BUILD_ROOT/usr/bin/
 install submitfilter $RPM_BUILD_ROOT/var/spool/pbs/
 
 
@@ -39,6 +40,7 @@ rm -rf %{buildroot}
 /usr/bin/show_queues
 /usr/bin/pbsmon
 /usr/bin/show_mem
+/usr/bin/mdiag.py
 /var/spool/pbs/submitfilter
 
 
