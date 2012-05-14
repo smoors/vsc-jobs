@@ -42,7 +42,8 @@ for o, a in opts:
             state.append(states[2])
         state.append(states[5])
         filteridle = True
-    elif o == "-m": #use mdiag instead of pbs
+    elif o == "-m":
+        #use mdiag instead of pbs
         from lxml import etree
         from vsc.utils.run import Command
 
