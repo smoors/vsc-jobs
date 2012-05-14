@@ -9,7 +9,8 @@ except getopt.GetoptError, err:
     print err
     sys.exit(1)
 
-states = ["down", "offline", "free", "job-exclusive", "state-unknown", "idle", "bad", "error"]
+states = ["down", "offline", "free", "job-exclusive", "state-unknown", "idle", "bad", "error",
+          "Busy"] #states from moab
 state = []
 nagios = False
 regex = None
@@ -41,7 +42,8 @@ for o, a in opts:
             state.append(states[2])
         state.append(states[5])
         filteridle = True
-    elif o == "-m": #use mdiag instead of pbs
+    elif o == "-m":
+        #use mdiag instead of pbs
         from lxml import etree
         from vsc.utils.run import Command
 
@@ -55,10 +57,11 @@ for o, a in opts:
                 """constructor"""
                 pass
 
-            def getnodes(self):
+            def getnodes(self, something=None):
                 """Similar to getnodes from PBSQuery
                 
                 returns a dict of nodes, with a 'status' field which is a dict of statusses
+                the something parameter is ignored. (for now)
                 """
                 xml, err = Command("mdiag -n --format=xml").run()
                 if err:
@@ -67,9 +70,8 @@ for o, a in opts:
                 tree = etree.fromstring(xml)
                 nodes = {}
                 for node in tree:
-                    nodes[node.get("NODEID")] = {'status' : {'state': node.get("NODESTATE"), 'size':node.get("RAMEM")}}
-                #TODO: sort
-                print nodes
+                    nodes[node.get("NODEID")] = {'status': {'state': node.get("NODESTATE").lower(), 'size': node.get("RAMEM")}}
+
         p = Query()
 
 
@@ -79,22 +81,22 @@ nodes.sort()
 if filteridle:
     ## replace free with idle if no jobs
     for n in nodes:
-        if (states[2] in pp[n]['state']) and (not pp[n].has_key('jobs')):
+        if (states[2] in pp[n]['state']) and (not 'jobs' in pp[n]):
             pp[n]['state'] = 'idle'
 
 ## sanity check
 ## match array jobs!
 jobreg = re.compile(r"\w+/\w+(\.|\w|\[|\])+")
 for n in nodes:
-    if pp[n].has_key('jobs'):
+    if 'jobs' in pp[n]:
         jobs = [jobreg.search(x.strip()) for x in pp[n]['jobs']]
         try:
             jobs.index(None)
             pp[n]['state'].append('bad')
         except:
             pass
-for n in nodes:
-    if pp[n].has_key('error'):
+
+    if 'error' in pp[n]:
         pp[n]['state'].append('error')
 
 
@@ -107,7 +109,7 @@ nagiosstatesorder = ['WARNING', 'CRITICAL', 'OK']
 nagiosstates = {
     'CRITICAL':[0, 4, 6, 7],
     'WARNING':[1],
-    'OK':[2, 3, 5]
+    'OK':[2, 3, 5, 8]
     }
 nagiosexit = {
     'CRITICAL':2,
