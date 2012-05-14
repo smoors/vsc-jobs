@@ -6,6 +6,8 @@ License: GPL
 Group: Applications/System
 Source: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+Requires: python-vsc-packages-utils >= 0.6.0
+
 %description
 Extra scripts for pbs interaction. (show_jobs, pbsmon, submitfilter, ...)
 
