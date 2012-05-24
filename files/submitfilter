@@ -18,15 +18,26 @@ import os
 
 DEFAULT_SERVER = "default"
 #these amounts are in bytes
-GENGAR_VMEM = 4096 <<20
-GENGAR_VMEM_WARNING = 47313<<20 #more then this and the job won't start
-GASTLY_VMEM = 2304<<20
-GASTLY_VMEM_WARNING = 23712<<20 #same for haunter
-GULPIN_VMEM = 2250<<20
-GULPIN_VMEM_WARNING = 80948<<20
-DUGTRIO_VMEM_WARNING = 1395439<<20 #total amount of ram in dugtrio cluster
+GENGAR_PHYSMEM = 16439292 << 10
+GENGAR_TOTMEM = 37410804 << 10
+GENGAR_NP = 8
 
-MIN_VMEM = 1536<<20 #minimum amount of ram in our machines.
+GASTLY_PHYSMEM = 12273152 << 10
+GASTLY_TOTMEM = 33244664 << 10
+GASTLY_NP = 8
+
+GULPIN_PHYSMEM = 66093364 << 10
+GULPIN_TOTMEM = 87064892 << 10
+GULPIN_NP = 32
+
+
+# in MB, ( 16G (RAM) + 16G (half of swap) ) / 8
+GENGAR_VMEM = (GENGAR_PHYSMEM + (GENGAR_TOTMEM - GENGAR_PHYSMEM) / 2) / GENGAR_NP
+GASTLY_VMEM = (GASTLY_PHYSMEM + (GASTLY_TOTMEM - GASTLY_PHYSMEM) / 2) / GASTLY_NP #same for haunter
+GULPIN_VMEM = (GULPIN_PHYSMEM + (GULPIN_TOTMEM - GULPIN_PHYSMEM) / 2) / GULPIN_NP
+DUGTRIO_VMEM_WARNING = 1395439 << 20 #total amount of ram in dugtrio cluster
+
+MIN_VMEM = 1536 << 20 #minimum amount of ram in our machines.
 
 class PassThroughOptionParser(OptionParser):
     """
@@ -37,8 +48,8 @@ class PassThroughOptionParser(OptionParser):
     from http://www.koders.com/python/fid9DFF5006AF4F52BA6483C4F654E26E6A20DBC73C.aspx?s=add+one#L27
     """
     def __init__(self):
-        OptionParser.__init__(self,add_help_option=False,usage=optparse.SUPPRESS_USAGE)
-        
+        OptionParser.__init__(self, add_help_option=False, usage=optparse.SUPPRESS_USAGE)
+
     def _process_long_opt(self, rargs, values):
 
         try:
@@ -110,12 +121,12 @@ def main(arguments=sys.argv):
     parser.add_option("-q", help="queue/server option")
 #    parser.add_option("-h", help="dummy option to prevent printing help",action="count")
     parser.add_option("-l", help="some other options", action="append")
-    
+
     #parser.add_option()
     (opts, args) = parser.parse_args(arguments)
 #    print "options:", opts
 #    print "args:", args
-    vmemDetected =False
+    vmemDetected = False
     ppnDetected = False
     mailDetected = bool(opts.m)
     serverDetected = False
@@ -135,14 +146,14 @@ def main(arguments=sys.argv):
                 opts.vmem = match.group("vmem")
                 vmemDetected = True
 
-                        
+
     #check for server in options
     if opts.q:
         t = serverreg.match(opts.q)
         if t:
             opts.server = t
             serverDetected = True
-                
+
     #process stdin
     header = ""
     body = ""
@@ -151,8 +162,8 @@ def main(arguments=sys.argv):
         if not line.startswith('#') and not line.strip() == "":
             #jump out of loop here, we will print the rest later
             body = line #save this line first
-            break 
-        header += line 
+            break
+        header += line
         #check if this line is mail
         if not mailDetected: #if mail not yet found
             opts.m = mailreg.match(line) #returns None if no match
@@ -172,51 +183,51 @@ def main(arguments=sys.argv):
             if t:
                 opts.server = t.group("server")
                 serverDetected = True
-                
+
 
     #combine results
     #vmem
-        
+
     #try to find the server if not set yet
     if not serverDetected and os.environ.has_key('PBS_DEFAULT'):
         t = serverreg.match(os.environ['PBS_DEFAULT'])
         if t:
             opts.server = t.group("server")
             serverDetected = bool(opts.server) #opts.server can also be the empty string
-        
+
     # check whether VSC_NODE_PARTITION environment variable is set
     # used for gulpin/dugtrio
-    
+
     if os.environ.has_key('VSC_NODE_PARTITION'):
         header += "\n#PBS -W x=PARTITION:%s\n" % os.environ['VSC_NODE_PARTITION']
-        
+
     #set defaults
     if not serverDetected:
         opts.server = DEFAULT_SERVER
     if not ppnDetected:
         opts.ppn = 1
-        
-    
+
+
     #compute vmem
-    if not serverDetected or opts.server in ["gengar","default"]:
+    if not serverDetected or opts.server in ["gengar", "default"]:
         tvmem = GENGAR_VMEM # in MB, ( 16G (RAM) + 16G (half of swap) ) / 8
-        maxvmem =GENGAR_VMEM_WARNING
-    elif opts.server in ["gastly","haunter"]:
+        maxvmem = GENGAR_TOTMEM
+    elif opts.server in ["gastly", "haunter"]:
         tvmem = GASTLY_VMEM # in MB, ( 12G (RAM) + 6G (half of swap) ) / 8
-        maxvmem =GASTLY_VMEM_WARNING
+        maxvmem = GASTLY_TOTMEM
     elif opts.server in ["gulpin"]:
-        tvmem =  GULPIN_VMEM # in MB, ( 64G (RAM) + 8G (half of swap) ) / 32
-        maxvmem =GULPIN_VMEM_WARNING
+        tvmem = GULPIN_VMEM # in MB, ( 64G (RAM) + 8G (half of swap) ) / 32
+        maxvmem = GULPIN_TOTMEM
     elif opts.server in ["dugtrio"]:
         tvmem = None #dont set it if not found
-        maxvmem = DUGTRIO_VMEM_WARNING
-        noVmemNeeded = True 
+        maxvmem = DUGTRIO_TOTMEM
+        noVmemNeeded = True
     else:
         # backup, but should not occur
         tvmem = MIN_VMEM
         maxvmem = 0
-        sys.stderr.write("Warning: unknown server (%s) detected, see PBS_DEFAULT. This should not be happening...\n"%opts.server)
-    
+        sys.stderr.write("Warning: unknown server (%s) detected, see PBS_DEFAULT. This should not be happening...\n" % opts.server)
+
     if not vmemDetected and not noVmemNeeded:
         #compute real vmem needed
         vmem = tvmem * int(opts.ppn) >> 20 #change to mb
@@ -229,7 +240,7 @@ def main(arguments=sys.argv):
             intvmem = int(intvmem)
         else:
             intvmem = 0
-        suffix=groupvmem.group(2)
+        suffix = groupvmem.group(2)
         if suffix:
             reqvmem = suffix.lower()
             if reqvmem.endswith('tb') or reqvmem.endswith('tw'):
@@ -240,23 +251,23 @@ def main(arguments=sys.argv):
                 intvmem = intvmem << 20
             if reqvmem.endswith('kb') or reqvmem.endswith('kw'):
                 intvmem = intvmem << 10
-            
-        if intvmem > maxvmem: 
+
+        if intvmem > maxvmem:
             #warn user that he's trying to request to much vmem
-            sys.stderr.write("Warning, requested %sb vmem per node, this is more then the available vmem (%sb), this job will never start.\n" % (intvmem,maxvmem))
+            sys.stderr.write("Warning, requested %sb vmem per node, this is more then the available vmem (%sb), this job will never start.\n" % (intvmem, maxvmem))
     #mail
     if not mailDetected:
         header += "# No mail specified - added by submitfilter\n#PBS -m n\n"
-    
-    
+
+
     print header
     print body
-    
+
     #print rest of stdin to stdout
     for line in iter(sys.stdin.readline, ''):
         sys.stdout.write(line)
     #print ("#done")
-    
+
 if __name__ == '__main__':
     #testOptionParser()
     main()

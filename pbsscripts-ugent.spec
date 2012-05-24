@@ -1,6 +1,6 @@
 Summary: ugent pbsscripts
 Name: pbsscripts-ugent
-Version: 0.8
+Version: 1.0
 Release: 1
 License: GPL
 Group: Applications/System
@@ -40,6 +40,8 @@ rm -rf %{buildroot}
 /var/spool/pbs/submitfilter
 
 %changelog
+* Thu May 24 2012 Jens Timmerman <jens.timmerman@gmail.com>
+- Submitfilter: changed they way vmem etc is computed, taking new swap into account.
 * Wed Feb 08 2012 Jens Timmerman <jens.timmerman@gmail.com>
 - added support for b,tb,w,kw,mw,gw and tw as suffix for vmem specification.
 * Tue Jan 10 2012 Jens Timmerman <jens.timmerman@gmail.com>
