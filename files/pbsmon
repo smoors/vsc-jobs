@@ -11,8 +11,6 @@
 #
 # SDW: add cluster node types
 #
-import sys
-import string
 import re
 from math import ceil
 import pbs
@@ -24,8 +22,7 @@ mb = 1024 * 1024
 gb = 1024 * 1024 * 1024
 def str2byte(txt):
     ## converts string like 100kb to float value in byte
-    exec("p=float(%s)") % regbyte.sub(r'\g<value>*\g<byte>', txt).lower()
-    return p
+    return float(regbyte.sub(r'\g<value>*\g<byte>', txt).lower())
 
 
 re_host = re.compile(r"(?P<name>\d+)")
@@ -54,7 +51,7 @@ def display_cluster_status(nl, sl):
     # Thanks to Daniel Olson, we have now code that can handle
     # 2 and 3 digit hostname numbers
     #
-    if len(nl) == 1: 
+    if len(nl) == 1:
         width = len(nl[0])
     else:
         width = len(nl[-1])
@@ -68,10 +65,10 @@ def display_cluster_status(nl, sl):
         step = end = 25
         fmt = '%2s'
 
-    start = 0 
-    
+    start = 0
+
     items = len(nl)
-    
+
     # Sanity check 
     if end > items:
         end = items
@@ -85,15 +82,15 @@ def display_cluster_status(nl, sl):
         print '\n ',
         for j in range(start, end):
             print fmt % (sl[j]) ,
-   
+
         print '\n'
 
         start = end
-        end = end + step 
-        
+        end = end + step
+
         if end > items:
             end = items
-   
+
     # Now some statistics
     #
     n = 0
@@ -129,7 +126,7 @@ def display_cluster_status(nl, sl):
     if n % 2 == 0:
         print "%3s %-21s   %s\t |" % (' ', ' ', ' '),
     print "%3s %-21s : %d\t |" % ('o', "other", other),
-   
+
 
 def display_node_types(types):
     """
@@ -154,7 +151,7 @@ def main():
     state_list = []
     node_list = []
     node_nr = 0
-    
+
     p = PBSQuery()
     pp = p.getnodes(['state'])
     nodes = pp.keys()
@@ -164,7 +161,7 @@ def main():
         # interested in first entry.
         #
         state = pp[node]['state'][0]
-    
+
         # look if on a free node a job is scheduled, then mark it
         # as other state
         #
@@ -192,7 +189,7 @@ def main():
                 ## 'size': ['539214180kb:539416640kb']
                 ## - use 2nd field
                 s = str2byte(rs[0].split(':')[1])
-        
+
                 ## round mem to 1 gb, size to 5gb
                 pmem = ceil(10 * p / gb) / 10
                 tmem = ceil(10 * t / gb) / 10
@@ -201,14 +198,14 @@ def main():
                 typ = [cores, pmem, swap, dsize]
                 if not typ in types:
                     types.append(typ)
-        
+
         result = re_host.search(node)
         if result:
             node_list.append(result.group('name'))
         else:
             node_nr = node_nr + 1
             node_list.append(str(node_nr))
-    
+
     display_cluster_status(node_list, state_list)
     display_node_types(types)
 

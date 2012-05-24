@@ -6,6 +6,8 @@ License: GPL
 Group: Applications/System
 Source: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+Requires: python-vsc-packages-utils >= 0.6.0
+
 %description
 Extra scripts for pbs interaction. (show_jobs, pbsmon, submitfilter, ...)
 
@@ -39,6 +41,7 @@ rm -rf %{buildroot}
 /usr/bin/show_mem
 /var/spool/pbs/submitfilter
 
+
 %changelog
 * Thu May 24 2012 Jens Timmerman <jens.timmerman@gmail.com>
 - Submitfilter: changed they way vmem etc is computed, taking new swap into account.
@@ -47,7 +50,7 @@ rm -rf %{buildroot}
 * Tue Jan 10 2012 Jens Timmerman <jens.timmerman@gmail.com>
 - replaced submitfilter with python implementation, this fixes:
 - submitfilter not giving priority to command line options (for ppn)
-- submitfilter not detecting en of of header
+- submitfilter not detecting end of header
 * Thu May 12 2011 Wouter Depypere <wouter.depypere@ugent.be>
 - first version
 
