@@ -1,6 +1,6 @@
 Summary: ugent pbsscripts
 Name: pbsscripts-ugent
-Version: 1.0
+Version: 1.1
 Release: 1
 License: GPL
 Group: Applications/System
@@ -43,6 +43,8 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu May 24 2012 Jens Timmerman <jens.timmerman@gmail.com>
+- Added a -m option to show_nodes to use mdiag output instead of pbs
 * Thu May 24 2012 Jens Timmerman <jens.timmerman@gmail.com>
 - Submitfilter: changed they way vmem etc is computed, taking new swap into account.
 * Wed Feb 08 2012 Jens Timmerman <jens.timmerman@gmail.com>
