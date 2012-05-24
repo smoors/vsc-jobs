@@ -70,7 +70,7 @@ for o, a in opts:
                 tree = etree.fromstring(xml)
                 nodes = {}
                 for node in tree:
-                    nodes[node.get("NODEID")] = {'status': {'state': node.get("NODESTATE").lower(), 'size': node.get("RAMEM")}}
+                    nodes[node.get("NODEID")] = {'state': [node.get("NODESTATE").lower()], 'size': node.get("RAMEM")}
                 return nodes
 
         p = Query()
