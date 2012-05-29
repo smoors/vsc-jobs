@@ -30,12 +30,12 @@ GULPIN_PHYSMEM = 66093364 << 10
 GULPIN_TOTMEM = 87064892 << 10
 GULPIN_NP = 32
 
+DUGTRIO_TOTMEM = 1395439 << 20 #total amount of ram in dugtrio cluster
 
 # in MB, ( 16G (RAM) + 16G (half of swap) ) / 8
 GENGAR_VMEM = (GENGAR_PHYSMEM + (GENGAR_TOTMEM - GENGAR_PHYSMEM) / 2) / GENGAR_NP
 GASTLY_VMEM = (GASTLY_PHYSMEM + (GASTLY_TOTMEM - GASTLY_PHYSMEM) / 2) / GASTLY_NP #same for haunter
 GULPIN_VMEM = (GULPIN_PHYSMEM + (GULPIN_TOTMEM - GULPIN_PHYSMEM) / 2) / GULPIN_NP
-DUGTRIO_VMEM_WARNING = 1395439 << 20 #total amount of ram in dugtrio cluster
 
 MIN_VMEM = 1536 << 20 #minimum amount of ram in our machines.
 
