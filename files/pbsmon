@@ -22,7 +22,8 @@ mb = 1024 * 1024
 gb = 1024 * 1024 * 1024
 def str2byte(txt):
     ## converts string like 100kb to float value in byte
-    return float(regbyte.sub(r'\g<value>*\g<byte>', txt).lower())
+    exec("p=float(%s)") % regbyte.sub(r'\g<value>*\g<byte>', txt).lower()
+    return p
 
 
 re_host = re.compile(r"(?P<name>\d+)")
