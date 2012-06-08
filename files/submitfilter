@@ -151,7 +151,7 @@ def main(arguments=sys.argv):
     if opts.q:
         t = serverreg.match(opts.q)
         if t:
-            opts.server = t
+            opts.server = t.group('server')
             serverDetected = True
 
     #process stdin
