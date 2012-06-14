@@ -178,27 +178,28 @@ def main():
 
         ## down_on_error is also down
         if not state in (pbs.ND_down, pbs.ND_offline):
-            cores = pp[node]['np'][0]
-            rp = pp[node]['status'].get('physmem', None)
-            rt = pp[node]['status'].get('totmem', None)
-            rs = pp[node]['status'].get('size', None)
-            if rp and rt and rs:
-                ## 'physmem': ['66103784kb']
-                p = str2byte(rp[0])
-                ## 'totmem': ['82891700kb']
-                t = str2byte(rt[0])
-                ## 'size': ['539214180kb:539416640kb']
-                ## - use 2nd field
-                s = str2byte(rs[0].split(':')[1])
-
-                ## round mem to 1 gb, size to 5gb
-                pmem = ceil(10 * p / gb) / 10
-                tmem = ceil(10 * t / gb) / 10
-                swap = tmem - pmem
-                dsize = ceil(10 * s / (5 * gb)) / 2
-                typ = [cores, pmem, swap, dsize]
-                if not typ in types:
-                    types.append(typ)
+            if 'status' in pp[node] and 'np' in pp[node]:
+                cores = pp[node]['np'][0]
+                rp = pp[node]['status'].get('physmem', None)
+                rt = pp[node]['status'].get('totmem', None)
+                rs = pp[node]['status'].get('size', None)
+                if rp and rt and rs:
+                    ## 'physmem': ['66103784kb']
+                    p = str2byte(rp[0])
+                    ## 'totmem': ['82891700kb']
+                    t = str2byte(rt[0])
+                    ## 'size': ['539214180kb:539416640kb']
+                    ## - use 2nd field
+                    s = str2byte(rs[0].split(':')[1])
+    
+                    ## round mem to 1 gb, size to 5gb
+                    pmem = ceil(10 * p / gb) / 10
+                    tmem = ceil(10 * t / gb) / 10
+                    swap = tmem - pmem
+                    dsize = ceil(10 * s / (5 * gb)) / 2
+                    typ = [cores, pmem, swap, dsize]
+                    if not typ in types:
+                        types.append(typ)
 
         result = re_host.search(node)
         if result:
