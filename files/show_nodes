@@ -4,7 +4,7 @@ import getopt, sys, re
 from PBSQuery import PBSQuery
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "doxfuianbemr:")
+    opts, args = getopt.getopt(sys.argv[1:], "doxfuiIanbemr:")
 except getopt.GetoptError, err:
     print err
     sys.exit(1)
@@ -15,6 +15,7 @@ state = []
 nagios = False
 regex = None
 filteridle = False
+singlenodeinformation = False
 p = PBSQuery()
 
 for o, a in opts:
@@ -42,6 +43,10 @@ for o, a in opts:
             state.append(states[2])
         state.append(states[5])
         filteridle = True
+    elif o == "-I":
+        ## node information in bash form
+        ## report some node info in bash friendly format
+        singlenodeinformation = True
     elif o == "-m":
         #use mdiag instead of pbs
         from lxml import etree
@@ -76,6 +81,47 @@ for o, a in opts:
         p = Query()
 
 
+if singlenodeinformation:
+    interesni_nodes = ('free', 'job-exclusive',)
+    res = {'cores':{}, 'physmem':{}}
+    node_vals = p.getnodes().values()
+    for x in node_vals:
+        if not ('status' in x and 'np' in x and 'state' in x): continue
+        if not x['state'][0] in interesni_nodes: continue
+        cores = int(x['np'][0])
+        rp = x['status'].get('physmem', [''])[0]
+
+        res['cores'].setdefault(cores, 0)
+        res['cores'][cores] += 1
+
+        res['physmem'].setdefault(rp, 0)
+        res['physmem'][rp] += 1
+
+    ## return most frequent
+    if len(res['cores']) > 1  or len(res['physmem']) > 1:
+        sys.stderr.write("Node all nodes have same parameters. Using most frequent ones.")
+        sys.stderr.flush()
+    elif len(res['cores']) < 1 or len(res['physmem']) < 1:
+        sys.stderr.write("No nodes found. Setting all to 0")
+        sys.stderr.flush()
+
+    freq_count, freq_cores = max([(j, i) for i, j in res['cores'].items()])
+    freq_count, freq_physmem = max([(j, i) for i, j in res['physmem'].items()])
+
+    regbyte = re.compile(r"^\s*(?P<value>\d+)(?P<byte>(?:k|m|g)b)\s*$", re.I)
+    kb = 1024
+    mb = 1024 * 1024
+    gb = 1024 * 1024 * 1024
+    def str2gigabyte(txt):
+        ## converts string like 100kb to float value in byte
+        exec("p=int(float(%s)/(1024*1024))") % regbyte.sub(r'\g<value>*\g<byte>', txt).lower()
+        return p
+
+    ## usage: export `./show_nodes -I` ; env |grep SHOWNODES_
+
+    print "SHOWNODES_PPN=%d\nSHOWNODES_PHYSMEMGB=%s\n" % (freq_cores, str2gigabyte(freq_physmem))
+    sys.exit(0)
+
 pp = p.getnodes(['state'])
 nodes = pp.keys()
 nodes.sort()
@@ -99,6 +145,7 @@ for n in nodes:
 
     if 'error' in pp[n]:
         pp[n]['state'].append('error')
+
 
 
 ans = []

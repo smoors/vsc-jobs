@@ -17,25 +17,37 @@ import re
 import os
 
 DEFAULT_SERVER = "default"
-#these amounts are in bytes
-GENGAR_PHYSMEM = 16439292 << 10
-GENGAR_TOTMEM = 37410804 << 10
-GENGAR_NP = 8
 
-GASTLY_PHYSMEM = 12273152 << 10
-GASTLY_TOTMEM = 33244664 << 10
-GASTLY_NP = 8
+#these amounts are in bytes as reported by pnbsnodes
+CLUSTERDATA = {
+                'gengar' : {
+                            'PHYSMEM' : 16439292 << 10,
+                            'TOTMEM': 37410804 << 10,
+                            'NP' : 8
+                            },
+                'gastly': {
+                           'PHYSMEM': 12273152 << 10,
+                           'TOTMEM' : 33244664 << 10,
+                           'NP' : 8
+                           },
+                'gulpin' : {
+                            'PHYSMEM': 66093364 << 10,
+                            'TOTMEM': 87064892 << 10,
+                            'NP' : 32,
+                            },
+                'raichu' : {
+                            'PHYSMEM' : 33764679680 << 10,
+                            'TOTMEM' : 55239507968 << 10,
+                            'NP': 16
+                            },
+                'dugtrio' : {
+                             'TOTMEM' : 1395439 << 20, #total amount of ram in dugtrio cluster
+                             'DEFMAXNP' : 48, ## default maximum np in case of ppn=full
+                             },
+               }
 
-GULPIN_PHYSMEM = 66093364 << 10
-GULPIN_TOTMEM = 87064892 << 10
-GULPIN_NP = 32
 
-DUGTRIO_TOTMEM = 1395439 << 20 #total amount of ram in dugtrio cluster
 
-# in MB, ( 16G (RAM) + 16G (half of swap) ) / 8
-GENGAR_VMEM = (GENGAR_PHYSMEM + (GENGAR_TOTMEM - GENGAR_PHYSMEM) / 2) / GENGAR_NP
-GASTLY_VMEM = (GASTLY_PHYSMEM + (GASTLY_TOTMEM - GASTLY_PHYSMEM) / 2) / GASTLY_NP #same for haunter
-GULPIN_VMEM = (GULPIN_PHYSMEM + (GULPIN_TOTMEM - GULPIN_PHYSMEM) / 2) / GULPIN_NP
 
 MIN_VMEM = 1536 << 20 #minimum amount of ram in our machines.
 
@@ -109,7 +121,7 @@ def main(arguments=sys.argv):
     #regexes needed here
     mailreg = re.compile("^#PBS\s+-m\s.+")
     vmemreg = re.compile('^#PBS\s+-l\s+[^#]*?vmem=(?P<vmem>[^\s]*)')
-    ppnreg = re.compile('^#PBS\s+-l\s+[^#]*?nodes=.+?:ppn=(?P<ppn>\d+)')
+    ppnreg = re.compile('^#PBS\s+-l\s+[^#]*?nodes=.+?:ppn=(?P<ppn>\d+|all|half)', re.M) ## multiline to replace header in single sub
     serverreg = re.compile('.*master[0-9]*\.(?P<server>[^.]*)\.gent\.vsc')
     #optsppnreg = re.compile('nodes=(?P<nodes>\d+)[^:#,\s]ppn=(?P<ppn>\d+)')
     optsppnreg = re.compile('.*?nodes=(?P<nodes>\d+)[^#,\s]*ppn=(?P<ppn>\d+)')
@@ -128,6 +140,7 @@ def main(arguments=sys.argv):
 #    print "args:", args
     vmemDetected = False
     ppnDetected = False
+    ppnDetectedinHeader = None
     mailDetected = bool(opts.m)
     serverDetected = False
     noVmemNeeded = False
@@ -176,8 +189,9 @@ def main(arguments=sys.argv):
         if not ppnDetected:
             t = ppnreg.match(line)
             if t:
-                opts.ppn = t.group("ppn") #returns '' if no match, which evalutates to false
+                opts.ppn = t.group("ppn") #returns '' if no match, which evaluates to false
                 ppnDetected = bool(opts.ppn)
+                ppnDetectedinHeader = t.group(0) ## the whole matched string, to be rewritten
         if not serverDetected:
             t = serverreg.match(line)
             if t:
@@ -209,28 +223,42 @@ def main(arguments=sys.argv):
 
 
     #compute vmem
-    if not serverDetected or opts.server in ["gengar", "default"]:
-        tvmem = GENGAR_VMEM # in MB, ( 16G (RAM) + 16G (half of swap) ) / 8
-        maxvmem = GENGAR_TOTMEM
-    elif opts.server in ["gastly", "haunter"]:
-        tvmem = GASTLY_VMEM # in MB, ( 12G (RAM) + 6G (half of swap) ) / 8
-        maxvmem = GASTLY_TOTMEM
-    elif opts.server in ["gulpin"]:
-        tvmem = GULPIN_VMEM # in MB, ( 64G (RAM) + 8G (half of swap) ) / 32
-        maxvmem = GULPIN_TOTMEM
-    elif opts.server in ["dugtrio"]:
-        tvmem = None #dont set it if not found
-        maxvmem = DUGTRIO_TOTMEM
-        noVmemNeeded = True
+    if not serverDetected or opts.server in ['default']:
+        opts.server = 'gengar'
+
+    if opts.server in CLUSTERDATA:
+        cluster = CLUSTERDATA[opts.server]
+        try:
+            tvmem = int((cluster['PHYSMEM'] + (cluster['TOTMEM'] - cluster['PHYSMEM']) / 2) / cluster['NP'])
+        except:
+            ## something is not defined (eg dugtrio case)
+            tvmem = None #dont set it if not found
+
+        if opts.server in ["dugtrio"]:
+            noVmemNeeded = True
+
+        maxvmem = cluster.get('TOTMEM', 0)
+        if opts.ppn in ('all', 'half'):
+            ppn = cluster.get('NP', cluster.get('DEFMAXNP', 1))
+            if opts.ppn == 'half':
+                opts.ppn = max(1, int(ppn / 2))
+            else:
+                opts.ppn = ppn
     else:
         # backup, but should not occur
         tvmem = MIN_VMEM
         maxvmem = 0
+        if opts.ppn in ('all', 'half'):
+            opts.ppn = 1
         sys.stderr.write("Warning: unknown server (%s) detected, see PBS_DEFAULT. This should not be happening...\n" % opts.server)
+
+
+    ## always (and only here to replace ppn=all or ppn=half
+    opts.ppn = int(opts.ppn)
 
     if not vmemDetected and not noVmemNeeded:
         #compute real vmem needed
-        vmem = tvmem * int(opts.ppn) >> 20 #change to mb
+        vmem = tvmem * opts.ppn >> 20 #change to mb
         header += "# No vmem limit specified - added by submitfilter (server found: %s)\n#PBS -l vmem=%smb\n" % (opts.server, vmem)
     elif not noVmemNeeded:
         #parse detected vmem to check if to much was asked
@@ -255,10 +283,13 @@ def main(arguments=sys.argv):
         if intvmem > maxvmem:
             #warn user that he's trying to request to much vmem
             sys.stderr.write("Warning, requested %sb vmem per node, this is more then the available vmem (%sb), this job will never start.\n" % (intvmem, maxvmem))
-    #mail
+    ## mail
     if not mailDetected:
         header += "# No mail specified - added by submitfilter\n#PBS -m n\n"
 
+    ## ppn in header
+    if ppnDetectedinHeader:
+        header = re.sub('ppn=(all|half)', 'ppn=%d' % opts.ppn, header)
 
     print header
     print body
