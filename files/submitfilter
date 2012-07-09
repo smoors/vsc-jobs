@@ -18,7 +18,7 @@ import os
 
 DEFAULT_SERVER = "default"
 
-#these amounts are in bytes as reported by pnbsnodes
+#these amounts are in kilobytes as reported by pnbsnodes
 CLUSTERDATA = {
                 'gengar' : {
                             'PHYSMEM' : 16439292 << 10,
@@ -36,8 +36,8 @@ CLUSTERDATA = {
                             'NP' : 32,
                             },
                 'raichu' : {
-                            'PHYSMEM' : 33764679680 << 10,
-                            'TOTMEM' : 55239507968 << 10,
+                            'PHYSMEM' : 32973320 << 10,
+                            'TOTMEM' : 53944832 << 10,
                             'NP': 16
                             },
                 'dugtrio' : {
