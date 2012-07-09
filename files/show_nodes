@@ -99,10 +99,10 @@ if singlenodeinformation:
 
     ## return most frequent
     if len(res['cores']) > 1  or len(res['physmem']) > 1:
-        sys.stderr.write("Node all nodes have same parameters. Using most frequent ones.")
+        sys.stderr.write("Node all nodes have same parameters. Using most frequent ones.\n")
         sys.stderr.flush()
     elif len(res['cores']) < 1 or len(res['physmem']) < 1:
-        sys.stderr.write("No nodes found. Setting all to 0")
+        sys.stderr.write("No nodes found. Setting all to 0.\n")
         sys.stderr.flush()
 
     freq_count, freq_cores = max([(j, i) for i, j in res['cores'].items()])
@@ -112,14 +112,14 @@ if singlenodeinformation:
     kb = 1024
     mb = 1024 * 1024
     gb = 1024 * 1024 * 1024
-    def str2gigabyte(txt):
+    def str2megabyte(txt):
         ## converts string like 100kb to float value in byte
         exec("p=int(float(%s)/(1024*1024))") % regbyte.sub(r'\g<value>*\g<byte>', txt).lower()
         return p
 
     ## usage: export `./show_nodes -I` ; env |grep SHOWNODES_
 
-    print "SHOWNODES_PPN=%d\nSHOWNODES_PHYSMEMGB=%s\n" % (freq_cores, str2gigabyte(freq_physmem))
+    print "SHOWNODES_PPN=%d\nSHOWNODES_PHYSMEMMB=%s\n" % (freq_cores, str2megabyte(freq_physmem))
     sys.exit(0)
 
 pp = p.getnodes(['state'])
