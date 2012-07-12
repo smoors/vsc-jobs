@@ -30,6 +30,11 @@ CLUSTERDATA = {
                            'TOTMEM' : 33244664 << 10,
                            'NP' : 8
                            },
+                'haunter': {
+                           'PHYSMEM': 12273152 << 10,
+                           'TOTMEM' : 33244664 << 10,
+                           'NP' : 8
+                           },
                 'gulpin' : {
                             'PHYSMEM': 66093364 << 10,
                             'TOTMEM': 87064892 << 10,
