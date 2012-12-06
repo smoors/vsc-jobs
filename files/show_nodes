@@ -72,11 +72,12 @@ for o, a in opts:
                 returns a dict of nodes, with a 'status' field which is a dict of statusses
                 the something parameter is ignored. (for now)
                 """
-                xml, err = Command("mdiag -n --format=xml").run()
+                mdiagoutput="/tmp/mdiag_xml.out"
+                xml, err = Command("mdiag -n --format=xml > %s" % mdiagoutput).run()
                 if err:
                     print "Error occured running mdiag -n: %s" % err
                 #build tree
-                tree = etree.fromstring(xml)
+                tree = etree.parse(open(mdiagoutput))
                 nodes = {}
                 for node in tree:
                     nodes[node.get("NODEID")] = {'state': [node.get("NODESTATE").lower()], 'size': node.get("RAMEM")}
