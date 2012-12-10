@@ -45,6 +45,11 @@ CLUSTERDATA = {
                             'TOTMEM' : 53944832 << 10,
                             'NP': 16
                             },
+                'muk' : {
+                            'PHYSMEM' : 66068964 << 10,
+                            'TOTMEM' : 99623388 << 10,
+                            'NP': 16
+                            },
                 'dugtrio' : {
                              'TOTMEM' : 1395439 << 20, #total amount of ram in dugtrio cluster
                              'DEFMAXNP' : 48, ## default maximum np in case of ppn=full
