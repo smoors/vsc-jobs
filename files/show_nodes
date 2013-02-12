@@ -57,7 +57,7 @@ for o, a in opts:
     elif o == "-m":
         #use mdiag instead of pbs
         from lxml import etree
-        from vsc.utils.run import Command
+        from vsc.utils.run import run_async
 
 
         class Query(object):
@@ -71,16 +71,16 @@ for o, a in opts:
 
             def getnodes(self, something=None):
                 """Similar to getnodes from PBSQuery
-                
+
                 returns a dict of nodes, with a 'status' field which is a dict of statusses
                 the something parameter is ignored. (for now)
                 """
                 mdiagoutput="/tmp/mdiag_xml.out"
-                xml, err = Command("mdiag -n --format=xml > %s" % mdiagoutput).run()
+                err, xml = run_async("mdiag -n --format=xml".split())
                 if err:
                     print "Error occured running mdiag -n: %s" % err
                 #build tree
-                tree = etree.parse(open(mdiagoutput))
+                tree = etree.fromstring(xml)
                 nodes = {}
                 for node in tree:
                     nodes[node.get("NODEID")] = {'state': [node.get("NODESTATE").lower()], 'size': node.get("RAMEM")}
@@ -247,5 +247,3 @@ else:
                     break
 
         print ' '.join(ans)
-
-
