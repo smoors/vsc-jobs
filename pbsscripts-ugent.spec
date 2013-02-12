@@ -1,6 +1,6 @@
 Summary: ugent pbsscripts
 Name: pbsscripts-ugent
-Version: 1.6
+Version: 1.7
 Release: 1
 License: GPL
 Group: Applications/System
@@ -55,4 +55,3 @@ rm -rf %{buildroot}
 - submitfilter not detecting end of header
 * Thu May 12 2011 Wouter Depypere <wouter.depypere@ugent.be>
 - first version
-
