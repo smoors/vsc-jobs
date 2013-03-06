@@ -188,7 +188,7 @@ def showsummary(res,userMap,owner,showvo):
     totalStr="TOTAL"
     overallStr="OVERALL"
     
-    hosts=["gengar","gastly","haunter","gulpin","dugtrio"]
+    hosts=["gengar","gastly","haunter","gulpin","dugtrio","raichu"]
     
     ## maximum namelength + extra whitespace
     maxlen=max([len(x) for x in usernames])+2
