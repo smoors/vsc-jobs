@@ -1,0 +1,102 @@
+#!/usr/bin/python
+
+import getopt, sys, re
+from PBSQuery import PBSQuery
+
+mail=False
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "m")
+except getopt.GetoptError, err:
+    print err
+    sys.exit(1)
+    
+for o, a in opts:
+    if o == "-m":
+        mail=True
+
+p = PBSQuery()
+
+pp=p.getnodes()
+ns={}
+
+regphys=re.compile(r"(\d+)(kb)?")
+
+for n,nn in p.getnodes().items():
+    if not nn.has_key('status'):
+        #print "Node %s has no status field: %s"%(n,nn)
+        continue
+
+    r=regphys.search(nn['status']['physmem'][0])
+    if not r:
+        print "Node %s found with no physmem"%n
+    sts=int(r.group(1))
+    unit=r.group(2)
+    if unit == 'kb':
+        sts=sts*1024
+    np=int(nn['np'][0])
+    ns[n]={'np':np,'mem':sts,'avg':int(sts/np)}
+
+
+reg_user=re.compile(r"(\w+)@\S+")
+regmem=re.compile(r"^(\d+)(kb)?$")
+toomuch={}
+
+
+
+js=p.getjobs()
+for n,j in js.items():
+    if not j['job_state'][0] == 'R': continue
+    
+    if reg_user.search(j['Job_Owner'][0]):
+        user=reg_user.search(j['Job_Owner'][0]).group(1)
+    else:
+        print "Job %s has not jobwoner field"%n
+        continue
+    
+
+    if not (j.has_key('resources_used') and j['resources_used'].has_key('mem')):
+        print "Job %s has no resources_used.mem field."%n
+        continue
+    
+    r=regmem.search(j['resources_used']['mem'][0])
+    if not r:
+        print "Job %s found with no mem"%n
+    mem=int(r.group(1))
+    unit=r.group(2)
+    if unit == 'kb':
+        mem=mem*1024
+
+    exh={}
+    cores=0
+    for e in j['exec_host'][0].split('+'):
+        nam=e.split('/')[0]
+        if not exh.has_key(nam):
+            exh[nam]=0
+        exh[nam]+=1
+        cores+=1
+        
+    usedavg=int(mem/cores)
+
+    for nod,c in exh.items():
+        ## more then avg on node?
+        if usedavg > ns[nod]['avg']:
+            #print "Job %s using more then avg amount of memory"%n
+            if not toomuch.has_key(user):
+                toomuch[user]={}
+            if not toomuch[user].has_key(nod):
+                toomuch[user][nod]=[]
+            toomuch[user][nod].append(n)
+            
+        ## whole node loaded?
+        
+users=toomuch.keys()
+users.sort()
+
+txt=''
+for us in users:
+    txt+="%s:\n"%us
+    for nod,jobs in toomuch[us].items():
+        txt+="\t%s:\t%s\n"%(nod,' '.join(jobs))    
+
+print txt
