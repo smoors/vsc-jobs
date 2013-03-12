@@ -80,7 +80,7 @@ def process_attributes(job_xml, job, attributes):
             job.pop(attribute)
 
 
-def parseshowqxml(host, txt):
+def parse_showq_xml(host, txt):
     """
     Parse showq --xml output
 
@@ -167,6 +167,6 @@ def showq(path, cluster, options, xml=True, process=True):
         return None
 
     if process:
-        return parseshowqxml(cluster, output)
+        return parse_showq_xml(cluster, output)
     else:
         return output
