@@ -3,7 +3,7 @@
 ##
 # Copyright 2009-2013 Ghent University
 #
-# This file is part of vsc-config,
+# This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
@@ -14,9 +14,8 @@
 #
 ##
 """
-vsc-config base distribution setup.py
+vsc-jobs base distribution setup.py
 
-@author: Stijn De Weirdt (Ghent University)
 @author: Andy Georges (Ghent University)
 """
 import shared_setup
@@ -30,22 +29,22 @@ def remove_bdist_rpm_source_file():
 
 shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
 shared_setup.SHARED_TARGET.update({
-    'url': 'https://github.ugent.be/hpcugent/vsc-config',
-    'download_url': 'https://github.ugent.be/hpcugent/vsc-config'
+    'url': 'https://github.ugent.be/hpcugent/vsc-jobs',
+    'download_url': 'https://github.ugent.be/hpcugent/vsc-jobs'
 })
 
 PACKAGE = {
-    'name': 'vsc-config',
-    'version': '1.0',
+    'name': 'vsc-jobs',
+    'version': '0.1',
     'author': [sdw, ag],
     'maintainer': [sdw, ag],
-    'packages': ['vsc', 'vsc.config'],
+    'packages': ['vsc', 'vsc.jobs'],
     'namespace_packages': ['vsc'],
     'scripts': [],
     'install_requires': [
         'vsc-base >= 0.90'
     ],
-    'provides': ['python-vsc-core = 0.96'],
+    'provides': ['python-vsc-jobs = 0.1'],
 }
 
 
