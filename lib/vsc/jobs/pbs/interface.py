@@ -58,6 +58,7 @@ ND_free_and_job = pbs.ND_free_and_job
 ND_down_on_error = pbs.ND_down_on_error
 ND_free_and_job = 'partial'
 ND_down_on_error = 'downerror'
+ND_bad = 'bad'
 
 TRANSLATE_STATE = {
                    ND_free: '_',
@@ -72,6 +73,7 @@ TRANSLATE_STATE = {
                    ND_cluster: 'C',
                    ND_free_and_job: 'j',
                    ND_down_on_error: 'x',
+                   ND_bad: 'b',
 }
 
 ND_STATE_EXOTIC = [
@@ -81,6 +83,7 @@ ND_STATE_EXOTIC = [
                    ND_job_sharing,
                    ND_state_unknown,
                    ND_cluster,
+                   ND_bad,
                    ]
 
 ND_STATE_OK = [
@@ -98,6 +101,8 @@ ND_STATE_NOTOK = [
 UNIT_PREFIX = ['', 'k', 'm', 'g', 't']
 UNITS_LOWER = ['%sb' % x for x in UNIT_PREFIX]
 UNIT_REG = re.compile(r'^\s*(?P<value>\d+)?(?P<unit>%s)?\s*$' % '|'.join(UNITS_LOWER), re.I)
+
+JOBID_REG = re.compile(r"\w+/\w+(\.|\w|\[|\])+")
 
 
 def str2byte(txt):
@@ -143,17 +148,20 @@ def get_nodes_dict():
     node_states = query.getnodes([])
     for full_state in node_states.values():
         state = full_state['state'][0]  # insert additional state
-        if state == ND_free:
-            if 'jobs' in full_state:
-                full_state['state'].insert(0, ND_free_and_job)
-        elif state == pbs.ND_down:
-            if 'error' in full_state:
-                full_state['state'].insert(0, ND_down_on_error)
+        if 'jobs' in full_state and not all([JOBID_REG.search(x.strip()) for x in full_state['jobs']]):
+            full_state['state'].insert(0, ND_bad)
+        elif state == ND_free and 'jobs' in full_state:
+            full_state['state'].insert(0, ND_free_and_job)
+        elif state == pbs.ND_down and 'error' in full_state:
+            full_state['state'].insert(0, ND_down_on_error)
 
         # extend the node dict with derived dict (for convenience)
         derived = {}
+
+        derived['state'] = state
+
         if 'np' in full_state:
-            derived['np'] = full_state['np'][0]
+            derived['np'] = int(full_state['np'][0])
         if 'status' in full_state:
             status = full_state['status']
             for prop in ['physmem', 'totmem', 'size']:
