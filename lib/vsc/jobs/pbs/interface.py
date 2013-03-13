@@ -99,6 +99,7 @@ UNIT_PREFIX = ['', 'k', 'm', 'g', 't']
 UNITS_LOWER = ['%sb' % x for x in UNIT_PREFIX]
 UNIT_REG = re.compile(r'^\s*(?P<value>\d+)?(?P<unit>%s)?\s*$' % '|'.join(UNITS_LOWER), re.I)
 
+
 def str2byte(txt):
     """Simple conversion of string to integer as per units used in pbs"""
     r = UNIT_REG.search(txt)
@@ -117,6 +118,23 @@ def str2byte(txt):
     unit_int = 1024 ** UNITS_LOWER.index(unit.lower())
 
     return value * unit_int
+
+
+def str2sec(txt):
+    """Convert a DD:HH:MM:SS format to seconds"""
+    reg_time = re.compile(r"((((?P<day>\d+):)?(?P<hour>\d+):)?(?P<min>\d+):)?(?P<sec>\d+)")
+    m = reg_time.search(txt)
+    if m:
+        totalwallsec = int(m.group('sec'))
+        if m.group('min'):
+            totalwallsec += int(m.group('min')) * 60
+            if m.group('hour'):
+                totalwallsec += int(m.group('hour')) * 60 * 60
+                if m.group('day'):
+                    totalwallsec += int(m.group('day')) * 60 * 60 * 24
+        return totalwallsec
+    else:
+        return None
 
 
 def get_nodes_dict():
@@ -238,30 +256,26 @@ def get_jobs_dict():
     jobs = get_jobs()
 
     reg_user = re.compile(r"(?P<user>\w+)@\S+")
-    reg_walltime = re.compile(r"((((?P<day>\d+):)?(?P<hour>\d+):)?(?P<min>\d+):)?(?P<sec>\d+)")
 
     nodes_cores = re.compile(r"(?P<nodes>\d+)(:ppn=(?P<cores>\d+))?")
     nodes_nocores = re.compile(r"(?P<nodes>node\d+).*?")
 
     for jobdata in jobs.values():
         derived = {}
+
+        derived['state'] = jobdata['job_state'][0]
+
         r = reg_user.search(jobdata['Job_Owner'][0])
         if r:
             derived['user'] = r.group('user')
+
         if 'Resource_List' in jobdata:
             resource_list = jobdata['Resource_List']
 
             # walltime
             if 'walltime' in resource_list:
-                m = reg_walltime.search(resource_list['walltime'][0])
-                if m:
-                    totalwallsec = int(m.group('sec'))
-                    if m.group('min'):
-                        totalwallsec += int(m.group('min')) * 60
-                        if m.group('hour'):
-                            totalwallsec += int(m.group('hour')) * 60 * 60
-                            if m.group('day'):
-                                totalwallsec += int(m.group('day')) * 60 * 60 * 24
+                totalwallsec = str2sec(resource_list['walltime'][0])
+                if totalwallsec is not None:
                     derived['totalwalltimesec'] = totalwallsec
 
             # nodes / cores
@@ -279,6 +293,35 @@ def get_jobs_dict():
                     cores = int(m.group('cores'))
                 derived['nodes'] = nodes
                 derived['cores'] = cores
+
+        # resource used
+        if 'resources_used' in jobdata:
+            resources_used = jobdata['resources_used']
+
+            if 'mem' in resources_used:
+                derived['used_mem'] = str2byte(resource_list['mem'][0])
+
+            if 'vmem' in resources_used:
+                derived['used_vmem'] = str2byte(resource_list['vmem'][0])
+
+            if 'walltime' in resources_used:
+                sec = str2sec(resource_list['walltime'][0])
+                if sec is not None:
+                    derived['used_walltime'] = sec
+
+            if 'cput' in resources_used:
+                sec = str2sec(resource_list['cput'][0])
+                if sec is not None:
+                    derived['used_cput'] = sec
+
+        if 'exec_host' in jobdata:
+            exec_hosts = {}
+            for host in jobdata['exec_host'][0].split('+'):
+                hostname = host.split('/')[0]
+                if not hostname in exec_hosts:
+                    exec_hosts[hostname] = 0
+                exec_hosts[hostname] += 1
+            derived['exec_hosts'] = exec_hosts
 
         jobdata['derived'] = derived
 
@@ -336,7 +379,7 @@ def get_userjob_stats():
         cores = derived['cores']
         corenodes = nodes * cores
 
-        state = jobdata['job_state'][0]
+        state = derived['state']
         if state in ('R', 'Q',):
             pass
         elif state in ('H',):
