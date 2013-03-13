@@ -19,7 +19,7 @@ All things moab.
 import xml.dom.minidom
 
 from vsc.utils.fancylogger import getLogger
-from vsc.utils.run import run_simple
+from vsc.utils.run import RunLoop
 
 
 logger = getLogger('vsc.jobs.moab')
@@ -157,11 +157,11 @@ def showq(path, cluster, options, xml=True, process=True):
     @return: string if no processing is done, dict with the job information otherwise
     """
 
-    options_ = []
+    options_ = options
     if xml:
         options_ += ['--xml']
 
-    (exit_code, output) = run_simple([path] + options_)
+    (exit_code, output) = RunLoop.run([path] + options_)
 
     if exit_code != 0:
         return None
