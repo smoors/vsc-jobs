@@ -32,6 +32,7 @@ The main pbs module
 import re
 from math import ceil
 from vsc import fancylogger
+from vsc.utils.missing import all
 
 _log = fancylogger.getLogger('pbs.pbs', fname=False)
 
@@ -131,6 +132,24 @@ def get_nodes_dict():
             if 'error' in full_state:
                 full_state['state'].insert(0, ND_down_on_error)
 
+        # extend the node dict with derived dict (for convenience)
+        derived = {}
+        if 'np' in full_state:
+            derived['np'] = full_state['np'][0]
+        if 'status' in full_state:
+            status = full_state['status']
+            for prop in ['physmem', 'totmem', 'size']:
+                if not prop in status:
+                    continue
+                val = status.get(prop)[0]
+                if prop in ('size',):
+                    # 'size': ['539214180kb:539416640kb']
+                    # - use 2nd field
+                    val = val.split(':')[1]
+                derived[prop] = str2byte(val)
+
+        full_state['derived'] = derived
+
     return node_states
 
 
@@ -154,31 +173,23 @@ def collect_nodeinfo():
         state_list.append(state)
 
         if not state in ND_STATE_NOTOK:
-            if 'status' in full_state and 'np' in full_state:
-                # collect detailed info of the nodes
-                cores = full_state['np'][0]
-                physmem_txt = full_state['status'].get('physmem', [None])[0]
-                totmem_txt = full_state['status'].get('totmem', [None])[0]
-                size_txt = full_state['status'].get('size', [None])[0]
-                if physmem_txt and totmem_txt and size_txt:
-                    # # 'physmem': ['66103784kb']
-                    p = str2byte(physmem_txt)
-                    # # 'totmem': ['82891700kb']
-                    t = str2byte(totmem_txt)
-                    # # 'size': ['539214180kb:539416640kb']
-                    # # - use 2nd field
-                    s = str2byte(size_txt.split(':')[1])
+            derived = full_state['derived']
+            cores = derived.get('np', None)
+            physmem = derived.get('physmem', None)
+            totmem = derived.get('totmem', None)
+            size = derived.get('size', None)
 
-                    # # round mem to 1 gb, size to 5gb
-                    GB = str2byte('gb')
-                    pmem = ceil(10 * p / GB) / 10
-                    tmem = ceil(10 * t / GB) / 10
-                    swap = tmem - pmem
-                    dsize = ceil(10 * s / (5 * GB)) / 2
-                    typ = (cores, pmem, swap, dsize)
-                    if not typ in types:
-                        types[typ] = 0
-                    types[typ] += 1
+            if not all(cores, physmem, totmem, size):  # there shouldn't be any value 0
+                # round mem to 1 gb, size to 5gb
+                GB = str2byte('gb')
+                pmem = ceil(10 * physmem / GB) / 10
+                tmem = ceil(10 * totmem / GB) / 10
+                swap = tmem - pmem
+                dsize = ceil(10 * size / (5 * GB)) / 2
+                typ = (cores, pmem, swap, dsize)
+                if not typ in types:
+                    types[typ] = 0
+                types[typ] += 1
 
         result = re_host_id.search(node)
         if result:
@@ -215,3 +226,129 @@ def get_queues_dict():
     return queues_dict
 
 
+def get_jobs():
+    """Get the jobs"""
+    query = PBSQuery()
+    jobs = query.getjobs()
+    return jobs
+
+
+def get_jobs_dict():
+    """Get jobs dict with derived info"""
+    jobs = get_jobs()
+
+    reg_user = re.compile(r"(?P<user>\w+)@\S+")
+    reg_walltime = re.compile(r"((((?P<day>\d+):)?(?P<hour>\d+):)?(?P<min>\d+):)?(?P<sec>\d+)")
+
+    nodes_cores = re.compile(r"(?P<nodes>\d+)(:ppn=(?P<cores>\d+))?")
+    nodes_nocores = re.compile(r"(?P<nodes>node\d+).*?")
+
+    for jobdata in jobs.values():
+        derived = {}
+        r = reg_user.search(jobdata['Job_Owner'][0])
+        if r:
+            derived['user'] = r.group('user')
+        if 'Resource_List' in jobdata:
+            resource_list = jobdata['Resource_List']
+
+            # walltime
+            if 'walltime' in resource_list:
+                m = reg_walltime.search(resource_list['walltime'][0])
+                if m:
+                    totalwallsec = int(m.group('sec'))
+                    if m.group('min'):
+                        totalwallsec += int(m.group('min')) * 60
+                        if m.group('hour'):
+                            totalwallsec += int(m.group('hour')) * 60 * 60
+                            if m.group('day'):
+                                totalwallsec += int(m.group('day')) * 60 * 60 * 24
+                    derived['totalwalltimesec'] = totalwallsec
+
+            # nodes / cores
+            if 'neednodes' in resource_list:
+                m = nodes_cores.match(resource_list['neednodes'][0])
+                if not m:
+                    if nodes_nocores.match(resource_list['neednodes'][0]):
+                        m = nodes_cores.match("1")
+            elif 'nodes' in resource_list:
+                m = nodes_cores.match(resource_list['nodes'][0])
+            if m:
+                nodes = int(m.group('nodes'))
+                cores = 1
+                if len(m.groups()) > 1 and m.group('cores'):
+                    cores = int(m.group('cores'))
+                derived['nodes'] = nodes
+                derived['cores'] = cores
+
+        jobdata['derived'] = derived
+
+    return jobs
+
+
+def get_userjob_stats():
+    """Report job stats per user"""
+    jobs = get_jobs_dict()
+
+    faults = []
+    stats = {}
+
+    # order as printed by nagios
+    categories = [
+                  ('R', 'running'),
+                  ('RN', 'running nodes'),
+                  ('RC', 'running cores'),
+                  ('RP', 'running procseconds'),
+
+                  ('Q', 'queued'),
+                  ('QN', 'queued nodes'),
+                  ('QC', 'queued cores'),
+                  ('QP', 'queued procseconds'),
+
+                  # this one last
+                  ('O', 'other jobids')
+                  ]
+
+    cat_map = dict([(x[0], idx) for idx, x in enumerate(categories)])
+
+    for name, jobdata in jobs.items():
+        derived = jobdata['derived']
+
+        if not 'user' in derived:
+            faults.append(('Missing user in job %s' % name, jobdata))
+            continue
+
+        if not derived['user'] in stats:
+            stats[derived['user']] = [0] * (len(categories) - 1) + [[]]
+        ustat = stats[derived['user']]
+
+        if 'totalwalltimesec' in derived:
+            totalwalltimesec = derived['totalwalltimesec']
+        else:
+            faults.append(('Missing totalwalltimesec in job %s. Counts as 0.' % (name), jobdata))
+            totalwalltimesec = 0
+
+        if not 'nodes' in derived:
+            faults.append(('Missing nodes/cores in job %s. Marked as other.' % (name), jobdata))
+            ustat[-1].append(name)
+            continue
+
+        nodes = derived['nodes']
+        cores = derived['cores']
+        corenodes = nodes * cores
+
+        state = jobdata['job_state'][0]
+        if state in ('R', 'Q',):
+            pass
+        elif state in ('H',):
+            state = 'Q'
+        else:
+            faults.append(('Not counting job with state %s in job %s. Marked as other.' % (name, state), jobdata))
+            ustat[-1].append(name)
+            continue
+
+        ustat[cat_map['%s' % state]] += 1
+        ustat[cat_map['%sN' % state]] += nodes
+        ustat[cat_map['%sC' % state]] += cores
+        ustat[cat_map['%sP' % state]] += corenodes * totalwalltimesec
+
+    return stats, faults, categories
