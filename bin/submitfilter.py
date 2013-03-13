@@ -68,9 +68,9 @@ def main(arguments=sys.argv):
     # regexes needed here
     mailreg = re.compile(r"^#PBS\s+-m\s.+")
     vmemreg = re.compile(r'^#PBS\s+-l\s+[^#]*?vmem=(?P<vmem>[^\s]*)')
-    ppnreg = re.compile(r'^#PBS\s+-l\s+[^#]*?nodes=.+?:ppn=(?P<ppn>\d+|all|half)', re.M)  # # multiline to replace header in single sub
+    # multiline to replace header in single sub
+    ppnreg = re.compile(r'^#PBS\s+-l\s+[^#]*?nodes=.+?:ppn=(?P<ppn>\d+|all|half)', re.M)
     serverreg = re.compile(r'.*master[0-9]*\.(?P<server>[^.]*)\.gent\.vsc')
-    # optsppnreg = re.compile(r'nodes=(?P<nodes>\d+)[^:#,\s]ppn=(?P<ppn>\d+)')
     optsppnreg = re.compile(r'.*?nodes=(?P<nodes>\d+)[^#,\s]*ppn=(?P<ppn>\d+)')
 
     optsvmemreg = re.compile(r'vmem=(?P<vmem>[^#\s]*)')
@@ -78,13 +78,12 @@ def main(arguments=sys.argv):
     parser = PassThroughOptionParser()  # ignore unknown options
     parser.add_option("-m", help="mail option")
     parser.add_option("-q", help="queue/server option")
-#    parser.add_option("-h", help="dummy option to prevent printing help",action="count")
+    # parser.add_option("-h", help="dummy option to prevent printing help",action="count")
     parser.add_option("-l", help="some other options", action="append")
 
     # parser.add_option()
     (opts, args) = parser.parse_args(arguments)
-#    print "options:", opts
-#    print "args:", args
+
     vmemDetected = False
     ppnDetected = False
     ppnDetectedinHeader = None
@@ -137,7 +136,7 @@ def main(arguments=sys.argv):
             if t:
                 opts.ppn = t.group("ppn")  # returns '' if no match, which evaluates to false
                 ppnDetected = bool(opts.ppn)
-                ppnDetectedinHeader = t.group(0)  # # the whole matched string, to be rewritten
+                ppnDetectedinHeader = t.group(0)  # the whole matched string, to be rewritten
         if not serverDetected:
             t = serverreg.match(line)
             if t:
@@ -226,11 +225,11 @@ def main(arguments=sys.argv):
         if intvmem > maxvmem:
             # warn user that he's trying to request to much vmem
             sys.stderr.write("Warning, requested %sb vmem per node, this is more then the available vmem (%sb), this job will never start.\n" % (intvmem, maxvmem))
-    # # mail
+    # mail
     if not mailDetected:
         header += "# No mail specified - added by submitfilter\n#PBS -m n\n"
 
-    # # ppn in header
+    # ppn in header
     if ppnDetectedinHeader:
         header = re.sub('ppn=(all|half)', 'ppn=%d' % opts.ppn, header)
 
@@ -240,9 +239,7 @@ def main(arguments=sys.argv):
     # print rest of stdin to stdout
     for line in iter(sys.stdin.readline, ''):
         sys.stdout.write(line)
-    # print ("#done")
 
 if __name__ == '__main__':
-    # testOptionParser()
     main()
 
