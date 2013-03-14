@@ -134,10 +134,10 @@ def showstats():
     summary = {
                'DPH': res['stats']['GPHDed'],  # Dedicated ProcHours
                'TPH': res['stats']['GPHAvl'],  # Total ProcHours
-               'LTE': 1.0 * res['stats']['GPHDed'] / res['stats']['GPHAvl'],  # LongTerm Efficiency
+               'LTE': 100.0 * (res['stats']['GPHDed'] / res['stats']['GPHAvl']),  # LongTerm Efficiency in %
                'CAP': res['sys']['UPP'] - res['sys']['IPC'],  # Current Active Procs
                'CTP': res['sys']['UPP'],  # Current Total Procs
-               'STE': 1.0 - 1.0 * res['sys']['IPC'] / res['sys']['UPP'],  # ShortTerm Efficiency
+               'STE': 100.0 * (1.0 - 1.0 * res['sys']['IPC'] / res['sys']['UPP']),  # ShortTerm Efficiency in %
                }
 
     res['summary'] = summary
