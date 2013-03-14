@@ -54,6 +54,7 @@ ND_free_and_job = 'partial'
 ND_error = 'error'
 ND_down_on_error = 'downerror'
 ND_bad = 'bad'
+ND_idle = 'idle'
 
 TRANSLATE_STATE = {
                    ND_free: '_',
@@ -70,6 +71,7 @@ TRANSLATE_STATE = {
                    ND_error: 'e',
                    ND_down_on_error: 'x',
                    ND_bad: 'b',
+                   ND_idle: 'i',  # same as free?
 }
 
 NDST_OK = 'ok'
@@ -122,6 +124,8 @@ def get_nodes_dict():
         states = full_state['state']
         if ND_free in states and 'jobs' in full_state:
             states.insert(0, ND_free_and_job)
+        if ND_free in states and not 'jobs' in full_state:
+            states.append(ND_idle)  # append it, not insert
 
         if 'error' in full_state:
             states.insert(0, ND_error)
@@ -134,7 +138,7 @@ def get_nodes_dict():
         # extend the node dict with derived dict (for convenience)
         derived = {}
 
-        derived['states'] = states
+        derived['states'] = [str(x) for x in states]
 
         # what state to report?
         nd_not_ok = [x for x in ND_STATE_NOTOK if x in states]
@@ -148,7 +152,7 @@ def get_nodes_dict():
         else:
             state = states[0]
             ndst = NDST_OTHER
-        derived['state'] = state
+        derived['state'] = str(state)
         derived['nodestate'] = ndst
 
         # what nagios state?
@@ -181,9 +185,11 @@ def get_nodes_dict():
     return node_states
 
 
-def get_nodes():
+def get_nodes(nodes_dict=None):
     """Get the pbs_nodes equivalent, return sorted list of tuples (sorted on nodename)"""
-    node_states = get_nodes_dict().items()
+    if nodes_dict is None:
+        nodes_dict = get_nodes_dict()
+    node_states = nodes_dict.items()
     node_states.sort(key=lambda x: x[0])
     return node_states
 

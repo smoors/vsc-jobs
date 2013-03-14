@@ -1,263 +1,154 @@
 #!/usr/bin/python
 
+import sys
 from vsc import fancylogger
-from vsc.job.pbs.nodes import get_nodes_dict
+from vsc.job.pbs.nodes import get_nodes, collect_nodeinfo, NDNAG_CRITICAL, NDNAG_WARNING, NDNAG_OK
+from vsc.job.pbs.nodes import ND_NAGIOS_CRITICAL, ND_NAGIOS_WARNING, ND_NAGIOS_OK
+from vsc.job.pbs.nodes import ND_down, ND_offline, ND_free, ND_job_exclusive, ND_status_unknown, ND_bad, ND_error, ND_idle
+from vsc.job.pbs.moab import get_nodes_dict as moab_get_nodes_dict
 
 _log = fancylogger.getLogger('show_nodes')
 
+options = {
+           'nagios':('Report in nagios format', None, 'store_true', False, 'n'),
+           'regex':('Filter on regexp, data for first match', None, 'regex', None, 'r'),
+           'allregex':('Combined with --regex/-r, return all data', None, 'store_true', False, 'R'),
+           'down':('Down nodes', None, 'store_true', False, 'D'),
+           'offline':('Offline nodes', None, 'store_true', False, 'o'),
+           'free':('Free nodes', None, 'store_true', False, 'f'),
+           'job-exclusive':('Job-exclusive nodes', None, 'store_true', False, 'x'),
+           'unknown':('State unknown nodes', None, 'store_true', False, 'u'),
+           'bad':('Bad nodes (broken jobregex)', None, 'store_true', False, 'b'),
+           'error':('Error nodes', None, 'store_true', False, 'e'),
+           'idle':('Idle nodes', None, 'store_true', False, 'i'),
+           'singlenodeinfo':(('Single (most-frequent) node information in key=value format'
+                              '(no combination with other options)'), None, 'store_true', False, 'I'),
+           'reportnodeinfo':('Report node information (no combination with other options)', None, 'store_true', False, 'R'),
+           'moab':('Use moab information (mdiag -n)', None, 'store_true', False, 'm'),
+           }
 
-import sys
-import re
-import getopt
+go = simple_option(options)
 
-from PBSQuery import PBSQuery
-
-try:
-    opts, args = getopt.getopt(sys.argv[1:], "doxfuiIRanbemr:")
-except getopt.GetoptError, err:
-    print err
-    sys.exit(1)
-
-states = ["down",  # C
-          "offline",  # W
-          "free",
-          "job-exclusive",
-          "state-unknown",  # C
-          "idle",
-          "bad",  # C
-          "error",  # C
-          "Busy"
-          ]  # states from moab
-state = []
-nagios = False
-regex = None
-filteridle = False
-singlenodeinformation = False
-reportsinglenodeinformation = False
-p = PBSQuery()
-
-for o, a in opts:
-    if o == "-n":
-        nagios = True
-    elif o == "-r":
-        regex = re.compile(r"%s" % a)
-    elif o == "-d":
-        state.append(states[0])
-    elif o == "-o":
-        state.append(states[1])
-    elif o == "-f":
-        state.append(states[2])
-    elif o == "-x":
-        state.append(states[3])
-    elif o == "-u":
-        state.append(states[4])
-    elif o == "-b":
-        state.append(states[6])
-    elif o == "-e":
-        state.append(states[7])
-    elif o == "-i":
-        # # these are free nodes that have no jobs
-        if not states[2] in states:
-            state.append(states[2])
-        state.append(states[5])
-        filteridle = True
-    elif o == "-I":
-        # # node information in bash form
-        # # report some node info in bash friendly format
-        singlenodeinformation = True
-    elif o == "-R":
-        # # report node information details
-        reportsinglenodeinformation = True
-    elif o == "-m":
-        # use mdiag instead of pbs
-        from lxml import etree
-        from vsc.utils.run import run_async
+all_states = ND_NAGIOS_CRITICAL + ND_NAGIOS_WARNING + ND_NAGIOS_OK
+report_states = []
+if go.options.down:
+    report_states.append(ND_down)
+if go.options.offline:
+    report_states.append(ND_offline)
+if go.options.free:
+    report_states.append(ND_free)
+if go.options.job_exclusive:
+    report_states.append(ND_job_exclusive)
+if go.options.unknown:
+    report_states.append(ND_status_unknown)
+if go.options.bad:
+    report_states.append(ND_bad)
+if go.options.error:
+    report_states.append(ND_error)
+if go.options.idle:
+    report_states.append(ND_idle)
 
 
-        class Query(object):
-            """
-            Implements something similar to PBSQuery
-            """
+if len(report_states) == 0:
+    report_states = all_states
 
-            def __init__(self, state=None):
-                """constructor"""
-                pass
+if go.options.singlenodeinfo or go.options.reportnodeinfo:
+    nodeinfo = collect_nodeinfo()[2]
+    if len(nodeinfo) == 0:
+        _log.error('No nodeinfo found')
+        sys.exit(1)
 
-            def getnodes(self, something=None):
-                """Similar to getnodes from PBSQuery
+    ordered = sorted(nodeinfo.items(), key=lambda x: x[1], reverse=True)
 
-                returns a dict of nodes, with a 'status' field which is a dict of statusses
-                the something parameter is ignored. (for now)
-                """
-                mdiagoutput = "/tmp/mdiag_xml.out"
-                err, xml = run_async("mdiag -n --format=xml".split())
-                if err:
-                    print "Error occured running mdiag -n: %s" % err
-                # build tree
-                tree = etree.fromstring(xml)
-                nodes = {}
-                for node in tree:
-                    nodes[node.get("NODEID")] = {'state': [node.get("NODESTATE").lower()], 'size': node.get("RAMEM")}
-                return nodes
+    if go.options.singlenodeinfo:
+        if len(nodeinfo) > 1:
+            msg = "Not all nodes have same parameters. Using most frequent ones."
+            if go.options.reportnodeinfo:
+                _log.warning(msg)
+            else:
+                _log.error(msg)
 
-        p = Query()
+        # usage: export `./show_nodes -I` ; env |grep SHOWNODES_
+        most_freq = ordered[0][0]
+        msg = []
+        msg.append("SHOWNODES_PPN=%d" % most_freq[0])
+        msg.append("SHOWNODES_PHYSMEMMB=%d" % most_freq[1] / 1024 ** 2)
+    else:
+        msg = []
+        for info, freq in ordered:
+            msg.append("%d nodes with %d cores and %s MB physmem" % (freq, info[0], info[1] / 1024 ** 2))
 
-
-if singlenodeinformation or reportsinglenodeinformation:
-    interesni_nodes = ('free', 'job-exclusive',)
-    res = {'cores':{}, 'physmem':{}}
-    for name, x in p.getnodes().items():
-        if not ('status' in x and 'np' in x and 'state' in x): continue
-        if not reportsinglenodeinformation and not x['state'][0] in interesni_nodes: continue
-        cores = int(x['np'][0])
-        rp = x['status'].get('physmem', [''])[0]
-
-        res['cores'].setdefault(cores, [])
-        res['cores'][cores].append(name)
-
-        res['physmem'].setdefault(rp, [])
-        res['physmem'][rp].append(name)
-
-    # # return most frequent
-    if len(res['cores']) > 1  or len(res['physmem']) > 1:
-        sys.stderr.write("Not all nodes have same parameters. Using most frequent ones.\n")
-        sys.stderr.flush()
-    elif len(res['cores']) < 1 or len(res['physmem']) < 1:
-        sys.stderr.write("No nodes found. Setting all to 0.\n")
-        sys.stderr.flush()
-
-    freq_count, freq_cores = max([(len(j), i) for i, j in res['cores'].items()])
-    freq_count, freq_physmem = max([(len(j), i) for i, j in res['physmem'].items()])
-
-    regbyte = re.compile(r"^\s*(?P<value>\d+)(?P<byte>(?:k|m|g)b)\s*$", re.I)
-    kb = 1024
-    mb = 1024 * 1024
-    gb = 1024 * 1024 * 1024
-    def str2megabyte(txt):
-        # # converts string like 100kb to float value in byte
-        exec("p=int(float(%s)/(1024*1024))") % regbyte.sub(r'\g<value>*\g<byte>', txt).lower()
-        return p
-
-    # # usage: export `./show_nodes -I` ; env |grep SHOWNODES_
-
-    print "SHOWNODES_PPN=%d\nSHOWNODES_PHYSMEMMB=%s\n" % (freq_cores, str2megabyte(freq_physmem))
-    if reportsinglenodeinformation:
-        msg = 'Nodes with parameters that are different from majority\n'
-        for cores, nodes in [(c, n) for c, n in res['cores'].items() if c != freq_cores]:
-            msg += "  Cores %s nodes %s\n" % (cores, " ".join(nodes))
-        for physmem, nodes in [(c, n) for c, n in res['physmem'].items() if c != freq_physmem]:
-            msg += "  Physmem %s nodes %s\n" % (physmem, " ".join(nodes))
-
-        print msg
+    print "\n".join(msg)
     sys.exit(0)
 
-pp = p.getnodes(['state'])
-nodes = pp.keys()
-nodes.sort()
-if filteridle:
-    # # replace free with idle if no jobs
-    for n in nodes:
-        if (states[2] in pp[n]['state']) and (not 'jobs' in pp[n]):
-            pp[n]['state'] = 'idle'
-
-# # sanity check
-# # match array jobs!
-jobreg = re.compile(r"\w+/\w+(\.|\w|\[|\])+")
-for n in nodes:
-    if 'jobs' in pp[n]:
-        jobs = [jobreg.search(x.strip()) for x in pp[n]['jobs']]
-        try:
-            jobs.index(None)
-            pp[n]['state'].append('bad')
-        except:
-            pass
-
-    if 'error' in pp[n]:
-        pp[n]['state'].append('error')
+if go.options.moab:
+    nodes_dict = moab_get_nodes_dict()
+    nodes = get_nodes(nodes_dict)
+else:
+    nodes = get_nodes()
 
 
-
-ans = []
-
-# #
-# # WARNING first, since that is the one that gives dependency on others
-# #
-nagiosstatesorder = ['WARNING', 'CRITICAL', 'OK']
-nagiosstates = {
-    'CRITICAL':[0, 4, 6, 7],
-    'WARNING':[1],
-    'OK':[2, 3, 5, 8]
-    }
+# WARNING first, since that is the one that gives dependency on others
+nagiosstatesorder = [NDNAG_WARNING, NDNAG_CRITICAL, NDNAG_OK]
 nagiosexit = {
-    'CRITICAL':2,
-    'WARNING':1,
-    'OK':0
-    }
+              NDNAG_CRITICAL:2,
+              NDNAG_WARNING:1,
+              NDNAG_OK: 0,
+              }
 
-def matchnagiosstate(nodestates, nagstate):
-    """
-    Find out if a nodestate matches a nagios state
-    """
-    for stateidx in nagiosstates[nagstate]:
-        if states[stateidx] in nodestates:
-            return True
-    return False
+nagios_res = {}
+detailed_res = {}
+nodes_found = []
+for name, full_state in nodes:
+    if go.options.regex and not go.options.regex.search(name):
+        continue
 
-if regex:
-    node = None
-    for n in nodes:
-        if (not node) and regex.search(n):
-            node = n
-    if not node:
-        state = ['regexp_failed']
-    else:
-        state = pp[node]['state']
+    nagios_state = full_state['derived']['nagiosstate']
+    if not nagios_state in nagios_res:
+        nagios_res[nagios_state] = []
 
-    # print "%s %s"%(state,node)
+    state = full_state['derived']['state']
+    if state == ND_free and ND_idle in full_state['state']:
+        state = ND_idle  # special case for idle
+    if not state in detailed_res:
+        detailed_res[state] = []
 
-    nagstate = None
-    for nstat in nagiosstatesorder:
-        if (not nagstate) and matchnagiosstate(state, nstat):
-            nagstate = nstat
-    if not nagstate:
-        nagstate = "CRITICAL"
+    if state in report_states:  # filter the allowed states
+        nagios_res[nagios_state].append(full_state['derived']['states'])
+        detailed_res[state].append(full_state['derived']['states'])
+        nodes_found.append(name)
 
-    if nagios:
-        txt = "show_nodes %s - %s" % (nagstate, ",".join(state))
+        if go.options.regex and not go.options.allregex:
+            break
+
+
+if go.options.regex and not go.options.allregex:
+    nagios_state, full_state = nagios_res.items()[0]  # there should only be one node
+    if go.options.nagios:
+        txt = "show_nodes %s - %s" % (nagios_state, ",".join(full_state['derived']['states']))
         print txt
-        sys.exit(nagiosexit[nagstate])
+        sys.exit(nagiosexit[nagios_state])
     else:
-        txt = "%s %s" % (nagstate, ",".join(state))
+        txt = "%s %s" % (nagios_state, ",".join(full_state['derived']['states']))
         print txt
 else:
-    if nagios:
-        bad = 'OK'
-        ec = 0
+    if go.options.nagios:
         header = 'show_nodes '
-        txt = ''
-        for s in states:
-            reg = re.compile(r"" + s)
-            tmp = 0
-            for n in nodes:
-                if s in pp[n]['state']:
-                    tmp += 1
-            if s in ('bad',) and tmp > 0:
-                bad = 'CRITICAL - %s bad nodes' % tmp
-                ec = 2
-            txt += "%s=%s " % (s, tmp)
-        txt += "total=%s" % (len(nodes))
-
-        print "%s %s | %s" % (header, bad, txt)
-        sys.exit(ec)
-
-    else:
-        for n in nodes:
-            if len(state) == 0:
-                ans.append(n)
+        txt = []
+        total = 0
+        for state in all_states:
+            if not state in detailed_res:
                 continue
-            for s in state:
-                if s in pp[n]['state']:
-                    ans.append(n)
-                    break
+            nr = len(detailed_res[state])
+            total += nr
+            txt.append("%s=%s" % (state, nr))
+        txt.append("total=%s" % total)
 
-        print ' '.join(ans)
+        reported_state = str(NDNAG_OK)
+        if ND_bad in detailed_res:
+            reported_state = '%s - %s bad nodes' % (NDNAG_CRITICAL, len(detailed_res[ND_bad]))
+        print "%s %s | %s" % (header, reported_state, txt)
+        sys.exit(nagiosexit[reported_state])
+    else:
+        # just print the nodes
+        print ' '.join(nodes_found)
