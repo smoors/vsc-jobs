@@ -7,7 +7,7 @@ import grp
 import sys
 
 from vsc.utils.generaloption import simple_option
-from vsc.job.pbs.interface import get_userjob_stats
+from vsc.job.pbs.jobs import get_userjob_stats
 
 options = {
            'users':('Report for users', None, "extend", [], 'u'),

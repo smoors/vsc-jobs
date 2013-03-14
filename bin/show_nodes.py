@@ -1,5 +1,11 @@
 #!/usr/bin/python
-import os
+
+from vsc import fancylogger
+from vsc.job.pbs.nodes import get_nodes_dict
+
+_log = fancylogger.getLogger('show_nodes')
+
+
 import sys
 import re
 import getopt
@@ -12,14 +18,22 @@ except getopt.GetoptError, err:
     print err
     sys.exit(1)
 
-states = ["down", "offline", "free", "job-exclusive", "state-unknown", "idle", "bad", "error",
-          "Busy"] #states from moab
+states = ["down",  # C
+          "offline",  # W
+          "free",
+          "job-exclusive",
+          "state-unknown",  # C
+          "idle",
+          "bad",  # C
+          "error",  # C
+          "Busy"
+          ]  # states from moab
 state = []
 nagios = False
 regex = None
 filteridle = False
 singlenodeinformation = False
-reportsinglenodeinformation=False
+reportsinglenodeinformation = False
 p = PBSQuery()
 
 for o, a in opts:
@@ -42,20 +56,20 @@ for o, a in opts:
     elif o == "-e":
         state.append(states[7])
     elif o == "-i":
-        ## these are free nodes that have no jobs
+        # # these are free nodes that have no jobs
         if not states[2] in states:
             state.append(states[2])
         state.append(states[5])
         filteridle = True
     elif o == "-I":
-        ## node information in bash form
-        ## report some node info in bash friendly format
+        # # node information in bash form
+        # # report some node info in bash friendly format
         singlenodeinformation = True
     elif o == "-R":
-        ## report node information details
+        # # report node information details
         reportsinglenodeinformation = True
     elif o == "-m":
-        #use mdiag instead of pbs
+        # use mdiag instead of pbs
         from lxml import etree
         from vsc.utils.run import run_async
 
@@ -75,11 +89,11 @@ for o, a in opts:
                 returns a dict of nodes, with a 'status' field which is a dict of statusses
                 the something parameter is ignored. (for now)
                 """
-                mdiagoutput="/tmp/mdiag_xml.out"
+                mdiagoutput = "/tmp/mdiag_xml.out"
                 err, xml = run_async("mdiag -n --format=xml".split())
                 if err:
                     print "Error occured running mdiag -n: %s" % err
-                #build tree
+                # build tree
                 tree = etree.fromstring(xml)
                 nodes = {}
                 for node in tree:
@@ -92,7 +106,7 @@ for o, a in opts:
 if singlenodeinformation or reportsinglenodeinformation:
     interesni_nodes = ('free', 'job-exclusive',)
     res = {'cores':{}, 'physmem':{}}
-    for name,x in p.getnodes().items():
+    for name, x in p.getnodes().items():
         if not ('status' in x and 'np' in x and 'state' in x): continue
         if not reportsinglenodeinformation and not x['state'][0] in interesni_nodes: continue
         cores = int(x['np'][0])
@@ -104,7 +118,7 @@ if singlenodeinformation or reportsinglenodeinformation:
         res['physmem'].setdefault(rp, [])
         res['physmem'][rp].append(name)
 
-    ## return most frequent
+    # # return most frequent
     if len(res['cores']) > 1  or len(res['physmem']) > 1:
         sys.stderr.write("Not all nodes have same parameters. Using most frequent ones.\n")
         sys.stderr.flush()
@@ -120,18 +134,18 @@ if singlenodeinformation or reportsinglenodeinformation:
     mb = 1024 * 1024
     gb = 1024 * 1024 * 1024
     def str2megabyte(txt):
-        ## converts string like 100kb to float value in byte
+        # # converts string like 100kb to float value in byte
         exec("p=int(float(%s)/(1024*1024))") % regbyte.sub(r'\g<value>*\g<byte>', txt).lower()
         return p
 
-    ## usage: export `./show_nodes -I` ; env |grep SHOWNODES_
+    # # usage: export `./show_nodes -I` ; env |grep SHOWNODES_
 
     print "SHOWNODES_PPN=%d\nSHOWNODES_PHYSMEMMB=%s\n" % (freq_cores, str2megabyte(freq_physmem))
     if reportsinglenodeinformation:
-        msg='Nodes with parameters that are different from majority\n'
-        for cores,nodes in [(c,n) for c,n in res['cores'].items() if c != freq_cores]:
+        msg = 'Nodes with parameters that are different from majority\n'
+        for cores, nodes in [(c, n) for c, n in res['cores'].items() if c != freq_cores]:
             msg += "  Cores %s nodes %s\n" % (cores, " ".join(nodes))
-        for physmem,nodes in [(c,n) for c,n in res['physmem'].items() if c != freq_physmem]:
+        for physmem, nodes in [(c, n) for c, n in res['physmem'].items() if c != freq_physmem]:
             msg += "  Physmem %s nodes %s\n" % (physmem, " ".join(nodes))
 
         print msg
@@ -141,13 +155,13 @@ pp = p.getnodes(['state'])
 nodes = pp.keys()
 nodes.sort()
 if filteridle:
-    ## replace free with idle if no jobs
+    # # replace free with idle if no jobs
     for n in nodes:
         if (states[2] in pp[n]['state']) and (not 'jobs' in pp[n]):
             pp[n]['state'] = 'idle'
 
-## sanity check
-## match array jobs!
+# # sanity check
+# # match array jobs!
 jobreg = re.compile(r"\w+/\w+(\.|\w|\[|\])+")
 for n in nodes:
     if 'jobs' in pp[n]:
@@ -165,9 +179,9 @@ for n in nodes:
 
 ans = []
 
-##
-## WARNING first, since that is the one that gives dependency on others
-##
+# #
+# # WARNING first, since that is the one that gives dependency on others
+# #
 nagiosstatesorder = ['WARNING', 'CRITICAL', 'OK']
 nagiosstates = {
     'CRITICAL':[0, 4, 6, 7],
@@ -199,7 +213,7 @@ if regex:
     else:
         state = pp[node]['state']
 
-    #print "%s %s"%(state,node)
+    # print "%s %s"%(state,node)
 
     nagstate = None
     for nstat in nagiosstatesorder:

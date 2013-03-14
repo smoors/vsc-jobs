@@ -2,7 +2,7 @@
 """
 Prints the enabled and route queues
 """
-from vsc.jobs.pbs.interface import get_queues_dict
+from vsc.jobs.pbs.queues import get_queues_dict
 
 
 def main():

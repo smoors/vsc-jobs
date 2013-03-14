@@ -12,9 +12,10 @@
 # SDW: add cluster node types
 #
 from vsc import fancylogger
-from vsc.jobs.pbs.interface import ND_STATE_OK, ND_STATE_NOTOK, ND_STATE_EXOTIC, TRANSLATE_STATE, collect_nodeinfo
+from vsc.jobs.pbs.nodes import ND_STATE_OK, ND_STATE_NOTOK, ND_STATE_EXOTIC, TRANSLATE_STATE, collect_nodeinfo
 
 _log = fancylogger.getLogeer('pbsmon')
+
 
 def display_cluster_status(nl, sl):
     # Thanks to Daniel Olson, we have now code that can handle

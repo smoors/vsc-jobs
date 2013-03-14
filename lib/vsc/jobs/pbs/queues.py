@@ -29,20 +29,36 @@ The main pbs module
 
 @author: Stijn De Weirdt (Ghent University)
 """
+import re
 from vsc import fancylogger
+from vsc.jobs.pbs.interface import get_query
 
-_log = fancylogger.getLogger('pbs.interface', fname=False)
-
-HAVE_PBS_PYTHON = True
-try:
-    import pbs
-    from PBSQuery import PBSQuery
-except:
-    _log.error('Failed to import pbs_python modules')
-    HAVE_PBS_PYTHON = False
+_log = fancylogger.getLogger('pbs.queues', fname=False)
 
 
-def get_query():
-    """Return query instance"""
-    return PBSQuery()
+def get_queues():
+    """Get the queues"""
+    query = get_query()
+    queues = query.getqueues()
+    return queues
+
+
+def get_queues_dict():
+    """Get dict with queues, separated on 'disabled', 'route', 'enabled'"""
+    queues_dict = {
+                   'enabled': [],
+                   'route': [],
+                   'disabled': [],
+                   }
+
+    for name, queue in get_queues().items():
+        if not queue.is_enabled():
+            queues_dict['disabled'].append((name, queue))
+        elif queue['queue_type'][0].lower() == 'route':
+            queues_dict['route'].append((name, queue))
+        else:
+            queues_dict['enabled'].append((name, queue))
+
+    return queues_dict
+
 
