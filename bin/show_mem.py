@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 from vsc import fancylogger
-from vsc.job.pbs.jobs import get_jobs_dict
-from vsc.job.pbs.nodes import get_nodes_dict
+from vsc.jobs.pbs.jobs import get_jobs_dict
+from vsc.jobs.pbs.nodes import get_nodes_dict
 
 _log = fancylogger.getLogger('show_mem')
 

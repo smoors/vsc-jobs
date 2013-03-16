@@ -36,6 +36,8 @@ _log = fancylogger.getLogger('pbs.interface', fname=False)
 HAVE_PBS_PYTHON = True
 try:
     import pbs
+    pbs = pbs  # allow to remote access
+
     from PBSQuery import PBSQuery
 except:
     _log.error('Failed to import pbs_python modules')

@@ -1,18 +1,21 @@
 #!/usr/bin/python
-
+"""
+show_nodes prints nodes and node state information
+"""
 import sys
 from vsc import fancylogger
-from vsc.job.pbs.nodes import get_nodes, collect_nodeinfo, NDNAG_CRITICAL, NDNAG_WARNING, NDNAG_OK
-from vsc.job.pbs.nodes import ND_NAGIOS_CRITICAL, ND_NAGIOS_WARNING, ND_NAGIOS_OK
-from vsc.job.pbs.nodes import ND_down, ND_offline, ND_free, ND_job_exclusive, ND_status_unknown, ND_bad, ND_error, ND_idle
-from vsc.job.pbs.moab import get_nodes_dict as moab_get_nodes_dict
+from vsc.utils.generaloption import simple_option
+from vsc.jobs.pbs.nodes import get_nodes, collect_nodeinfo, NDNAG_CRITICAL, NDNAG_WARNING, NDNAG_OK
+from vsc.jobs.pbs.nodes import ND_NAGIOS_CRITICAL, ND_NAGIOS_WARNING, ND_NAGIOS_OK
+from vsc.jobs.pbs.nodes import ND_down, ND_offline, ND_free, ND_job_exclusive, ND_state_unknown, ND_bad, ND_error, ND_idle
+from vsc.jobs.pbs.moab import get_nodes_dict as moab_get_nodes_dict
 
 _log = fancylogger.getLogger('show_nodes')
 
 options = {
            'nagios':('Report in nagios format', None, 'store_true', False, 'n'),
            'regex':('Filter on regexp, data for first match', None, 'regex', None, 'r'),
-           'allregex':('Combined with --regex/-r, return all data', None, 'store_true', False, 'R'),
+           'allregex':('Combined with --regex/-r, return all data', None, 'store_true', False, 'A'),
            'down':('Down nodes', None, 'store_true', False, 'D'),
            'offline':('Offline nodes', None, 'store_true', False, 'o'),
            'free':('Free nodes', None, 'store_true', False, 'f'),
@@ -40,7 +43,7 @@ if go.options.free:
 if go.options.job_exclusive:
     report_states.append(ND_job_exclusive)
 if go.options.unknown:
-    report_states.append(ND_status_unknown)
+    report_states.append(ND_state_unknown)
 if go.options.bad:
     report_states.append(ND_bad)
 if go.options.error:
@@ -123,13 +126,15 @@ for name, full_state in nodes:
 
 
 if go.options.regex and not go.options.allregex:
-    nagios_state, full_state = nagios_res.items()[0]  # there should only be one node
+    # there should only be one node
+    nagios_state, all_states = nagios_res.items()[0]
+    states = all_states[0]
     if go.options.nagios:
-        txt = "show_nodes %s - %s" % (nagios_state, ",".join(full_state['derived']['states']))
+        txt = "show_nodes %s - %s" % (nagios_state, ",".join(states))
         print txt
         sys.exit(nagiosexit[nagios_state])
     else:
-        txt = "%s %s" % (nagios_state, ",".join(full_state['derived']['states']))
+        txt = "%s %s" % (nagios_state, ",".join(states))
         print txt
 else:
     if go.options.nagios:
@@ -137,18 +142,20 @@ else:
         txt = []
         total = 0
         for state in all_states:
-            if not state in detailed_res:
-                continue
-            nr = len(detailed_res[state])
+            if state in detailed_res:
+                nr = len(detailed_res[state])
+            else:
+                nr = 0
             total += nr
             txt.append("%s=%s" % (state, nr))
         txt.append("total=%s" % total)
 
-        reported_state = str(NDNAG_OK)
+        reported_state = [str(NDNAG_OK), '']
         if ND_bad in detailed_res:
-            reported_state = '%s - %s bad nodes' % (NDNAG_CRITICAL, len(detailed_res[ND_bad]))
-        print "%s %s | %s" % (header, reported_state, txt)
-        sys.exit(nagiosexit[reported_state])
+            reported_state[0] = '%s' % (NDNAG_CRITICAL)
+            reported_state[1] = '- %s bad nodes' % (len(detailed_res[ND_bad]))
+        print "%s %s%s | %s" % (header, reported_state[0], reported_state[1], " ".join(txt))
+        sys.exit(nagiosexit[reported_state[0]])
     else:
         # just print the nodes
         print ' '.join(nodes_found)

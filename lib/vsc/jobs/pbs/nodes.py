@@ -49,10 +49,9 @@ ND_busy = pbs.ND_busy
 ND_state_unknown = pbs.ND_state_unknown
 ND_timeshared = pbs.ND_timeshared
 ND_cluster = pbs.ND_cluster
-ND_down_on_error = pbs.ND_down_on_error
+ND_down_on_error = 'down_on_error'
 ND_free_and_job = 'partial'
 ND_error = 'error'
-ND_down_on_error = 'downerror'
 ND_bad = 'bad'
 ND_idle = 'idle'
 
@@ -119,20 +118,25 @@ def get_nodes_dict():
     """Get the pbs_nodes equivalent info as dict"""
     query = get_query()
     node_states = query.getnodes([])
-    for full_state in node_states.values():
+    for name, full_state in node_states.items():
         # just add states
         states = full_state['state']
         if ND_free in states and 'jobs' in full_state:
+            _log.debug('Added free_and_job node %s' % (name))
             states.insert(0, ND_free_and_job)
         if ND_free in states and not 'jobs' in full_state:
+            _log.debug('Append idle node %s' % (name))
             states.append(ND_idle)  # append it, not insert
 
         if 'error' in full_state:
+            _log.debug('Added error node %s' % (name))
             states.insert(0, ND_error)
         if ND_down in states and 'error' in full_state:
+            _log.debug('Added down_on_error node %s' % (name))
             states.insert(0, ND_down_on_error)
 
         if 'jobs' in full_state and not all([JOBID_REG.search(x.strip()) for x in full_state['jobs']]):
+            _log.debug('Added bad node %s for jobs %s' % (name, full_state['jobs']))
             states.insert(0, ND_bad)
 
         # extend the node dict with derived dict (for convenience)
@@ -144,14 +148,12 @@ def get_nodes_dict():
         nd_not_ok = [x for x in ND_STATE_NOTOK if x in states]
         nd_ok = [x for x in ND_STATE_OK if x in states]
         if len(nd_not_ok) > 0:
-            state = nd_not_ok[0]
             ndst = NDST_NOTOK
         elif (len(nd_ok)):
-            state = nd_ok[0]
             ndst = NDST_OK
         else:
-            state = states[0]
             ndst = NDST_OTHER
+        state = states[0]
         derived['state'] = str(state)
         derived['nodestate'] = ndst
 
@@ -160,7 +162,7 @@ def get_nodes_dict():
         nag_warn = [x for x in ND_NAGIOS_WARNING if x in states]
         if len(nag_crit) > 0:
             ndnag = NDNAG_CRITICAL
-        elif len(len(nag_warn)) > 0:
+        elif len(nag_warn) > 0:
             ndnag = NDNAG_WARNING
         else:
             ndnag = NDNAG_OK
@@ -181,6 +183,7 @@ def get_nodes_dict():
                 derived[prop] = str2byte(val)
 
         full_state['derived'] = derived
+        _log.debug("node %s derived data %s " % (name, derived))
 
     return node_states
 

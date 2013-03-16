@@ -7,7 +7,7 @@ import grp
 import sys
 
 from vsc.utils.generaloption import simple_option
-from vsc.job.pbs.jobs import get_userjob_stats
+from vsc.jobs.pbs.jobs import get_userjob_stats
 
 options = {
            'users':('Report for users', None, "extend", [], 'u'),
@@ -18,7 +18,7 @@ options = {
 
 go = simple_option(options)
 
-for gr in go.opions.groups:
+for gr in go.options.groups:
     # get the members
     g = grp.getgrnam(gr)
     if g:
@@ -50,7 +50,7 @@ for user, tmp in ustats.items():
         agg_ans[i] += tmp[i]
 
 
-if go.opions.nagios:
+if go.options.nagios:
     # maxchars: total should be 80, - 2*6 + 1 ' '
     absmaxchars = 200
     maxuserchars = 20

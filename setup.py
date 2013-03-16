@@ -38,7 +38,7 @@ PACKAGE = {
     'version': '0.1',
     'author': [sdw, ag],
     'maintainer': [sdw, ag],
-    'packages': ['vsc', 'vsc.jobs'],
+    'packages': ['vsc', 'vsc.jobs', 'vsc.jobs.pbs'],
     'namespace_packages': ['vsc'],
     'scripts': [],
     'install_requires': [

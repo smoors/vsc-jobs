@@ -33,7 +33,7 @@ A moab module to be used
 
 from lxml import etree
 from vsc.utils.run import RunAsyncLoop
-from vsc.jobs.pbs.interface import str2byte
+from vsc.jobs.pbs.tools import str2byte
 
 from vsc import fancylogger
 
