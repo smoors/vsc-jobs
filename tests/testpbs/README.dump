@@ -1,0 +1,6 @@
+python -c 'from PBSQuery import PBSQuery as pq;q=pq();print "nodes = %s"%q.getnodes().__repr__();print "queues = %s"%q.getqueues().__repr__();print "jobs = %s"%q.getjobs().__repr__()' >& $(hostname -s)_dump_$(date +%Y%m%d).py
+
+for master3_dump_20130316 :
+ node380 is bad
+# show_nodes -n
+show_nodes  CRITICAL - 1 bad nodes | down=7 offline=2 free=23 job-exclusive=24 state-unknown=0 idle=0 bad=1 error=0 Busy=0 total=56

@@ -1,0 +1,2 @@
+mdiag -n --xml > $(hostname -s)_dump_mdiag_n_xml_$(date +%Y%m%d).xml
+showstats --xml > $(hostname -s)_dump_showstats_xml_$(date +%Y%m%d).xml

@@ -1,0 +1,1 @@
+python -c 'import pbs; print "\n".join(["%s=%s"%(x,getattr(pbs,x).__repr__())for x in dir(pbs) if x[0] == x[0].upper() and not x.startswith("_")])' > fake_pbs_constants.py
