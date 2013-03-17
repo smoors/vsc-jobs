@@ -25,20 +25,8 @@ from vsc.utils.run import RunLoop
 logger = getLogger('vsc.jobs.moab')
 
 
-class ShowqInfo(dict):
-    """Code partially taken from http://stackoverflow.com/questions/6256183/combine-two-dictionaries-of-dictionaries-python."""
-
-    def __init__(self, *args, **kwargs):
-        super(ShowqInfo, self).__init__(*args, **kwargs)
-
-    def add(self, user, host, state):
-
-        if not user in self:
-            self[user] = {}
-        if not host in self[user]:
-            self[user][host] = {}
-        if not state in self[user][host]:
-            self[user][host][state] = []
+class RUDict(dict):
+    """Code taken from http://stackoverflow.com/questions/6256183/combine-two-dictionaries-of-dictionaries-python."""
 
     def update(self, E=None, **F):
         if E is not None:
@@ -53,22 +41,38 @@ class ShowqInfo(dict):
                     self.r_update(k, {k: v})
 
         for k in F:
+            logger.debug("Hmmz")
             self.r_update(k, {k: F[k]})
 
     def r_update(self, key, other_dict):
-
+        """Recursive update."""
         if isinstance(self[key], dict) and isinstance(other_dict[key], dict):
-            od = dict(self[key])
+            od = RUDict(self[key])
             nd = other_dict[key]
             od.update(nd)
             self[key] = od
         elif isinstance(self[key], list):
             if isinstance(other_dict[key], list):
-                self[key] = self[key].extend(other_dict[key])
+                self[key].extend(other_dict[key])
             else:
                 self[key] = self[key].append(other_dict[key])
         else:
             self[key] = other_dict[key]
+
+
+class ShowqInfo(RUDict):
+
+    def __init__(self, *args, **kwargs):
+        super(ShowqInfo, self).__init__(*args, **kwargs)
+
+    def add(self, user, host, state):
+
+        if not user in self:
+            self[user] = RUDict()
+        if not host in self[user]:
+            self[user][host] = RUDict()
+        if not state in self[user][host]:
+            self[user][host][state] = []
 
 
 def process_attributes(job_xml, job, attributes):
@@ -116,6 +120,8 @@ def parse_showq_xml(host, txt):
         user = j.getAttribute('User')
         state = j.getAttribute('State')
 
+        logger.debug("Found job %s for user %s in state %s" % (j.getAttribute('JobID'), user, state))
+
         res.add(user, host, state)
 
         process_attributes(j, job, mandatory_attributes)
@@ -135,7 +141,7 @@ def parse_showq_xml(host, txt):
                 process_attributes(j, job, idle_attributes)
 
         # append the job
-        res[user][host][state] = [job]
+        res[user][host][state] += [job]
 
     return res
 
