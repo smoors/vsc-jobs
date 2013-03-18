@@ -1,16 +1,38 @@
 #!/usr/bin/python
+# #
+# Copyright 2013-2013 Ghent University
 #
-# Author: Bas van der Vlies <basv@sara.nl>
-# Date  : 17 Aug 2001
-# Desc. : This script displays the status of the PBS batch.
-#         It display the status of a node. The ideas are
-#         based on the awk-script of Willem Vermin
+# This file is part of vsc-jobs,
+# originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
+# with support of Ghent University (http://ugent.be/hpc),
+# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Hercules foundation (http://www.herculesstichting.be/in_English)
+# and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# CVS info:
-# $Id: pbsmon.py 134 2006-10-10 09:29:08Z bas $
+# http://github.com/hpcugent/vsc-jobs
 #
-# SDW: add cluster node types
+# vsc-jobs is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Library General Public License as
+# published by the Free Software Foundation, either version 2 of
+# the License, or (at your option) any later version.
 #
+# vsc-jobs is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Library General Public License for more details.
+#
+# You should have received a copy of the GNU Library General Public License
+# along with vsc-jobs. If not, see <http://www.gnu.org/licenses/>.
+# #
+"""
+This script displays the status of the PBS batch.
+It display the status of a node.
+The code is based on pbsmon from pbs_python release by Bas van der Vlies <basv@sara.nl> (also GPL)
+The ideas are based on the awk-script of Willem Vermin
+
+@author: Stijn De Weirdt (Ghent University)
+"""
+
 from vsc import fancylogger
 from vsc.jobs.pbs.nodes import ND_STATE_OK, ND_STATE_NOTOK, ND_STATE_OTHER, TRANSLATE_STATE, collect_nodeinfo
 
