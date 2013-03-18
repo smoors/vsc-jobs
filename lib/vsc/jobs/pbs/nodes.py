@@ -71,7 +71,7 @@ TRANSLATE_STATE = {
                    ND_down_on_error: 'x',
                    ND_bad: 'b',
                    ND_idle: 'i',  # same as free?
-}
+                   }
 
 NDST_OK = 'ok'
 NDST_NOTOK = 'notok'
@@ -108,7 +108,7 @@ ND_NAGIOS_OK = [
                 ND_job_exclusive,
                 ND_free_and_job,
                 ND_free,
-               ]
+                ]
 
 ND_NAGIOS_WARNING = [x for x in TRANSLATE_STATE.keys() if not x in ND_NAGIOS_CRITICAL + ND_NAGIOS_OK]
 
@@ -117,7 +117,10 @@ JOBID_REG = re.compile(r"\w+/\w+(\.|\w|\[|\])+")
 
 
 def make_state_map(derived):
-    """Make a mapping for OK/NOTOK?OTHER and nagios OK/WARNING/CRITICAL"""
+    """Make a mapping for OK/NOTOK?OTHER and nagios OK/WARNING/CRITICAL.
+        derived: the (reference to the) dict that is added to the node state dict as returned by pbs
+            it should already contain the 'states' of the node
+    """
     states = derived['states']
     # what state to report?
     nd_not_ok = [x for x in ND_STATE_NOTOK if x in states]
