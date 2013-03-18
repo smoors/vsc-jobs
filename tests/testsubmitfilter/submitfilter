@@ -1,51 +1,24 @@
 #!/usr/bin/python
-# #
-# Copyright 2013-2013 Ghent University
-#
-# This file is part of vsc-jobs,
-# originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
-# with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
-# the Hercules foundation (http://www.herculesstichting.be/in_English)
-# and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
-#
-# http://github.com/hpcugent/vsc-jobs
-#
-# vsc-jobs is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Library General Public License as
-# published by the Free Software Foundation, either version 2 of
-# the License, or (at your option) any later version.
-#
-# vsc-jobs is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Library General Public License for more details.
-#
-# You should have received a copy of the GNU Library General Public License
-# along with vsc-jobs. If not, see <http://www.gnu.org/licenses/>.
-# #
 """
+@author: Jens Timmerman
+
 Filters scripts submitted by qsub,
 adds default values and command line parameters to the script
 for processing by pbs
-
-@author: Jens Timmerman (Ghent University)
-@author: Stijn De Weirdt (Ghent University)
 """
 
-# -mail options parsen
-# -vmem option parsen
-# -cores parsen (voor vmem)
+#-mail options parsen
+#-vmem option parsen
+#-cores parsen (voor vmem)
+from optparse import OptionParser, BadOptionError
+import optparse
 import sys
 import re
 import os
-from vsc.utils.generaloption import PassThroughOptionParser
-
-DEFAULT_SERVER_CLUSTER = 'gengar'
 
 DEFAULT_SERVER = "default"
 
-# these amounts are in kilobytes as reported by pnbsnodes
+#these amounts are in kilobytes as reported by pnbsnodes
 CLUSTERDATA = {
                 'gengar' : {
                             'PHYSMEM' : 16439292 << 10,
@@ -78,38 +51,103 @@ CLUSTERDATA = {
                             'NP': 16
                             },
                 'dugtrio' : {
-                             'TOTMEM' : 1395439 << 20,  # total amount of ram in dugtrio cluster
-                             'DEFMAXNP' : 48,  # # default maximum np in case of ppn=full
+                             'TOTMEM' : 1395439 << 20, #total amount of ram in dugtrio cluster
+                             'DEFMAXNP' : 48, ## default maximum np in case of ppn=full
                              },
                }
 
 
-MIN_VMEM = 1536 << 20  # minimum amount of ram in our machines.
+
+
+MIN_VMEM = 1536 << 20 #minimum amount of ram in our machines.
+
+class PassThroughOptionParser(OptionParser):
+    """
+    "Pass-through" option parsing -- an OptionParser that ignores
+    unknown options and lets them pile up in the leftover argument
+    list.  Useful for programs that pass unknown options through
+    to a sub-program.
+    from http://www.koders.com/python/fid9DFF5006AF4F52BA6483C4F654E26E6A20DBC73C.aspx?s=add+one#L27
+    """
+    def __init__(self):
+        OptionParser.__init__(self, add_help_option=False, usage=optparse.SUPPRESS_USAGE)
+
+    def _process_long_opt(self, rargs, values):
+
+        try:
+            OptionParser._process_long_opt(self, rargs, values)
+        except BadOptionError, err:
+            self.largs.append(err.opt_str)
+
+    def _process_short_opts(self, rargs, values):
+        #implementation from recent optparser
+        arg = rargs.pop(0)
+        stop = False
+        i = 1
+        for ch in arg[1:]:
+            opt = "-" + ch
+            option = self._short_opt.get(opt)
+            i += 1                      # we have consumed a character
+
+            if not option:
+                #Changed by Jens: don't fail here, just append to largs
+                #                raise BadOptionError(opt)
+                self.largs.append(opt)
+                return
+            if option.takes_value():
+                # Any characters left in arg?  Pretend they're the
+                # next arg, and stop consuming characters of arg.
+                if i < len(arg):
+                    rargs.insert(0, arg[i:])
+                    stop = True
+
+                nargs = option.nargs
+                if len(rargs) < nargs:
+                    if nargs == 1:
+                        self.error(_("%s option requires an argument") % opt)
+                    else:
+                        self.error(_("%s option requires %d arguments")
+                                   % (opt, nargs))
+                elif nargs == 1:
+                    value = rargs.pop(0)
+                else:
+                    value = tuple(rargs[0:nargs])
+                    del rargs[0:nargs]
+
+            else:                       # option doesn't take a value
+                value = None
+
+            option.process(opt, value, values, self)
+
+            if stop:
+                break
+
 
 
 def main(arguments=sys.argv):
     """
     main method
     """
-    # regexes needed here
-    mailreg = re.compile(r"^#PBS\s+-m\s.+")
-    vmemreg = re.compile(r'^#PBS\s+-l\s+[^#]*?vmem=(?P<vmem>[^\s]*)')
-    # multiline to replace header in single sub
-    ppnreg = re.compile(r'^#PBS\s+-l\s+[^#]*?nodes=.+?:ppn=(?P<ppn>\d+|all|half)', re.M)
-    serverreg = re.compile(r'master\d*(?:-moab\d*)?\.(?P<server>[^.]+)\.(?:gent\.vsc|os)')
-    optsppnreg = re.compile(r'nodes=(?P<nodes>\d+)[^#,\s]*ppn=(?P<ppn>\d+)')
+    #regexes needed here
+    mailreg = re.compile("^#PBS\s+-m\s.+")
+    vmemreg = re.compile('^#PBS\s+-l\s+[^#]*?vmem=(?P<vmem>[^\s]*)')
+    ppnreg = re.compile('^#PBS\s+-l\s+[^#]*?nodes=.+?:ppn=(?P<ppn>\d+|all|half)', re.M) ## multiline to replace header in single sub
+    serverreg = re.compile('.*master[0-9]*\.(?P<server>[^.]*)\.gent\.vsc')
+    #optsppnreg = re.compile('nodes=(?P<nodes>\d+)[^:#,\s]ppn=(?P<ppn>\d+)')
+    optsppnreg = re.compile('.*?nodes=(?P<nodes>\d+)[^#,\s]*ppn=(?P<ppn>\d+)')
 
-    optsvmemreg = re.compile(r'vmem=(?P<vmem>[^#\s]*)')
-    # parse command line options
-    parser = PassThroughOptionParser()  # ignore unknown options
+    optsvmemreg = re.compile('vmem=(?P<vmem>[^#\s]*)')
+    #parse command line options
+    parser = PassThroughOptionParser() #ignore unknown options
     parser.add_option("-m", help="mail option")
     parser.add_option("-q", help="queue/server option")
-    # parser.add_option("-h", help="dummy option to prevent printing help",action="count")
+#    parser.add_option("-h", help="dummy option to prevent printing help",action="count")
     parser.add_option("-l", help="some other options", action="append")
 
-    # parser.add_option()
+    #parser.add_option()
     (opts, args) = parser.parse_args(arguments)
-
+#    print "options:", opts
+#    print "args:", args
     vmemDetected = False
     ppnDetected = False
     ppnDetectedinHeader = None
@@ -117,7 +155,7 @@ def main(arguments=sys.argv):
     serverDetected = False
     noVmemNeeded = False
     opts.server = None
-    # process appended results to l
+    #process appended results to l
     opts.vmem = None
     opts.ppn = 1
     if opts.l:
@@ -131,26 +169,27 @@ def main(arguments=sys.argv):
                 opts.vmem = match.group("vmem")
                 vmemDetected = True
 
-    # check for server in options
+
+    #check for server in options
     if opts.q:
         t = serverreg.match(opts.q)
         if t:
             opts.server = t.group('server')
             serverDetected = True
 
-    # process stdin
+    #process stdin
     header = ""
     body = ""
     for line in iter(sys.stdin.readline, ''):
-        # check if we're still in the preamble
+        #check if we're still in the preamble
         if not line.startswith('#') and not line.strip() == "":
-            # jump out of loop here, we will print the rest later
-            body = line  # save this line first
+            #jump out of loop here, we will print the rest later
+            body = line #save this line first
             break
         header += line
-        # check if this line is mail
-        if not mailDetected:  # if mail not yet found
-            opts.m = mailreg.match(line)  # returns None if no match
+        #check if this line is mail
+        if not mailDetected: #if mail not yet found
+            opts.m = mailreg.match(line) #returns None if no match
             mailDetected = bool(opts.m)
         if not vmemDetected:
             opts.vmem = vmemreg.match(line)
@@ -160,48 +199,50 @@ def main(arguments=sys.argv):
         if not ppnDetected:
             t = ppnreg.match(line)
             if t:
-                opts.ppn = t.group("ppn")  # returns '' if no match, which evaluates to false
+                opts.ppn = t.group("ppn") #returns '' if no match, which evaluates to false
                 ppnDetected = bool(opts.ppn)
-                ppnDetectedinHeader = t.group(0)  # the whole matched string, to be rewritten
+                ppnDetectedinHeader = t.group(0) ## the whole matched string, to be rewritten
         if not serverDetected:
             t = serverreg.match(line)
             if t:
                 opts.server = t.group("server")
                 serverDetected = True
 
-    # combine results
-    # vmem
 
-    # try to find the server if not set yet
-    if not serverDetected and 'PBS_DEFAULT' in os.environ:
+    #combine results
+    #vmem
+
+    #try to find the server if not set yet
+    if not serverDetected and os.environ.has_key('PBS_DEFAULT'):
         t = serverreg.match(os.environ['PBS_DEFAULT'])
         if t:
             opts.server = t.group("server")
-            serverDetected = bool(opts.server)  # opts.server can also be the empty string
+            serverDetected = bool(opts.server) #opts.server can also be the empty string
 
     # check whether VSC_NODE_PARTITION environment variable is set
     # used for gulpin/dugtrio
 
-    if 'VSC_NODE_PARTITION' in os.environ:
+    if os.environ.has_key('VSC_NODE_PARTITION'):
         header += "\n#PBS -W x=PARTITION:%s\n" % os.environ['VSC_NODE_PARTITION']
 
-    # set defaults
+    #set defaults
     if not serverDetected:
         opts.server = DEFAULT_SERVER
     if not ppnDetected:
         opts.ppn = 1
 
-    # compute vmem
-    if not serverDetected or opts.server in [DEFAULT_SERVER]:
-        opts.server = DEFAULT_SERVER_CLUSTER
+
+    #compute vmem
+    if not serverDetected or opts.server in ['default']:
+        opts.server = 'gengar'
 
     if opts.server in CLUSTERDATA:
         cluster = CLUSTERDATA[opts.server]
         try:
             tvmem = int((cluster['PHYSMEM'] + (cluster['TOTMEM'] - cluster['PHYSMEM']) / 2) / cluster['NP'])
         except:
-            # something is not defined (eg dugtrio case)
-            tvmem = None  # dont set it if not found
+            ## something is not defined (eg dugtrio case)
+            tvmem = None #dont set it if not found
 
         if opts.server in ["dugtrio"]:
             noVmemNeeded = True
@@ -221,15 +262,16 @@ def main(arguments=sys.argv):
             opts.ppn = 1
         sys.stderr.write("Warning: unknown server (%s) detected, see PBS_DEFAULT. This should not be happening...\n" % opts.server)
 
-    # always (and only here to replace ppn=all or ppn=half
+
+    ## always (and only here to replace ppn=all or ppn=half
     opts.ppn = int(opts.ppn)
 
     if not vmemDetected and not noVmemNeeded:
-        # compute real vmem needed
-        vmem = tvmem * opts.ppn >> 20  # change to mb
+        #compute real vmem needed
+        vmem = tvmem * opts.ppn >> 20 #change to mb
         header += "# No vmem limit specified - added by submitfilter (server found: %s)\n#PBS -l vmem=%smb\n" % (opts.server, vmem)
     elif not noVmemNeeded:
-        # parse detected vmem to check if to much was asked
+        #parse detected vmem to check if to much was asked
         groupvmem = re.search('(\d+)(.*)', opts.vmem)
         intvmem = groupvmem.group(1)
         if intvmem:
@@ -249,23 +291,25 @@ def main(arguments=sys.argv):
                 intvmem = intvmem << 10
 
         if intvmem > maxvmem:
-            # warn user that he's trying to request to much vmem
+            #warn user that he's trying to request to much vmem
             sys.stderr.write("Warning, requested %sb vmem per node, this is more then the available vmem (%sb), this job will never start.\n" % (intvmem, maxvmem))
-    # mail
+    ## mail
     if not mailDetected:
         header += "# No mail specified - added by submitfilter\n#PBS -m n\n"
 
-    # ppn in header
+    ## ppn in header
     if ppnDetectedinHeader:
         header = re.sub('ppn=(all|half)', 'ppn=%d' % opts.ppn, header)
 
     print header
     print body
 
-    # print rest of stdin to stdout
+    #print rest of stdin to stdout
     for line in iter(sys.stdin.readline, ''):
         sys.stdout.write(line)
+    #print ("#done")
 
 if __name__ == '__main__':
+    #testOptionParser()
     main()
 
