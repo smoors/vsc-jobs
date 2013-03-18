@@ -28,6 +28,7 @@ options = {
                               '(no combination with other options)'), None, 'store_true', False, 'I'),
            'reportnodeinfo':('Report node information (no combination with other options)', None, 'store_true', False, 'R'),
            'moab':('Use moab information (mdiag -n)', None, 'store_true', False, 'm'),
+           'moabxml':('Use xml moab data from file (for testing)', None, 'store', None),
            }
 
 go = simple_option(options)
@@ -85,7 +86,16 @@ if go.options.singlenodeinfo or go.options.reportnodeinfo:
     sys.exit(0)
 
 if go.options.moab:
-    nodes_dict = moab_get_nodes_dict()
+
+    if go.options.moabxml:
+        try:
+            moabxml = open(go.options.moabxml).read()
+        except:
+            _log.error('Failed to read moab xml from %s' % go.options.moabxml)
+    else:
+        moabxml = None
+    nodes_dict = moab_get_nodes_dict(xml=moabxml)
+
     nodes = get_nodes(nodes_dict)
 else:
     nodes = get_nodes()
@@ -94,8 +104,8 @@ else:
 # WARNING first, since that is the one that gives dependency on others
 nagiosstatesorder = [NDNAG_WARNING, NDNAG_CRITICAL, NDNAG_OK]
 nagiosexit = {
-              NDNAG_CRITICAL:2,
-              NDNAG_WARNING:1,
+              NDNAG_CRITICAL: 2,
+              NDNAG_WARNING: 1,
               NDNAG_OK: 0,
               }
 
@@ -152,8 +162,8 @@ else:
 
         reported_state = [str(NDNAG_OK), '']
         if ND_bad in detailed_res:
-            reported_state[0] = '%s' % (NDNAG_CRITICAL)
-            reported_state[1] = '- %s bad nodes' % (len(detailed_res[ND_bad]))
+            reported_state[0] = NDNAG_CRITICAL
+            reported_state[1] = ' - %s bad nodes' % (len(detailed_res[ND_bad]))
         print "%s %s%s | %s" % (header, reported_state[0], reported_state[1], " ".join(txt))
         sys.exit(nagiosexit[reported_state[0]])
     else:

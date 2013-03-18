@@ -68,7 +68,6 @@ def get_jobs_dict():
 
         if 'Resource_List' in jobdata:
             resource_list = jobdata['Resource_List']
-
             # walltime
             if 'walltime' in resource_list:
                 totalwallsec = str2sec(resource_list['walltime'][0])
@@ -96,18 +95,18 @@ def get_jobs_dict():
             resources_used = jobdata['resources_used']
 
             if 'mem' in resources_used:
-                derived['used_mem'] = str2byte(resource_list['mem'][0])
+                derived['used_mem'] = str2byte(resources_used['mem'][0])
 
             if 'vmem' in resources_used:
-                derived['used_vmem'] = str2byte(resource_list['vmem'][0])
+                derived['used_vmem'] = str2byte(resources_used['vmem'][0])
 
             if 'walltime' in resources_used:
-                sec = str2sec(resource_list['walltime'][0])
+                sec = str2sec(resources_used['walltime'][0])
                 if sec is not None:
                     derived['used_walltime'] = sec
 
             if 'cput' in resources_used:
-                sec = str2sec(resource_list['cput'][0])
+                sec = str2sec(resources_used['cput'][0])
                 if sec is not None:
                     derived['used_cput'] = sec
 

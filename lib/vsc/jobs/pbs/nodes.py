@@ -90,6 +90,8 @@ ND_STATE_NOTOK = [
                   ND_down_on_error,
                   ]
 
+ND_STATE_OTHER = [x for x in TRANSLATE_STATE.keys() if not x in ND_STATE_OK + ND_STATE_NOTOK]
+
 # node states for nagios WARNING is all not critical or ok
 NDNAG_CRITICAL = 'CRITICAL'
 NDNAG_WARNING = 'WARNING'
@@ -112,6 +114,34 @@ ND_NAGIOS_WARNING = [x for x in TRANSLATE_STATE.keys() if not x in ND_NAGIOS_CRI
 
 
 JOBID_REG = re.compile(r"\w+/\w+(\.|\w|\[|\])+")
+
+
+def make_state_map(derived):
+    """Make a mapping for OK/NOTOK?OTHER and nagios OK/WARNING/CRITICAL"""
+    states = derived['states']
+    # what state to report?
+    nd_not_ok = [x for x in ND_STATE_NOTOK if x in states]
+    nd_ok = [x for x in ND_STATE_OK if x in states]
+    if len(nd_not_ok) > 0:
+        ndst = NDST_NOTOK
+    elif (len(nd_ok)):
+        ndst = NDST_OK
+    else:
+        ndst = NDST_OTHER
+    state = states[0]
+    derived['state'] = str(state)
+    derived['nodestate'] = ndst
+
+    # what nagios state?
+    nag_crit = [x for x in ND_NAGIOS_CRITICAL if x in states]
+    nag_warn = [x for x in ND_NAGIOS_WARNING if x in states]
+    if len(nag_crit) > 0:
+        ndnag = NDNAG_CRITICAL
+    elif len(nag_warn) > 0:
+        ndnag = NDNAG_WARNING
+    else:
+        ndnag = NDNAG_OK
+    derived['nagiosstate'] = ndnag
 
 
 def get_nodes_dict():
@@ -143,30 +173,7 @@ def get_nodes_dict():
         derived = {}
 
         derived['states'] = [str(x) for x in states]
-
-        # what state to report?
-        nd_not_ok = [x for x in ND_STATE_NOTOK if x in states]
-        nd_ok = [x for x in ND_STATE_OK if x in states]
-        if len(nd_not_ok) > 0:
-            ndst = NDST_NOTOK
-        elif (len(nd_ok)):
-            ndst = NDST_OK
-        else:
-            ndst = NDST_OTHER
-        state = states[0]
-        derived['state'] = str(state)
-        derived['nodestate'] = ndst
-
-        # what nagios state?
-        nag_crit = [x for x in ND_NAGIOS_CRITICAL if x in states]
-        nag_warn = [x for x in ND_NAGIOS_WARNING if x in states]
-        if len(nag_crit) > 0:
-            ndnag = NDNAG_CRITICAL
-        elif len(nag_warn) > 0:
-            ndnag = NDNAG_WARNING
-        else:
-            ndnag = NDNAG_OK
-        derived['nagiosstate'] = ndnag
+        make_state_map(derived)
 
         if 'np' in full_state:
             derived['np'] = int(full_state['np'][0])
@@ -217,7 +224,7 @@ def collect_nodeinfo():
             totmem = derived.get('totmem', None)
             size = derived.get('size', None)
 
-            if not all(cores, physmem, totmem, size):  # there shouldn't be any value 0
+            if all([cores, physmem, totmem, size]):  # there shouldn't be any value 0
                 # round mem to 1 gb, size to 5gb
                 GB = str2byte('gb')
                 pmem = ceil(10 * physmem / GB) / 10

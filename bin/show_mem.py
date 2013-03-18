@@ -28,7 +28,9 @@ for node, details in get_nodes_dict().items():
 
 toomuch = {}
 
-for name, details in get_jobs_dict():
+MB = 1024 ** 2
+
+for name, details in get_jobs_dict().items():
     derived = details['derived']
     if not derived['state'] in ('R',):
         continue
@@ -50,7 +52,7 @@ for name, details in get_jobs_dict():
 
     cores = sum(exec_hosts.values())
 
-    used_avg_mem = int(mem / cores)
+    used_avg_mem = int(used_mem / cores)
 
     for host in exec_hosts.keys():
         # more then avg on node?
@@ -59,7 +61,8 @@ for name, details in get_jobs_dict():
                 toomuch[user] = {}
             if not host in toomuch[user]:
                 toomuch[user][host] = []
-            toomuch[user][host].append(name)
+
+            toomuch[user][host].append([name, used_avg_mem / MB, ns[host]['avg'] / MB])
 
 users = toomuch.keys()
 users.sort()
@@ -68,6 +71,9 @@ txt = []
 for user in users:
     txt.append("%s:" % user)
     for host, jobs in toomuch[user].items():
-        txt += "\t%s:\t%s\n" % (host, ' '.join(jobs))
+        txt.append("\t%s:\t%s\n" % (host, ' '.join([str(x) for x in jobs])))
 
-print "\n".join(txt)
+if len(txt) > 0:
+    print "\n".join(txt)
+else:
+    print "All ok"

@@ -52,7 +52,7 @@ def get_queues_dict():
                    }
 
     for name, queue in get_queues().items():
-        if not queue.is_enabled():
+        if not queue.get('enabled', None):
             queues_dict['disabled'].append((name, queue))
         elif queue['queue_type'][0].lower() == 'route':
             queues_dict['route'].append((name, queue))

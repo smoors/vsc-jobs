@@ -33,23 +33,36 @@ A moab module to be used
 
 from lxml import etree
 from vsc.utils.run import RunAsyncLoop
+import vsc.jobs.pbs.nodes as pbs_nodes
 from vsc.jobs.pbs.tools import str2byte
 
 from vsc import fancylogger
 
 _log = fancylogger.getLogger('pbs.moab')
 
+# map moab node states to pbs node states
+# lowercase keys!
+MOAB_PBS_NODEMAP = {
+                    "busy": [pbs_nodes.ND_job_exclusive],
+                    "drained": [pbs_nodes.ND_offline],  # ?
+                    "down": [pbs_nodes.ND_down],
+                    "idle": [pbs_nodes.ND_free, pbs_nodes.ND_idle],
+                    "running": [pbs_nodes.ND_free_and_job, pbs_nodes.ND_free],
+                    }
 
-def get_nodes_dict(self, something=None):
+
+def get_nodes_dict(something=None, xml=None):
     """Similar to derived getnodes from vsc.pbs.interface.get_nodes_dict
 
     returns a dict of nodes, with a 'status' field which is a dict of statusses
     the something parameter is ignored. (for now)
     """
-    err, xml = RunAsyncLoop.run("mdiag -n --format=xml".split())
-    if err:
-        _log.error("Problem occurred running mdiag -n: %s (%s)" % (err, xml))
-        return None
+    if xml is None:
+        cmd = "mdiag -n --format=xml"
+        err, xml = RunAsyncLoop.run(cmd.split())
+        if err:
+            _log.error("Problem occurred running %s: %s (%s)" % (cmd, err, xml))
+            return None
 
     # build tree
     tree = etree.fromstring(xml)
@@ -66,23 +79,32 @@ def get_nodes_dict(self, something=None):
         # RMACCESSLIST="gengar" RSVLIST="3956525" SPEED="1.000000" STATACTIVETIME="24357970"
         # STATMODIFYTIME="1363076905" STATTOTALTIME="25499884" STATUPTIME="24971920">
         host = node.get("NODEID")
+        nodes[host] = {}
         nodes[host]['xml'] = nodes.items()
-        nodes[host]['derived'] = {
-                                  'state': node.get("NODESTATE").lower(),
-                                  'size': str2byte(node.get("RCDISK") + "mb"),
-                                  'physmem': str2byte(node.get("RCMEM") + "mb"),
-                                  'np': int(node.get("RCPROC"))
-                                  }
+        states = MOAB_PBS_NODEMAP[node.get("NODESTATE").lower()]
+        derived = {
+                   'states': states,
+                   'state': states[0],
+                   'size': str2byte(node.get("RCDISK") + "mb"),
+                   'physmem': str2byte(node.get("RCMEM") + "mb"),
+                   'np': int(node.get("RCPROC")),
+                   }
+        # add state mapping to derived
+        pbs_nodes.make_state_map(derived)
+
+        nodes[host]['derived'] = derived
+
     return nodes
 
 
-def showstats():
+def showstats(xml=None):
     """Return a dict of the showstats command"""
-
-    err, xml = RunAsyncLoop.run("mdiag -n --format=xml".split())
-    if err:
-        _log.error("Problem occurred running mdiag -n: %s (%s)" % (err, xml))
-        return None
+    if xml is None:
+        cmd = "showstats --xml"
+        err, xml = RunAsyncLoop.run(cmd.split())
+        if err:
+            _log.error("Problem occurred running %s: %s (%s)" % (cmd, err, xml))
+            return None
 
     # [root@master2 ~]# showstats && showstats --xml
     #

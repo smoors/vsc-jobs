@@ -11,12 +11,21 @@ _log = fancylogger.getLogger('show_stats')
 options = {
            'detailed':('Report detailed information', None, 'store_true', False, 'D'),
            'nagios':('Report in nagios format', None, 'store_true', False, 'n'),
+           'moabxml':('Use xml moab data from file (for testing)', None, 'store', None),
            }
 
 go = simple_option(options)
 
+if go.options.moabxml:
+    try:
+        moabxml = open(go.options.moabxml).read()
+    except:
+        _log.error('Failed to read moab xml from %s' % go.options.moabxml)
+else:
+    moabxml = None
+
 try:
-    stats = showstats()
+    stats = showstats(xml=moabxml)
     summary_stats = stats['summary']
 except Exception, err:
     _log.error("Getting showstats failed with error %s" % (err))
@@ -25,11 +34,11 @@ except Exception, err:
 if go.options.nagios:
     header = "show_stats OK"
     summ = "short %.3f long %.3f" % (summary_stats['STE'], summary_stats['LTE'])
-    summary = "STE=%.3f LTE=%.3f DPH=%s TPH=%s AP=%s TP=%s"
-    values = [summary_stats[x] for x in ['STE', 'LTE', 'DPH', 'TPH', 'CAP', 'CTP']]
+    summary = "STE=%.1f LTE=%.1f DPH=%.0f TPH=%.0f AP=%s TP=%s"
+    values = tuple([summary_stats[x] for x in ['STE', 'LTE', 'DPH', 'TPH', 'CAP', 'CTP']])
 
     # first 2 in
-    msg = "%s - %s | %s" % (header, summ, summary)
+    msg = "%s - %s | %s" % (header, summ, summary % values)
 
     print msg
     sys.exit(0)
