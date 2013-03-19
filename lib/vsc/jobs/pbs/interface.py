@@ -1,34 +1,14 @@
 #!/usr/bin/env python
-<<<<<<< HEAD
-# -*- coding: latin-1 -*-
-##
-# Copyright 2009-2013 Ghent University
-#
-# This file is part of vsc-config,
-=======
 # #
-# Copyright 2011-2013 Ghent University
+# Copyright 2013-2013 Ghent University
 #
 # This file is part of vsc-jobs,
->>>>>>> master
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-<<<<<<< HEAD
-# All rights reserved.
-#
-##
-"""
-@author: Andy Georges (Ghent University)
-"""
-#the vsc namespace is used in different folders allong the system
-#so explicitly declare this is also the vsc namespace
-import pkg_resources
-pkg_resources.declare_namespace(__name__)
-=======
 # http://github.com/hpcugent/vsc-jobs
 #
 # vsc-jobs is free software: you can redistribute it and/or modify
@@ -45,13 +25,26 @@ pkg_resources.declare_namespace(__name__)
 # along with vsc-jobs. If not, see <http://www.gnu.org/licenses/>.
 # #
 """
-Initialize vsc package.
-The vsc namespace is used in different folders allong the system
-so explicitly declare this is also the vsc namespace
+The main pbs module
 
 @author: Stijn De Weirdt (Ghent University)
 """
-import pkg_resources
-pkg_resources.declare_namespace(__name__)
+from vsc import fancylogger
 
->>>>>>> master
+_log = fancylogger.getLogger('pbs.interface', fname=False)
+
+HAVE_PBS_PYTHON = True
+try:
+    import pbs
+    pbs = pbs  # allow to remote access
+
+    from PBSQuery import PBSQuery
+except:
+    _log.error('Failed to import pbs_python modules')
+    HAVE_PBS_PYTHON = False
+
+
+def get_query():
+    """Return query instance"""
+    return PBSQuery()
+

@@ -38,11 +38,11 @@ PACKAGE = {
     'version': '0.1',
     'author': [sdw, ag],
     'maintainer': [sdw, ag],
-    'packages': ['vsc', 'vsc.jobs'],
+    'packages': ['vsc', 'vsc.jobs', 'vsc.jobs.pbs'],
     'namespace_packages': ['vsc'],
     'scripts': [],
     'install_requires': [
-        'vsc-base >= 0.90'
+        'vsc-base >= 1.2'
     ],
     'provides': ['python-vsc-jobs = 0.1'],
 }

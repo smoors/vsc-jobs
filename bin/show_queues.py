@@ -1,34 +1,14 @@
-#!/usr/bin/env python
-<<<<<<< HEAD
-# -*- coding: latin-1 -*-
-##
-# Copyright 2009-2013 Ghent University
-#
-# This file is part of vsc-config,
-=======
+#!/usr/bin/python
 # #
-# Copyright 2011-2013 Ghent University
+# Copyright 2013-2013 Ghent University
 #
 # This file is part of vsc-jobs,
->>>>>>> master
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-<<<<<<< HEAD
-# All rights reserved.
-#
-##
-"""
-@author: Andy Georges (Ghent University)
-"""
-#the vsc namespace is used in different folders allong the system
-#so explicitly declare this is also the vsc namespace
-import pkg_resources
-pkg_resources.declare_namespace(__name__)
-=======
 # http://github.com/hpcugent/vsc-jobs
 #
 # vsc-jobs is free software: you can redistribute it and/or modify
@@ -45,13 +25,29 @@ pkg_resources.declare_namespace(__name__)
 # along with vsc-jobs. If not, see <http://www.gnu.org/licenses/>.
 # #
 """
-Initialize vsc package.
-The vsc namespace is used in different folders allong the system
-so explicitly declare this is also the vsc namespace
+Prints the enabled and route queues
 
 @author: Stijn De Weirdt (Ghent University)
 """
-import pkg_resources
-pkg_resources.declare_namespace(__name__)
 
->>>>>>> master
+from vsc.jobs.pbs.queues import get_queues_dict
+
+
+def main():
+    """Main function"""
+    queues_dict = get_queues_dict()
+
+    indent = " " * 4
+
+    txt = []
+    for name, queue in queues_dict['enabled']:
+        txt.append(name)
+        txt.append("%swalltime %s (max %s)" % (indent, queue['resources_default']['walltime'][0], queue['resources_max']['walltime'][0]))
+    for name, queue in queues_dict['route']:
+        txt.append(name)
+        txt.append("%sroutes %s" % (indent, queue['route_destinations'][0]))
+
+    print "\n".join(txt)
+
+if __name__ == "__main__":
+    main()
