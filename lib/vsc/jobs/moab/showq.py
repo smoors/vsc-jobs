@@ -15,52 +15,27 @@
 ##
 """
 All things moab.
+
+@author Andy Georges
 """
 import xml.dom.minidom
 
 from vsc.utils.fancylogger import getLogger
+from vsc.utils.midding import RUDict
 from vsc.utils.run import RunLoop
 
 
 logger = getLogger('vsc.jobs.moab')
 
 
-class RUDict(dict):
-    """Code taken from http://stackoverflow.com/questions/6256183/combine-two-dictionaries-of-dictionaries-python."""
-
-    def update(self, E=None, **F):
-        if E is not None:
-            if 'keys' in dir(E) and callable(getattr(E, 'keys')):
-                for k in E:
-                    if k in self:  # existing ...must recurse into both sides
-                        self.r_update(k, E)
-                    else:  # doesn't currently exist, just update
-                        self[k] = E[k]
-            else:
-                for (k, v) in E:
-                    self.r_update(k, {k: v})
-
-        for k in F:
-            logger.debug("Hmmz")
-            self.r_update(k, {k: F[k]})
-
-    def r_update(self, key, other_dict):
-        """Recursive update."""
-        if isinstance(self[key], dict) and isinstance(other_dict[key], dict):
-            od = RUDict(self[key])
-            nd = other_dict[key]
-            od.update(nd)
-            self[key] = od
-        elif isinstance(self[key], list):
-            if isinstance(other_dict[key], list):
-                self[key].extend(other_dict[key])
-            else:
-                self[key] = self[key].append(other_dict[key])
-        else:
-            self[key] = other_dict[key]
-
-
 class ShowqInfo(RUDict):
+    """Dictionary to keep track of queued jobs.
+
+    Basic key structure is
+        - user
+            - host
+                - state (Running, Idle, Blocked, ...)
+    """
 
     def __init__(self, *args, **kwargs):
         super(ShowqInfo, self).__init__(*args, **kwargs)
