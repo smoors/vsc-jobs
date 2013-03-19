@@ -22,7 +22,7 @@ import xml.dom.minidom
 
 from vsc.utils.fancylogger import getLogger
 from vsc.utils.midding import RUDict
-from vsc.utils.run import RunLoop
+from vsc.utils.run import RunAsyncLoop
 
 
 logger = getLogger('vsc.jobs.moab')
@@ -154,7 +154,7 @@ def showq(path, cluster, options, xml=True, process=True):
     if xml:
         options_ += ['--xml']
 
-    (exit_code, output) = RunLoop.run([path] + options_)
+    (exit_code, output) = RunAsyncLoop.run([path] + options_)
 
     if exit_code != 0:
         return None
