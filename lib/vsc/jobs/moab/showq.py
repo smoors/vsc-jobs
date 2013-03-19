@@ -51,7 +51,19 @@ class ShowqInfo(RUDict):
 
 
 def process_attributes(job_xml, job, attributes):
+    """Fill in thee job attributes from the XML data.
 
+    @type job_xml: dom structure for a job
+    @type job: dict
+    @type attributes: list of strings
+
+    @param job_xml: XML description of a job, as returned by Moab's showq command
+    @param job: maops attributes to their values for a job
+    @param attributes: list of attributes we'd like to find in the job description
+
+    Only places the attributes than are found in the description in the job disctionary, so no
+    extraneous keys are put in the dict.
+    """
     for attribute in attributes:
         job[attribute] = job_xml.getAttribute(attribute)
         if not job[attribute]:
