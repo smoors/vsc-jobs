@@ -21,7 +21,7 @@ All things moab.
 import xml.dom.minidom
 
 from vsc.utils.fancylogger import getLogger
-from vsc.utils.midding import RUDict
+from vsc.utils.missing import RUDict
 from vsc.utils.run import RunAsyncLoop
 
 
