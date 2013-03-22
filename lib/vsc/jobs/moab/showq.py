@@ -21,12 +21,7 @@ All things showq.
 from lxml import etree
 
 from vsc.jobs.moab.internal import MoabCommand
-
-from vsc.utils.fancylogger import getLogger
 from vsc.utils.missing import RUDict
-
-
-logger = getLogger('vsc.jobs.moab.showq')
 
 
 class ShowqInfo(RUDict):
@@ -100,7 +95,7 @@ class Showq(MoabCommand):
             user = job.attrib['User']
             state = job.attrib['State']
 
-            logger.debug("Found job %s for user %s in state %s" % (job.attrib['JobID'], user, state))
+            self.logger.debug("Found job %s for user %s in state %s" % (job.attrib['JobID'], user, state))
 
             showq_info.add(user, host, state)
 
