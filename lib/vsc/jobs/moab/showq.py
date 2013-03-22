@@ -14,18 +14,20 @@
 #
 ##
 """
-All things moab.
+All things showq.
 
 @author Andy Georges
 """
-import xml.dom.minidom
+from lxml import etree
+
+from vsc.jobs.moab.internal import moab_command, process_attributes
 
 from vsc.utils.fancylogger import getLogger
 from vsc.utils.missing import RUDict
 from vsc.utils.run import RunAsyncLoop
 
 
-logger = getLogger('vsc.jobs.moab')
+logger = getLogger('vsc.jobs.moab.showq')
 
 
 class ShowqInfo(RUDict):
@@ -48,27 +50,6 @@ class ShowqInfo(RUDict):
             self[user][host] = RUDict()
         if not state in self[user][host]:
             self[user][host][state] = []
-
-
-def process_attributes(job_xml, job, attributes):
-    """Fill in thee job attributes from the XML data.
-
-    @type job_xml: dom structure for a job
-    @type job: dict
-    @type attributes: list of strings
-
-    @param job_xml: XML description of a job, as returned by Moab's showq command
-    @param job: maops attributes to their values for a job
-    @param attributes: list of attributes we'd like to find in the job description
-
-    Only places the attributes than are found in the description in the job disctionary, so no
-    extraneous keys are put in the dict.
-    """
-    for attribute in attributes:
-        job[attribute] = job_xml.getAttribute(attribute)
-        if not job[attribute]:
-            logger.error("Failed to find attribute name %s in %s" % (attribute, job_xml.toxml()))
-            job.pop(attribute)
 
 
 def parse_showq_xml(host, txt):
@@ -150,16 +131,4 @@ def showq(path, cluster, options, xml=True, process=True):
     @return: string if no processing is done, dict with the job information otherwise
     """
 
-    options_ = options
-    if xml:
-        options_ += ['--xml']
-
-    (exit_code, output) = RunAsyncLoop.run([path] + options_)
-
-    if exit_code != 0:
-        return None
-
-    if process:
-        return parse_showq_xml(cluster, output)
-    else:
-        return output
+    return moab_command(path, cluster, options, parse_showq_xml, xml, process)
