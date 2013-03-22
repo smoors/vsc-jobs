@@ -115,7 +115,7 @@ class Showq(MoabCommand):
                     j.update(self._process_attributes(job, idle_attributes))
 
             # append the job
-            showq_info[user][host][state] += [job]
+            showq_info[user][host][state] += [j]
 
         return showq_info
 
