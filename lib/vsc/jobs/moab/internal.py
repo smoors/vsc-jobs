@@ -30,9 +30,6 @@ from vsc.utils.fs_store import UserStorageError, FileStoreError, FileMoveError
 from vsc.utils.run import RunAsyncLoop
 
 
-logger = getLogger('vsc.jobs.moab.checkjob')
-
-
 class MoabCommand(object):
     """Base class for Moab commands.
 
@@ -52,6 +49,7 @@ class MoabCommand(object):
         self.clusters = None
 
         self.dry_run = dry_run
+        self.logger = getLogger(self.__class__.__name__)
 
     def _cache_pickle_name(self, host):
         """Return the name of the pickle file to cache the retrieved information from the moab command."""
@@ -69,7 +67,7 @@ class MoabCommand(object):
         home = pwd.getpwnam('root')[5]
 
         if not os.path.isdir(home):
-            logger.error("Homedir %s of root not found" % (home))
+            self.logger.error("Homedir %s of root not found" % (home))
             return None
 
         source = "%s/%s" % (home, self._cache_pickle_name(host))
@@ -80,7 +78,7 @@ class MoabCommand(object):
             f.close()
             return out
         except Exception, err:
-            logger.error("Failed to load pickle from file %s: %s" % (source, err))
+            self.logger.error("Failed to load pickle from file %s: %s" % (source, err))
             return None
 
     def _store_pickle_cluster_file(self, host, output, dry_run=False):
@@ -94,10 +92,10 @@ class MoabCommand(object):
             if not self.dry_run:
                 store.store_pickle_data_at_user('root', self._cache_pickle_name(host), output)
             else:
-                logger.info("Dry run: skipping actually storing pickle files for cluster data")
+                self.logger.info("Dry run: skipping actually storing pickle files for cluster data")
         except (UserStorageError, FileStoreError, FileMoveError), err:
             # these should NOT occur, we're root, accessing our own home directory
-            logger.critical("Cannot store the out file %s at %s" % (self._cache_pickle_name(host), '/root'))
+            self.logger.critical("Cannot store the out file %s at %s" % (self._cache_pickle_name(host), '/root'))
 
     def _process_attributes(self, xml, attributes):
         """Fill in the attributes from the XML data.
@@ -148,7 +146,7 @@ class MoabCommand(object):
         """Parse the returned XML into the desired data structure for further processing."""
         pass
 
-    def get_moab_command_information(self, path, master):
+    def get_moab_command_information(self, path):
         """Accumulate the checkjob information for the users on the given hosts.
 
         @type path: absolute path to the executable moab command
@@ -166,15 +164,15 @@ class MoabCommand(object):
 
             if not host_job_information:
                 failed_hosts.append(host)
-                logger.error("Couldn't collect info for host %s" % (host))
-                logger.info("Trying to load cached pickle file for host %s" % (host))
+                self.logger.error("Couldn't collect info for host %s" % (host))
+                self.logger.info("Trying to load cached pickle file for host %s" % (host))
 
                 host_queue_information = self._load_pickle_cluster_file(host)
             else:
                 self._store_pickle_cluster_file(host, host_queue_information)
 
             if not host_queue_information:
-                logger.error("Couldn't load info for host %s" % (host))
+                self.logger.error("Couldn't load info for host %s" % (host))
             else:
                 job_information.update(host_queue_information)
                 reported_hosts.append(host)
