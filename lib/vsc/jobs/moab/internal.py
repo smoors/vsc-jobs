@@ -48,9 +48,6 @@ class MoabCommand(object):
         # data type for the resulting information
         self.info = None
 
-        # function that will parse the output of the command and return something of type self.info
-        self.parser = None
-
         # dict mapping hosts to master FQNs
         self.clusters = None
 
@@ -146,6 +143,10 @@ class MoabCommand(object):
             return self.parser(cluster, output)
         else:
             return output
+
+    def parser(self, host, txt):
+        """Parse the returned XML into the desired data structure for further processing."""
+        pass
 
     def get_moab_command_information(self, path, master):
         """Accumulate the checkjob information for the users on the given hosts.
