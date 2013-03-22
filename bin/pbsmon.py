@@ -87,11 +87,7 @@ def get_size(width, items, mode=None):
 
     if mode == 'maxfill':
         # max number of nodes per row
-        # leave at least 1 free col on right side
-        # the whitespace at the left is garanteed
         max_per_row = max_num_nodes_per_row
-        if max_num_nodes_per_row * col_per_node == col:
-            max_per_row -= 1
     elif mode == 'squarish':
         # try make it appear like a square
         max_per_row = (math.sqrt(tot_node_area) / col_per_node).__trunc__() + 1
@@ -101,6 +97,13 @@ def get_size(width, items, mode=None):
         max_per_row = (math.sqrt(tot_node_area / screen_ratio) / col_per_node).__trunc__() + 1
     else:
         _log.raiseException('get_size: unknown mode %s' % mode)
+
+    # sanity
+    max_per_row = min(max_per_row, max_num_nodes_per_row)
+    # leave at least 1 free col on right side
+    # the whitespace at the left is garanteed
+    if max_per_row * col_per_node == col:
+        max_per_row -= 1
 
     return max_per_row, fmt_w
 
