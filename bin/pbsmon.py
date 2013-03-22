@@ -32,29 +32,85 @@ The ideas are based on the awk-script of Willem Vermin
 
 @author: Stijn De Weirdt (Ghent University)
 """
-
+import math
+import os
 from vsc import fancylogger
 from vsc.jobs.pbs.nodes import ND_STATE_OK, ND_STATE_NOTOK, ND_STATE_OTHER, TRANSLATE_STATE, collect_nodeinfo
 
 _log = fancylogger.getLogger('pbsmon')
 
 
+def get_row_col():
+    """Get the dimensions of current terminal in row,col"""
+    row, col = 24, 80
+
+    stty = '/usr/bin/stty'
+    if os.path.exists(stty):
+        try:
+            row, col = [int(x) for x in os.popen('%s size 2>/dev/null' % stty).read().strip().split(' ')]
+        except:
+            # do nothing
+            pass
+    row = os.environ.get('ROWS', row)
+    col = os.environ.get('COLUMNS', col)
+
+    return row, col
+
+
+def get_size(width, items, mode=None):
+    """
+    Return max_per_row and the format
+        @param: width is width of the nodename
+        @param: items total number of nodes
+        @param mode plot style
+    """
+
+    row, col = get_row_col()
+
+    if width < 2:
+        width = 2
+
+    fmt_w = "%%%ds" % width
+
+    col_per_node = width + 1
+    row_per_node = 2  # node + state
+
+    max_num_nodes_per_row = col // col_per_node
+
+    row_col_ratio = 1.0 * 2 / 1  # assume 1 row = 2 cols (in pixels)
+
+    node_area = col_per_node * row_per_node * row_col_ratio  # in square cols
+    tot_node_area = items * node_area
+
+    if mode is None:
+        mode = 'ratio'
+
+    if mode == 'maxfill':
+        # max number of nodes per row
+        # leave at least 1 free col on right side
+        # the whitespace at the left is garanteed
+        max_per_row = max_num_nodes_per_row
+        if max_num_nodes_per_row * col_per_node == col:
+            max_per_row -= 1
+    elif mode == 'squarish':
+        # try make it appear like a square
+        max_per_row = (math.sqrt(tot_node_area) / col_per_node).__trunc__() + 1
+    elif mode == 'ratio':
+        # try make keep the screen ratio
+        screen_ratio = col / (col * row_col_ratio)
+        max_per_row = (math.sqrt(tot_node_area / screen_ratio) / col_per_node).__trunc__() + 1
+    else:
+        _log.raiseException('get_size: unknown mode %s' % mode)
+
+    return max_per_row, fmt_w
+
+
 def display_cluster_status(nl, sl):
-    # Thanks to Daniel Olson, we have now code that can handle
-    # 2 and 3 digit hostname numbers
-    #
+    """Create the ascii representation of the cluster"""
     width = len(nl[-1])
     items = len(nl)
 
-    # Determine what format we have to use
-    if width == 3:
-        max_per_row = 19
-        fmt_w = '%3s'
-    elif width < 3:
-        max_per_row = 25
-        fmt_w = '%2s'
-    else:
-        _log.error('Unsupported width %s' % width)
+    max_per_row, fmt_w = get_size(width, items)
 
     start = 0
     step = end = max_per_row
@@ -101,7 +157,7 @@ def display_cluster_status(nl, sl):
 def display_node_types(types):
     """Give an overview of all types of nodes"""
     template = "%sppn=%s, physmem=%sGB, swap=%sGB, vmem=%sGB, local disk=%sGB"
-    txt = ['', '', 'Node type:']
+    txt = ['', 'Node type:']
     offset = ' '
     if len(types) > 1:
         txt[-1].replace(':', 's:')
