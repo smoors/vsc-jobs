@@ -45,7 +45,7 @@ class MoabCommand(object):
         # data type for the resulting information
         self.info = None
 
-        # dict mapping hosts to master FQNs
+        # dict mapping hosts to {master: FQN, showq_path: path}
         self.clusters = None
 
         self.dry_run = dry_run

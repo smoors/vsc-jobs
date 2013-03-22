@@ -49,7 +49,7 @@ class ShowqInfo(RUDict):
 class Showq(MoabCommand):
     """Run showq and gather the results."""
 
-    def __init__(self, dry_run, clusters):
+    def __init__(self, clusters, dry_run):
 
         super(Showq, self).__init__(dry_run)
 
