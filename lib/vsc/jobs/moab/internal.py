@@ -116,6 +116,8 @@ class MoabCommand(object):
             except KeyError, err:
                 self.logger.error("Failed to find attribute name %s in %s" % (attribute, xml.attrib))
 
+        return d
+
     def _run_moab_command(self, path, cluster, options):
         """Run the moab command and return the (processed) output.
 
@@ -139,12 +141,15 @@ class MoabCommand(object):
 
         parsed = self.parser(cluster, output)
         if parsed:
+            self.logger.debug("Returning parsed output for cluster %s" % (cluster))
             return parsed
         else:
+            self.logger.debug("Returning raw output")
             return output
 
     def parser(self, host, txt):
         """Parse the returned XML into the desired data structure for further processing."""
+        self.logger.debug("Empty parser used.")
         return None
 
     def get_moab_command_information(self, path):
@@ -168,16 +173,14 @@ class MoabCommand(object):
                 self.logger.error("Couldn't collect info for host %s" % (host))
                 self.logger.info("Trying to load cached pickle file for host %s" % (host))
 
-                host_queue_information = self._load_pickle_cluster_file(host)
+                host_job_information = self._load_pickle_cluster_file(host)
             else:
-                self._store_pickle_cluster_file(host, host_queue_information)
+                self._store_pickle_cluster_file(host, host_job_information)
 
-            if not host_queue_information:
+            if not host_job_information:
                 self.logger.error("Couldn't load info for host %s" % (host))
             else:
-                job_information.update(host_queue_information)
+                job_information.update(host_job_information)
                 reported_hosts.append(host)
 
         return (job_information, reported_hosts, failed_hosts)
-
-
