@@ -20,11 +20,10 @@ All things showq.
 """
 from lxml import etree
 
-from vsc.jobs.moab.internal import moab_command, process_attributes
+from vsc.jobs.moab.internal import MoabCommand
 
 from vsc.utils.fancylogger import getLogger
 from vsc.utils.missing import RUDict
-from vsc.utils.run import RunAsyncLoop
 
 
 logger = getLogger('vsc.jobs.moab.showq')
@@ -79,56 +78,48 @@ def parse_showq_xml(host, txt):
     idle_attributes = []
     blocked_attributes = ['BlockReason', 'Description']
 
-    doc = xml.dom.minidom.parseString(txt)
+    showq_info = ShowqInfo()
+    xml = etree.fromstring(txt)
 
-    res = ShowqInfo()
+    for job in xml.findall('job'):
+        user = job.attrib['User']
+        state = job.attrib['State']
 
-    for j in doc.getElementsByTagName("job"):
-        job = {}
-        user = j.getAttribute('User')
-        state = j.getAttribute('State')
+        logger.debug("Found job %s for user %s in state %s" % (job.attrib['JobID'], user, state))
 
-        logger.debug("Found job %s for user %s in state %s" % (j.getAttribute('JobID'), user, state))
+        showq_info.add(user, host, state)
 
-        res.add(user, host, state)
+        j = {}
+        j.update(self.process_attributes(job, mandatory_attributes))
 
-        process_attributes(j, job, mandatory_attributes)
-
-        if state in ('Running'):
-            process_attributes(j, job, running_attributes)
+        if state in('Running'):
+            j.update(self.process_attributes(job, running_attributes))
         else:
-            if j.hasAttribute('BlockReason'):
-
-                if state == 'Idle':
-                    ## redefine state
+            if 'BlockReason' in job.attrib:
+                if state in ('Idle'):
                     state = 'IdleBlocked'
-                    res.add(user, host, state)
-                process_attributes(j, job, blocked_attributes)
-
+                    showq_info.add(user, host, state)
+                j.update(self.process_attributes(job, blocked_attributes))
             else:
-                process_attributes(j, job, idle_attributes)
+                j.update(self.process_attributes(job, idle_attributes))
 
         # append the job
-        res[user][host][state] += [job]
+        showq_info[user][host][state] += [job]
 
-    return res
+    return showq_info
 
 
-def showq(path, cluster, options, xml=True, process=True):
-    """Run the showq command and return the (processed) output.
+class Showq(MoabCommand):
+    """Run showq and gather the results."""
 
-    @type path: string
-    @type options: list of strings
-    @type xml: boolean
-    @type process: boolean
+    def __init__(self, dry_run, clusters):
 
-    @param path: path to the showq executable
-    @param options: The options to pass to the showq command.
-    @param xml: Should we ask for output in xml format?
-    @param process: Should we do postprocessing of the output here?
-                    FIXME: the output format may depend on the options, so this may be fragile.
+        super(Showq, self).__init__(dry_run)
 
-    @return: string if no processing is done, dict with the job information otherwise
-    """
+        self.info = ShowqInfo
+        self.parser = parse_showq_xml
+        self.clusters = clusters
 
-    return moab_command(path, cluster, options, parse_showq_xml, xml, process)
+    def _cache_pickle_name(self, host):
+        """File name for the pickle file to cache results."""
+        return ".showq.pickle.cluster_%s" % (host)
