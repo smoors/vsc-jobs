@@ -18,10 +18,15 @@ All things moab that are similar to all moab commands from which we want output.
 
 @author Andy Georges
 """
+import cPickle
+import os
+import pwd
 
+
+import vsc.utils.fs_store as store
 
 from vsc.utils.fancylogger import getLogger
-from vsc.utils.missing import RUDict
+from vsc.utils.fs_store import UserStorageError, FileStoreError, FileMoveError
 from vsc.utils.run import RunAsyncLoop
 
 
@@ -37,37 +42,86 @@ class MoabCommand(object):
     This class should be subclassed to allow actual running things
     """
 
-    def __init__(self):
+    def __init__(self, dry_run=False):
         """Initialise"""
 
-        self.command = None
-        self.pickle_name = None
-        self.command_option_name = None
-        self.parser = None
+        # data type for the resulting information
         self.info = None
-        self.opts = None
 
-    def _process_attributes(job_xml, job, attributes):
-        """Fill in thee job attributes from the XML data.
+        # function that will parse the output of the command and return something of type self.info
+        self.parser = None
 
-        @type job_xml: dom structure for a job
-        @type job: dict
+        # dict mapping hosts to master FQNs
+        self.clusters = None
+
+        self.dry_run = dry_run
+
+    def _cache_pickle_name(self, host):
+        """Return the name of the pickle file to cache the retrieved information from the moab command."""
+        pass
+
+    def _load_pickle_cluster_file(self, host):
+        """Load the data from the pickled files.
+
+        @type host: string
+
+        @param host: cluster for which we load data
+
+        @returns: representation of the showq output.
+        """
+        home = pwd.getpwnam('root')[5]
+
+        if not os.path.isdir(home):
+            logger.error("Homedir %s of root not found" % (home))
+            return None
+
+        source = "%s/%s" % (home, self._cache_pickle_name(host))
+
+        try:
+            f = open(source)
+            out = cPickle.load(f)
+            f.close()
+            return out
+        except Exception, err:
+            logger.error("Failed to load pickle from file %s: %s" % (source, err))
+            return None
+
+    def _store_pickle_cluster_file(self, host, output, dry_run=False):
+        """Store the result of the showq command in the relevant pickle file.
+
+        @type output: string
+
+        @param output: showq output information
+        """
+        try:
+            if not self.dry_run:
+                store.store_pickle_data_at_user('root', '.showq.pickle.cluster_%s' % (host), output)
+            else:
+                logger.info("Dry run: skipping actually storing pickle files for cluster data")
+        except (UserStorageError, FileStoreError, FileMoveError), err:
+            # these should NOT occur, we're root, accessing our own home directory
+            logger.critical("Cannot store the out file %s at %s" % ('.showq.pickle.cluster_%s', '/root'))
+
+    def _process_attributes(self, xml, attributes):
+        """Fill in the attributes from the XML data.
+
+        @type xml: etree structure for a job
         @type attributes: list of strings
 
-        @param job_xml: XML description of a job, as returned by Moab's showq command
-        @param job: maops attributes to their values for a job
-        @param attributes: list of attributes we'd like to find in the job description
+        @param job: the XML returned by the moab command
+        @param attributes: list of attributes we'd like to find in the XML
 
-        Only places the attributes than are found in the description in the job disctionary, so no
+        Only places the attributes than are found in the description in the resulting disctionary, so no
         extraneous keys are put in the dict.
         """
+        d = {}
         for attribute in attributes:
-            job[attribute] = job_xml.getAttribute(attribute)
-            if not job[attribute]:
-                logger.error("Failed to find attribute name %s in %s" % (attribute, job_xml.toxml()))
-                job.pop(attribute)
+            try:
+                d[attribute] = xml.attrib[attribute]
+            except KeyError, err:
+                self.logger.error("Failed to find attribute name %s in %s" % (attribute, xml.attrib))
 
-    def _run_moab_command(path, cluster, options, xml=True, process=True):
+    def _run_moab_command(self, path, cluster, options):
         """Run the moab command and return the (processed) output.
 
         @type path: string
@@ -83,49 +137,40 @@ class MoabCommand(object):
 
         @return: string if no processing is done, dict with the job information otherwise
         """
-        options_ = options
-        if xml:
-            options_ += ['--xml']
-
-        (exit_code, output) = RunAsyncLoop.run([path] + options_)
+        (exit_code, output) = RunAsyncLoop.run([path] + options)
 
         if exit_code != 0:
             return None
 
-        if process:
+        if self.parser:
             return self.parser(cluster, output)
         else:
             return output
 
-    def get_moab_command_information(moab_command, command_path_option, pickle_file_name_template, info):
+    def get_moab_command_information(self, path, master):
         """Accumulate the checkjob information for the users on the given hosts.
 
-        @type opts: vsc.util.generaloption.SimpleOption
-        @type moab_command: function that should be called to perform the actual data gathering
-        @type command_path_option: the name of the option to retrieve from the configuration
-        @type info: class that should be instantiated to gather the data
+        @type path: absolute path to the executable moab command
+        @type master: the master that will provide the information
         """
 
-        job_information = info()
+        job_information = self.info()
         failed_hosts = []
         reported_hosts = []
 
         # Obtain the information from all specified hosts
-        for host in opts.options.hosts:
+        for (host, master) in self.clusters.items():
 
-            master = opts.configfile_parser.get(host, "master")
-            path = opts.configfile_parser.get(host, command_path_option)
-
-            host_job_information = moab_command(path, host, ["--host=%s" % (master)], xml=True, process=True)
+            host_job_information = self._run_moab_command(path, host, ["--host=%s" % (master), "--xml"])
 
             if not host_job_information:
                 failed_hosts.append(host)
                 logger.error("Couldn't collect info for host %s" % (host))
                 logger.info("Trying to load cached pickle file for host %s" % (host))
 
-                host_queue_information = load_pickle_cluster_file(host)
+                host_queue_information = self._load_pickle_cluster_file(host)
             else:
-                store_pickle_cluster_file(host, host_queue_information)
+                self._store_pickle_cluster_file(host, host_queue_information)
 
             if not host_queue_information:
                 logger.error("Couldn't load info for host %s" % (host))
