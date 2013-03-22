@@ -92,12 +92,12 @@ class MoabCommand(object):
         """
         try:
             if not self.dry_run:
-                store.store_pickle_data_at_user('root', '.showq.pickle.cluster_%s' % (host), output)
+                store.store_pickle_data_at_user('root', self._cache_pickle_name(host), output)
             else:
                 logger.info("Dry run: skipping actually storing pickle files for cluster data")
         except (UserStorageError, FileStoreError, FileMoveError), err:
             # these should NOT occur, we're root, accessing our own home directory
-            logger.critical("Cannot store the out file %s at %s" % ('.showq.pickle.cluster_%s', '/root'))
+            logger.critical("Cannot store the out file %s at %s" % (self._cache_pickle_name(host), '/root'))
 
     def _process_attributes(self, xml, attributes):
         """Fill in the attributes from the XML data.
