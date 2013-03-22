@@ -122,15 +122,12 @@ class MoabCommand(object):
         """Run the moab command and return the (processed) output.
 
         @type path: string
+        @type cluster: string
         @type options: list of strings
-        @type xml: boolean
-        @type process: boolean
 
         @param path: path to the checkjob executable
+        @param cluster: name of the cluster we are asking for information
         @param options: The options to pass to the checkjob command.
-        @param xml: Should we ask for output in xml format?
-        @param process: Should we do postprocessing of the output here?
-                        FIXME: the output format may depend on the options, so this may be fragile.
 
         @return: string if no processing is done, dict with the job information otherwise
         """
@@ -152,7 +149,7 @@ class MoabCommand(object):
         self.logger.debug("Empty parser used.")
         return None
 
-    def get_moab_command_information(self, path):
+    def get_moab_command_information(self):
         """Accumulate the checkjob information for the users on the given hosts.
 
         @type path: absolute path to the executable moab command
@@ -164,7 +161,10 @@ class MoabCommand(object):
         reported_hosts = []
 
         # Obtain the information from all specified hosts
-        for (host, master) in self.clusters.items():
+        for (host, info) in self.clusters.items():
+
+            master = info['master']
+            path = info['path']
 
             host_job_information = self._run_moab_command(path, host, ["--host=%s" % (master), "--xml"])
 
