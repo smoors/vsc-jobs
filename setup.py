@@ -43,7 +43,7 @@ PACKAGE = {
     'scripts': [],
     'install_requires': [
         'vsc-base >= 1.2',
-        'python-lxml'
+        'lxml'
     ],
     'provides': ['python-vsc-jobs = 0.1'],
 }
