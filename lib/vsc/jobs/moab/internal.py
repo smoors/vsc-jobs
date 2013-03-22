@@ -137,14 +137,15 @@ class MoabCommand(object):
         if exit_code != 0:
             return None
 
-        if self.parser:
-            return self.parser(cluster, output)
+        parsed = self.parser(cluster, output)
+        if parsed:
+            return parsed
         else:
             return output
 
     def parser(self, host, txt):
         """Parse the returned XML into the desired data structure for further processing."""
-        pass
+        return None
 
     def get_moab_command_information(self, path):
         """Accumulate the checkjob information for the users on the given hosts.
