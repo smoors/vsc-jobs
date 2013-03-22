@@ -46,7 +46,6 @@ class ShowqInfo(RUDict):
             self[user][host][state] = []
 
 
-
 class Showq(MoabCommand):
     """Run showq and gather the results."""
 
@@ -91,7 +90,9 @@ class Showq(MoabCommand):
         showq_info = ShowqInfo()
         xml = etree.fromstring(txt)
 
-        for job in xml.findall('job'):
+        self.logger.debug("Parsing showq output")
+
+        for job in xml.findall('.//job'):
             user = job.attrib['User']
             state = job.attrib['State']
 
@@ -100,18 +101,18 @@ class Showq(MoabCommand):
             showq_info.add(user, host, state)
 
             j = {}
-            j.update(self.process_attributes(job, mandatory_attributes))
+            j.update(self._process_attributes(job, mandatory_attributes))
 
             if state in('Running'):
-                j.update(self.process_attributes(job, running_attributes))
+                j.update(self._process_attributes(job, running_attributes))
             else:
                 if 'BlockReason' in job.attrib:
                     if state in ('Idle'):
                         state = 'IdleBlocked'
                         showq_info.add(user, host, state)
-                    j.update(self.process_attributes(job, blocked_attributes))
+                    j.update(self._process_attributes(job, blocked_attributes))
                 else:
-                    j.update(self.process_attributes(job, idle_attributes))
+                    j.update(self._process_attributes(job, idle_attributes))
 
             # append the job
             showq_info[user][host][state] += [job]
