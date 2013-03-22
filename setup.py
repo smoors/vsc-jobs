@@ -42,7 +42,8 @@ PACKAGE = {
     'namespace_packages': ['vsc'],
     'scripts': [],
     'install_requires': [
-        'vsc-base >= 1.2'
+        'vsc-base >= 1.2',
+        'python-lxml'
     ],
     'provides': ['python-vsc-jobs = 0.1'],
 }
