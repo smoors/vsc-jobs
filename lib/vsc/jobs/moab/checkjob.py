@@ -70,10 +70,7 @@ class Checkjob(MoabCommand):
 
         checkjob_info = CheckjobInfo()
 
-        self.logger.debug("Parsing ...")
-
         for job in xml.findall('.//job'):
-
 
             user = job.attrib['User']
             checkjob_info.add(user, host)
