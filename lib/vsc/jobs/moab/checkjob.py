@@ -70,10 +70,13 @@ class Checkjob(MoabCommand):
 
         checkjob_info = CheckjobInfo()
 
-        for job in xml.findall('job'):
+        self.logger.debug("Parsing ...")
+
+        for job in xml.findall('.//job'):
+
 
             user = job.attrib['User']
             checkjob_info.add(user, host)
-            checkjob_info[user][host] += [(job.attrib, map(lambda r: r.attrib, job.getChildren()))]
+            checkjob_info[user][host] += [(job.attrib, map(lambda r: r.attrib, job.getchildren()))]
 
         return checkjob_info
