@@ -21,7 +21,7 @@ All things checkjob.
 
 from lxml import etree
 
-from vsc.jobs.moab.internal import moab_command
+from vsc.jobs.moab.internal import MoabCommand
 from vsc.utils.fancylogger import getLogger
 from vsc.utils.missing import RUDict
 from vsc.utils.run import RunAsyncLoop
@@ -50,37 +50,30 @@ class CheckjobInfo(RUDict):
             self[user][host] = []
 
 
-def parse_checkjob_xml(host, txt):
-    """Parse the checkjob XML and produce a corresponding CheckjobInfo instance."""
+class Checkjob(MoabCommand):
 
-    xml = etree.fromstring(txt)
+    def __init__(self, clusters, dry_run):
 
-    checkjob_info = CheckjobInfo()
+        super(Checkjob, self).__init__(dry_run)
 
-    for job in xml.findall('job'):
+        self.info = CheckjobInfo
+        self.clusters = clusters
 
-        user = job.attrib['User']
-        checkjob_info.add(user, host)
-        checkjob_info[user][host] += [(job.attrib, map(lambda r: r.attrib, job.getChildren())]
+    def _cache_pickle_name(self, host):
+        """File name for the pickle file to cache results."""
+        return ".checkjob.pickle.cluster_%s" % (host)
 
-    return checkjob_info
+    def parser(self, host, txt):
+        """Parse the checkjob XML and produce a corresponding CheckjobInfo instance."""
 
+        xml = etree.fromstring(txt)
 
-def checkjob(path, cluster, options, xml=True, process=True):
-    """Run the checkjob command and return the (processed) output.
+        checkjob_info = CheckjobInfo()
 
-    @type path: string
-    @type options: list of strings
-    @type xml: boolean
-    @type process: boolean
+        for job in xml.findall('job'):
 
-    @param path: path to the checkjob executable
-    @param options: The options to pass to the checkjob command.
-    @param xml: Should we ask for output in xml format?
-    @param process: Should we do postprocessing of the output here?
-                    FIXME: the output format may depend on the options, so this may be fragile.
+            user = job.attrib['User']
+            checkjob_info.add(user, host)
+            checkjob_info[user][host] += [(job.attrib, map(lambda r: r.attrib, job.getChildren()))]
 
-    @return: string if no processing is done, dict with the job information otherwise
-    """
-
-    return moab_command(path, cluster, options, parse_checkjob_xml, xml, process)
+        return checkjob_info
