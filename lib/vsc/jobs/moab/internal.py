@@ -39,7 +39,7 @@ class MoabCommand(object):
     This class should be subclassed to allow actual running things
     """
 
-    def __init__(self, dry_run=False):
+    def __init__(self, dry_run=False, cache_pickle=False):
         """Initialise"""
 
         # data type for the resulting information
@@ -49,6 +49,7 @@ class MoabCommand(object):
         self.clusters = None
 
         self.dry_run = dry_run
+        self.cache_pickle = cache_pickle
         self.logger = getLogger(self.__class__.__name__)
 
     def _cache_pickle_name(self, host):
@@ -173,9 +174,11 @@ class MoabCommand(object):
                 self.logger.error("Couldn't collect info for host %s" % (host))
                 self.logger.info("Trying to load cached pickle file for host %s" % (host))
 
-                host_job_information = self._load_pickle_cluster_file(host)
+                if self.cache_pickle:
+                    host_job_information = self._load_pickle_cluster_file(host)
             else:
-                self._store_pickle_cluster_file(host, host_job_information)
+                if self.cache_pickle:
+                    self._store_pickle_cluster_file(host, host_job_information)
 
             if not host_job_information:
                 self.logger.error("Couldn't load info for host %s" % (host))
