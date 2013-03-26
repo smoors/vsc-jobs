@@ -39,7 +39,7 @@ class MoabCommand(object):
     This class should be subclassed to allow actual running things
     """
 
-    def __init__(self, dry_run=False, cache_pickle=False):
+    def __init__(self, cache_pickle=False, dry_run=False):
         """Initialise"""
 
         # data type for the resulting information
