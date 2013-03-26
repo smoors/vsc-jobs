@@ -136,7 +136,7 @@ class MoabCommand(object):
 
         @return: string if no processing is done, dict with the job information otherwise
         """
-        (exit_code, output) = RunAsyncLoop.run(path + options)
+        (exit_code, output) = RunAsyncLoop.run(commandlist + options)
 
         if exit_code != 0:
             return None
