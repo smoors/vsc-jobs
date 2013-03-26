@@ -17,9 +17,6 @@ mycheckjob shows the contents of the information that was saved to the
 This mimics the result of Moab's checkjob command, but without the
 risks of letting users see job information of jobs that are not theirs.
 """
-
-MAXIMAL_AGE = 60 * 30  # 30 minutes
-
 import cPickle
 import os
 import pwd
@@ -30,6 +27,7 @@ from vsc.administration.user import MukUser, VscUser
 from vsc.utils import fancylogger
 from vsc.utils.generaloption import simple_option
 
+MAXIMAL_AGE = 60 * 30  # 30 minutes
 
 logger = fancylogger.getLogger("myshowq")
 fancylogger.logToScreen(True)
@@ -95,7 +93,7 @@ def main():
     if age > MAXIMAL_AGE:
         print "Job information is older than %d minutes (%f hours). Information may not be relevant any longer" % (age / 60, age / 60.0 / 60.0)
 
-    checkjob.display(opts.options.jobid)
+    print checkjob.display(opts.options.jobid)
 
 
 if __name__ == '__main__':
