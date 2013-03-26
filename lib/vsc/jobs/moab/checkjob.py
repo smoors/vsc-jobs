@@ -51,8 +51,12 @@ class CheckjobInfo(RUDict):
         if not host in self[user]:
             self[user][host] = []
 
+    def _display(job):
+        """Show the data for a single job."""
+        pass
+
     def display(self, jobid=None):
-        """Display the contents of the data for the given job id.
+        """Yield a string representing the contents of the data for the given job id.
 
         If the job id is None, all results are given.
         """
@@ -66,7 +70,7 @@ class CheckjobInfo(RUDict):
             return ""
 
         if len(location) > 1:
-            self.logger.error("Nultiple matching locations in the job tree for job id %s: %s" % (jobid, location))
+            self.logger.error("Multiple matching locations in the job tree for job id %s: %s" % (jobid, location))
             return None
 
         return yaml.dump(self[location[0]][location[1]][jobid], default_flow_style=False)
