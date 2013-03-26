@@ -119,20 +119,24 @@ class MoabCommand(object):
 
         return d
 
-    def _run_moab_command(self, path, cluster, options):
-        """Run the moab command and return the (processed) output.
+    def _command(self, path, master):
+        """If needed, transform the command prior to execution"""
+        return [path]
 
-        @type path: string
+    def _run_moab_command(self, commandlist, cluster, options):
+        """Run the moab command and return the (processed) oututput.
+
+        @type commandlist: list of strings
         @type cluster: string
         @type options: list of strings
 
-        @param path: path to the checkjob executable
+        @param commandlist: path to the checkjob executable
         @param cluster: name of the cluster we are asking for information
         @param options: The options to pass to the checkjob command.
 
         @return: string if no processing is done, dict with the job information otherwise
         """
-        (exit_code, output) = RunAsyncLoop.run([path] + options)
+        (exit_code, output) = RunAsyncLoop.run(path + options)
 
         if exit_code != 0:
             return None
@@ -166,8 +170,9 @@ class MoabCommand(object):
 
             master = info['master']
             path = info['path']
+            command = self._command(path, master)
 
-            host_job_information = self._run_moab_command(path, host, ["--host=%s" % (master), "--xml"])
+            host_job_information = self._run_moab_command(command, host, ["--host=%s" % (master), "--xml"])
 
             if not host_job_information:
                 failed_hosts.append(host)
@@ -187,3 +192,11 @@ class MoabCommand(object):
                 reported_hosts.append(host)
 
         return (job_information, reported_hosts, failed_hosts)
+
+
+class SshMoabCommand(MoabCommand):
+    """Similar to MaobCommand, but use ssh to contact the Moab master."""
+
+    def _command(self, path, master):
+        """Wrap the command in an ssh shell."""
+        return ['ssh', master, path]
