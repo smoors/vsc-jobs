@@ -89,6 +89,11 @@ class Checkjob(MoabCommand):
         """File name for the pickle file to cache results."""
         return ".checkjob.pickle.cluster_%s" % (host)
 
+    def _run_moab_command(self, commandlist, cluster, options):
+        """Override the default, need to ad an option"""
+        options += ['all']
+        return super(Checkjob, self)._run_moab_command(commandlist, cluster, options)
+
     def parser(self, host, txt):
         """Parse the checkjob XML and produce a corresponding CheckjobInfo instance."""
         xml = etree.fromstring(txt)
