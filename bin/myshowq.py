@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: latin-1 -*-
 ##
 # Copyright 2009-2013 Ghent University
@@ -42,19 +42,28 @@ from vsc.jobs.moab.showq import ShowqInfo
 from vsc.utils import fancylogger
 from vsc.utils.generaloption import simple_option
 
+logger = fancylogger.getLogger("myshowq")
+fancylogger.setLogLevelDebug()
+fancylogger.logToScreen(True)
 
-def readbuffer(owner, showvo, running, idle, blocked):
+def readbuffer(owner, showvo, running, idle, blocked, location=None):
     """
     Unpickle the file and fill in the resulting datastructure.
     """
 
-    home = pwd.getpwnam(owner)[5]
+    dest = None
+    if location:
+        dest = os.path.join(os.getenv(location), ".showq.pickle")
 
-    if not os.path.isdir(home):
-        print "Homedir %s for owner %s not found" % (home, owner)
-        return (None, None)
+    if not dest:
+        home = pwd.getpwnam(owner)[5]
 
-    dest = "%s/.showq.pickle" % home
+        if not os.path.isdir(home):
+            print "Homedir %s for owner %s not found" % (home, owner)
+            return (None, None)
+        dest = "%s/.showq.pickle" % home
+
+    logger.debug("destination, well, source, suh is %s" % (dest))
 
     try:
         f = open(dest)
@@ -263,6 +272,7 @@ def main():
         "running": ("Display running job information", None, "store_true", False, 'r'),
         "idle": ("Display idle job information", None, "store_true", False, 'i'),
         "blocked": ("Dispay blocked job information", None, "store_true", False, 'b'),
+        'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_HOME'),
     }
 
     opts = simple_option(options)
@@ -279,7 +289,9 @@ def main():
                                 opts.options.virtualorganisation,
                                 opts.options.running,
                                 opts.options.idle,
-                                opts.options.blocked)
+                                opts.options.blocked,
+                                opts.options.location_environment)
+
 
     if not res or len(res) == 0:
         print "no data"
