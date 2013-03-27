@@ -78,9 +78,9 @@ class CheckjobInfo(RUDict):
 
 class Checkjob(MoabCommand):
 
-    def __init__(self, clusters, dry_run):
+    def __init__(self, clusters, cache_pickle=False, dry_run=False):
 
-        super(Checkjob, self).__init__(dry_run)
+        super(Checkjob, self).__init__(cache_pickle, dry_run)
 
         self.info = CheckjobInfo
         self.clusters = clusters
