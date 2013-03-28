@@ -58,6 +58,8 @@ class MoabCommand(object):
         if not os.path.isdir(home):
             self.logger.raiseException("Homedir %s of root not found" % (home))
 
+        return home
+
     def _cache_pickle_name(self, host):
         """Return the name of the pickle file to cache the retrieved information from the moab command."""
         pass
