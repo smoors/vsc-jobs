@@ -42,8 +42,6 @@ class CheckjobInfo(RUDict):
     def __init__(self, *args, **kwargs):
         super(CheckjobInfo, self).__init__(*args, **kwargs)
 
-        self.logger = getLogger(self.__class__.__name__)
-
     def add(self, user, host):
 
         if not user in self:
@@ -51,7 +49,7 @@ class CheckjobInfo(RUDict):
         if not host in self[user]:
             self[user][host] = []
 
-    def _display(job):
+    def _display(self, job):
         """Show the data for a single job."""
         pass
 
@@ -66,11 +64,9 @@ class CheckjobInfo(RUDict):
         location = [(user, host) for user in self for host in self[user] if jobid in self[user][host]]
 
         if not location:
-            self.logger.debug("No matching location in the job tree for job id %s" % (jobid))
             return ""
 
         if len(location) > 1:
-            self.logger.error("Multiple matching locations in the job tree for job id %s: %s" % (jobid, location))
             return None
 
         return yaml.dump(self[location[0]][location[1]][jobid], default_flow_style=False)
@@ -90,7 +86,7 @@ class Checkjob(MoabCommand):
         return ".checkjob.pickle.cluster_%s" % (host)
 
     def _run_moab_command(self, commandlist, cluster, options):
-        """Override the default, need to ad an option"""
+        """Override the default, need to add an option"""
         options += ['all']
         return super(Checkjob, self)._run_moab_command(commandlist, cluster, options)
 
