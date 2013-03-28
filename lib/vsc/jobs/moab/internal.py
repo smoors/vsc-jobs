@@ -18,15 +18,11 @@ All things moab that are similar to all moab commands from which we want output.
 
 @author Andy Georges
 """
-import cPickle
 import os
 import pwd
 
-
-import vsc.utils.fs_store as store
-
+from vsc.utils.cache import FileCache
 from vsc.utils.fancylogger import getLogger
-from vsc.utils.fs_store import UserStorageError, FileStoreError, FileMoveError
 from vsc.utils.run import RunAsyncLoop
 
 
@@ -48,9 +44,19 @@ class MoabCommand(object):
         # dict mapping hosts to {master: FQN, showq_path: path}
         self.clusters = None
 
+        # key to index the cache store
+        self.cache_key = 'default'
+
         self.dry_run = dry_run
         self.cache_pickle = cache_pickle
         self.logger = getLogger(self.__class__.__name__)
+
+    def _cache_pickle_directory(self):
+        """Return the directory where we need to store the cached pickle file. Defaults to root's home."""
+        home = pwd.getpwnam('root')[5]
+
+        if not os.path.isdir(home):
+            self.logger.raiseException("Homedir %s of root not found" % (home))
 
     def _cache_pickle_name(self, host):
         """Return the name of the pickle file to cache the retrieved information from the moab command."""
@@ -65,22 +71,11 @@ class MoabCommand(object):
 
         @returns: representation of the showq output.
         """
-        home = pwd.getpwnam('root')[5]
+        source = os.path.join(self._cache_pickle_directory(), self._cache_pickle_name(host))
 
-        if not os.path.isdir(home):
-            self.logger.error("Homedir %s of root not found" % (home))
-            return None
+        cache = FileCache(source)
 
-        source = "%s/%s" % (home, self._cache_pickle_name(host))
-
-        try:
-            f = open(source)
-            out = cPickle.load(f)
-            f.close()
-            return out
-        except Exception, err:
-            self.logger.error("Failed to load pickle from file %s: %s" % (source, err))
-            return None
+        return cache.load(self.cache_key)
 
     def _store_pickle_cluster_file(self, host, output, dry_run=False):
         """Store the result of the showq command in the relevant pickle file.
@@ -89,14 +84,15 @@ class MoabCommand(object):
 
         @param output: showq output information
         """
-        try:
-            if not self.dry_run:
-                store.store_pickle_data_at_user('root', self._cache_pickle_name(host), output)
-            else:
-                self.logger.info("Dry run: skipping actually storing pickle files for cluster data")
-        except (UserStorageError, FileStoreError, FileMoveError), err:
-            # these should NOT occur, we're root, accessing our own home directory
-            self.logger.critical("Cannot store the out file %s at %s" % (self._cache_pickle_name(host), '/root'))
+
+        dest = os.path.join(self._cache_pickle_directory(), self._cache_pickle_name(host))
+
+        if not self.dry_run:
+            cache = FileCache(dest)
+            cache.update(self.cache_key, output, 0)  # no retention of old data
+            cache.close()
+        else:
+            self.logger.info("Dry run: skipping actually storing pickle files for cluster data")
 
     def _process_attributes(self, xml, attributes):
         """Fill in the attributes from the XML data.
