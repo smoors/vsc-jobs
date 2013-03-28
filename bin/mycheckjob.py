@@ -67,8 +67,7 @@ def read_checkjob_data(path):
         (timeinfo, checkjob) = cPickle.load(f)
         f.close()
     except Exception, err:
-        logger.error("Cannot read pickle file")
-        logger.debug("Cannot read pickle file: %s" % (err))
+        logger.error("Cannot read pickle file", err)
         return (0, None)
 
     return (timeinfo, checkjob)
