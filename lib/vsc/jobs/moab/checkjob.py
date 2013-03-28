@@ -18,7 +18,7 @@ All things checkjob.
 
 @author Andy Georges
 """
-import yaml
+import pprint
 
 from lxml import etree
 
@@ -59,7 +59,7 @@ class CheckjobInfo(RUDict):
         If the job id is None, all results are given.
         """
         if not jobid:
-            return yaml.dump(self, default_flow_style=False)
+            return pprint.pformat(self)
 
         location = [(user, host) for user in self for host in self[user] if jobid in self[user][host]]
 
@@ -69,7 +69,7 @@ class CheckjobInfo(RUDict):
         if len(location) > 1:
             return None
 
-        return yaml.dump(self[location[0]][location[1]][jobid], default_flow_style=False)
+        return pprint.pformat(self[location[0]][location[1]][jobid])
 
 
 class Checkjob(MoabCommand):
