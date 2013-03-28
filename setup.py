@@ -44,8 +44,8 @@ PACKAGE = {
     'install_requires': [
         'vsc-base >= 1.2',
         'lxml',
-    'release': 2,
     ],
+    'release': 2,
     'provides': ['python-vsc-jobs = 0.1'],
 }
 
