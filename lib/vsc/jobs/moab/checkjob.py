@@ -100,6 +100,6 @@ class Checkjob(MoabCommand):
 
             user = job.attrib['User']
             checkjob_info.add(user, host)
-            checkjob_info[user][host] += [(job.attrib, map(lambda r: r.attrib, job.getchildren()))]
+            checkjob_info[user][host] += [(dict(job.attrib.items()), map(lambda r: dict(r.attrib.items()), job.getchildren()))]
 
         return checkjob_info
