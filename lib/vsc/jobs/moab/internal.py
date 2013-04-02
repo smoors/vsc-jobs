@@ -98,7 +98,7 @@ class MoabCommand(object):
         if not self.dry_run:
             if raw:
                 f = open(dest, 'w')
-                cPicle.dump(output, f)
+                cPickle.dump(output, f)
                 f.close()
             else:
                 cache = FileCache(dest)
@@ -190,7 +190,7 @@ class MoabCommand(object):
             path = info['path']
             command = self._command(path, master)
 
-            (host_job_information, raw) = self._run_moab_command(command, host, ["--host=%s" % (master), "--xml"])
+            host_job_information = self._run_moab_command(command, host, ["--host=%s" % (master), "--xml"])
 
             if not host_job_information:
                 failed_hosts.append(host)
