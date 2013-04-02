@@ -18,8 +18,8 @@ vsc-jobs base distribution setup.py
 
 @author: Andy Georges (Ghent University)
 """
-import shared_setup
-from shared_setup import ag, sdw
+import vsc.install.shared_setup as shared_setup
+from vsc.install.shared_setup import ag, sdw
 
 
 def remove_bdist_rpm_source_file():
@@ -51,4 +51,4 @@ PACKAGE = {
 
 
 if __name__ == '__main__':
-    shared_setup.action_target(PACKAGE)
+    vsc.utils.shared_setup.action_target(PACKAGE)
