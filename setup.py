@@ -51,4 +51,4 @@ PACKAGE = {
 
 
 if __name__ == '__main__':
-    vsc.utils.shared_setup.action_target(PACKAGE)
+    shared_setup.action_target(PACKAGE)
