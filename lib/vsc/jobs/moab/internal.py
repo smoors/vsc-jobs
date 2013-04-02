@@ -18,6 +18,7 @@ All things moab that are similar to all moab commands from which we want output.
 
 @author Andy Georges
 """
+import cPickle
 import os
 import pwd
 
@@ -64,7 +65,7 @@ class MoabCommand(object):
         """Return the name of the pickle file to cache the retrieved information from the moab command."""
         pass
 
-    def _load_pickle_cluster_file(self, host):
+    def _load_pickle_cluster_file(self, host, raw=True):
         """Load the data from the pickled files.
 
         @type host: string
@@ -75,11 +76,16 @@ class MoabCommand(object):
         """
         source = os.path.join(self._cache_pickle_directory(), self._cache_pickle_name(host))
 
-        cache = FileCache(source)
+        if raw:
+            f = open(source, 'r')
+            output = cPickle.load(f)
+            f.close()
+            return output
+        else:
+            cache = FileCache(source)
+            return cache.load(self.cache_key)
 
-        return cache.load(self.cache_key)
-
-    def _store_pickle_cluster_file(self, host, output, dry_run=False):
+    def _store_pickle_cluster_file(self, host, output, raw=True):
         """Store the result of the showq command in the relevant pickle file.
 
         @type output: string
@@ -90,9 +96,14 @@ class MoabCommand(object):
         dest = os.path.join(self._cache_pickle_directory(), self._cache_pickle_name(host))
 
         if not self.dry_run:
-            cache = FileCache(dest)
-            cache.update(self.cache_key, output, 0)  # no retention of old data
-            cache.close()
+            if raw:
+                f = open(dest, 'w')
+                cPicle.dump(output, f)
+                f.close()
+            else:
+                cache = FileCache(dest)
+                cache.update(self.cache_key, output, 0)  # no retention of old data
+                cache.close()
         else:
             self.logger.info("Dry run: skipping actually storing pickle files for cluster data")
 
@@ -137,6 +148,15 @@ class MoabCommand(object):
         (exit_code, output) = RunAsyncLoop.run(commandlist + options)
 
         if exit_code != 0:
+            if self.cache_pickle:
+                output = self._load_pickle_cluster_file(cluster)
+            else:
+                return None
+        else:
+            if self.cache_pickle:
+                self._store_pickle_cluster_file(cluster, output)
+
+        if not output:
             return None
 
         parsed = self.parser(cluster, output)
@@ -170,21 +190,12 @@ class MoabCommand(object):
             path = info['path']
             command = self._command(path, master)
 
-            host_job_information = self._run_moab_command(command, host, ["--host=%s" % (master), "--xml"])
+            (host_job_information, raw) = self._run_moab_command(command, host, ["--host=%s" % (master), "--xml"])
 
             if not host_job_information:
                 failed_hosts.append(host)
                 self.logger.error("Couldn't collect info for host %s" % (host))
                 self.logger.info("Trying to load cached pickle file for host %s" % (host))
-
-                if self.cache_pickle:
-                    host_job_information = self._load_pickle_cluster_file(host)
-            else:
-                if self.cache_pickle:
-                    self._store_pickle_cluster_file(host, host_job_information)
-
-            if not host_job_information:
-                self.logger.error("Couldn't load info for host %s" % (host))
             else:
                 job_information.update(host_job_information)
                 reported_hosts.append(host)
