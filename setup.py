@@ -35,7 +35,7 @@ shared_setup.SHARED_TARGET.update({
 
 PACKAGE = {
     'name': 'vsc-jobs',
-    'version': '0.2',
+    'version': '0.3',
     'author': [sdw, ag],
     'maintainer': [sdw, ag],
     'packages': ['vsc', 'vsc.jobs', 'vsc.jobs.moab', 'vsc.jobs.pbs'],
@@ -46,7 +46,7 @@ PACKAGE = {
         'lxml',
     ],
     'release': 2,
-    'provides': ['python-vsc-jobs = 0.1'],
+    'provides': ['python-vsc-jobs = 0.3'],
 }
 
 
