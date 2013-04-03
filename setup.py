@@ -18,8 +18,8 @@ vsc-jobs base distribution setup.py
 
 @author: Andy Georges (Ghent University)
 """
-import shared_setup
-from shared_setup import ag, sdw
+import vsc.install.shared_setup as shared_setup
+from vsc.install.shared_setup import ag, sdw
 
 
 def remove_bdist_rpm_source_file():
@@ -44,6 +44,7 @@ PACKAGE = {
     'install_requires': [
         'vsc-base >= 1.2',
         'lxml',
+        'pbs_python >= 4.3',
     ],
     'release': 2,
     'provides': ['python-vsc-jobs = 0.3'],
