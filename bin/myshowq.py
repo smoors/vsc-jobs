@@ -29,22 +29,22 @@ Several formating options are provided:
 @author Stijn De Weirdt
 @author Andy Georges
 """
-maxage = 60 * 30  # 30 minutes
 
 import cPickle
 import os
 import pwd
-import re
 import sys
 import time
 
-from vsc.jobs.moab.showq import ShowqInfo
 from vsc.utils import fancylogger
 from vsc.utils.generaloption import simple_option
 
 logger = fancylogger.getLogger("myshowq")
 fancylogger.setLogLevelDebug()
 fancylogger.logToScreen(True)
+
+maxage = 60 * 30  # 30 minutes
+
 
 def readbuffer(owner, showvo, running, idle, blocked, location=None):
     """
@@ -67,21 +67,18 @@ def readbuffer(owner, showvo, running, idle, blocked, location=None):
 
     try:
         f = open(dest)
-        (res, userMap) = cPickle.load(f)
+        (res, user_map) = cPickle.load(f)
         f.close()
     except Exception, err:
         print "Failed to load pickle from file %s: %s" % (dest, err)
         return (None, None)
 
-    try:
-        res.has_key('timeinfo')
-    except Exception,err:
-        ## old format. no print since irrelevant for user
-        print "No timeinfo found in res: %s"%err
+    if not 'timeinfo' in res:
+        print "No timeinfo found in res: %s" % err
         return (None, None)
 
     ## check for timeinfo
-    if not res.has_key('timeinfo') or res['timeinfo'] < (time.time() - maxage):
+    if res['timeinfo'] < (time.time() - maxage):
         print "outdated"
         return (None, None)
     else:
@@ -89,30 +86,29 @@ def readbuffer(owner, showvo, running, idle, blocked, location=None):
 
     print res
 
-    """
-    Filter out data that is not needed
-    """
+    # Filter out data that is not needed
     if not showvo:
-        for us in res.keys():
-            if not us == owner:
-                #del res[us]
+        for user in res.keys():
+            if not user == owner:
+                #del res[user]
                 pass
 
-    for us in res.keys():
-        for host in res[us].keys():
+    for user in res.keys():
+        for host in res[user].keys():
             print "looking at host %s" % (host)
-            states=res[us][host].keys()
+            states = res[user][host].keys()
             if not running:
                 if 'Running' in states:
-                    del res[us][host]['Running']
+                    del res[user][host]['Running']
             if not idle:
                 if 'Idle' in states:
-                    del res[us][host]['Idle']
+                    del res[user][host]['Idle']
             if not blocked:
-                for st in [x for x in states if not x in ('Running','Idle')]:
-                    del res[us][host][st]
+                for state in [x for x in states if not x in ('Running','Idle')]:
+                    del res[user][host][state]
 
-    return (res,userMap)
+    return (res,user_map)
+
 
 def makemap(users,owner):
     """
@@ -139,7 +135,7 @@ def makemap(users,owner):
 
     return newusers
 
-def showdetail(res,userMap,owner,showvo):
+def showdetail(res,user_map,owner,showvo):
     """
     Show detailed info
 
@@ -152,12 +148,12 @@ def showdetail(res,userMap,owner,showvo):
     available info for running jobs: 'MasterHost'
     available info for blocked jobs: 'BlockReason','Description'
 
-    'userMap' is a dictionary of user ids to real names
+    'user_map' is a dictionary of user ids to real names
     """
     print "Not implemented, see source code for info to implement this."
 
 
-def showsummary(res,userMap,owner,showvo):
+def showsummary(res,user_map,owner,showvo):
     """
     Show summary info
     -- owner first if possible
@@ -208,7 +204,7 @@ def showsummary(res,userMap,owner,showvo):
 
     usernames=[]
     for user in users:
-        usernames.append(userMap[user])
+        usernames.append(user_map[user])
     #usernames=makemap(users,owner)
 
     totalStr="TOTAL"
@@ -285,22 +281,21 @@ def main():
     my_uid = os.geteuid()
     my_name = pwd.getpwuid(my_uid)[0]
 
-    (res, userMap) = readbuffer(my_name,
-                                opts.options.virtualorganisation,
-                                opts.options.running,
-                                opts.options.idle,
-                                opts.options.blocked,
-                                opts.options.location_environment)
-
+    (res, user_map) = readbuffer(my_name,
+                                 opts.options.virtualorganisation,
+                                 opts.options.running,
+                                 opts.options.idle,
+                                 opts.options.blocked,
+                                 opts.options.location_environment)
 
     if not res or len(res) == 0:
         print "no data"
         sys.exit(0)
 
     if opts.options.summary:
-        showsummary(res, userMap, my_name, opts.options.virtualorganisation)
+        showsummary(res, user_map, my_name, opts.options.virtualorganisation)
     if opts.options.detail:
-        showdetail(res, userMap, my_name, opts.options.virtualorganisation)
+        showdetail(res, user_map, my_name, opts.options.virtualorganisation)
 
 
 if __name__ == '__main__':
