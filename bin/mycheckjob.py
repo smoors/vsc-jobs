@@ -20,7 +20,6 @@ risks of letting users see job information of jobs that are not theirs.
 import cPickle
 import os
 import pwd
-import sys
 import time
 
 from vsc.administration.user import MukUser, VscUser
@@ -47,10 +46,7 @@ def checkjob_data_location(user_name, location):
 
     @returns: absolute path to the pickle file
     """
-    if location == 'home':
-        return os.join(VscUser(user_name).pickle_path(), '.checkjob.pickle')
-    elif location == 'scratch':
-        return os.join(MukUser(user_name).pickle_path(), '.checkjob.pickle')
+    return os.path.join(os.getenv(location), ".checkjob.pickle")
 
 
 def read_checkjob_data(path):
@@ -77,7 +73,7 @@ def main():
 
     options = {
         'jobid': ('jobid', 'Fully qualified identification of the job', None, 'store', None),
-        'location': ('the location for storing the pickle file: home, scratch', str, 'store', 'home'),
+         'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_HOME'),
     }
 
     opts = simple_option(options)
@@ -85,7 +81,8 @@ def main():
     my_uid = os.geteuid()
     my_name = pwd.getpwuid(my_uid)[0]
 
-    (timeinfo, checkjob) = read_checkjob_data(my_name, opts.options.location)
+    path = checkjob_data_location(opts.options.location)
+    (timeinfo, checkjob) = read_checkjob_data(path)
 
     age = time.time() - timeinfo
 
