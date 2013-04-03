@@ -53,6 +53,7 @@ PACKAGE = {
     'install_requires': [
         'vsc-base >= 1.2',
         'lxml',
+        'pbs_python >= 4.3',
     ],
     'release': 2,
     'provides': ['python-vsc-jobs = 0.3'],
@@ -60,4 +61,4 @@ PACKAGE = {
 
 
 if __name__ == '__main__':
-    vsc.utils.shared_setup.action_target(PACKAGE)
+    shared_setup.action_target(PACKAGE)
