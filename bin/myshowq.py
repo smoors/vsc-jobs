@@ -27,9 +27,11 @@ Several formating options are provided:
         - Blocked jobs
 
 @author Stijn De Weirdt
+@author Wouter De Pypere
 @author Andy Georges
 """
 
+import copy
 import cPickle
 import os
 import pwd
@@ -40,7 +42,7 @@ from vsc.utils import fancylogger
 from vsc.utils.generaloption import simple_option
 
 logger = fancylogger.getLogger("myshowq")
-fancylogger.setLogLevelDebug()
+fancylogger.setLogLevelWarning()
 fancylogger.logToScreen(True)
 
 maxage = 60 * 30  # 30 minutes
@@ -55,6 +57,7 @@ def readbuffer(owner, showvo, running, idle, blocked, location=None):
     if location:
         dest = os.path.join(os.getenv(location), ".showq.pickle")
 
+    # defaults to the user's home
     if not dest:
         home = pwd.getpwnam(owner)[5]
 
@@ -63,28 +66,28 @@ def readbuffer(owner, showvo, running, idle, blocked, location=None):
             return (None, None)
         dest = "%s/.showq.pickle" % home
 
-    logger.debug("destination, well, source, suh is %s" % (dest))
+    logger.debug("data source expected at %s" % (dest))
 
     try:
         f = open(dest)
         (res, user_map) = cPickle.load(f)
         f.close()
     except Exception, err:
-        print "Failed to load pickle from file %s: %s" % (dest, err)
+        print "Failed to load showq information from file %s: %s" % (dest, err)
         return (None, None)
 
     if not 'timeinfo' in res:
-        print "No timeinfo found in res: %s" % err
+        print "The cache file is missing time info to determine its age. Please contact your admin to look into this."
         return (None, None)
 
     ## check for timeinfo
     if res['timeinfo'] < (time.time() - maxage):
-        print "outdated"
+        print "The data in the showq cache is outdated. Please contact your admin to look into this."
         return (None, None)
     else:
         del res['timeinfo']
 
-    print res
+    logger.debug("Resulting cache data: %s" % (res))
 
     # Filter out data that is not needed
     if not showvo:
@@ -95,7 +98,7 @@ def readbuffer(owner, showvo, running, idle, blocked, location=None):
 
     for user in res.keys():
         for host in res[user].keys():
-            print "looking at host %s" % (host)
+            logger.debug("looking at host %s" % (host))
             states = res[user][host].keys()
             if not running:
                 if 'Running' in states:
@@ -107,7 +110,7 @@ def readbuffer(owner, showvo, running, idle, blocked, location=None):
                 for state in [x for x in states if not x in ('Running','Idle')]:
                     del res[user][host][state]
 
-    return (res,user_map)
+    return (res, user_map)
 
 
 def makemap(users,owner):
@@ -135,7 +138,8 @@ def makemap(users,owner):
 
     return newusers
 
-def showdetail(res,user_map,owner,showvo):
+
+def showdetail(hosts, res, user_map, owner, showvo):
     """
     Show detailed info
 
@@ -150,67 +154,85 @@ def showdetail(res,user_map,owner,showvo):
 
     'user_map' is a dictionary of user ids to real names
     """
-    print "Not implemented, see source code for info to implement this."
+    print "This functionality is not implemented yet. Please check the myshowq command source code for pointers on how to implement this."
 
 
-def showsummary(res,user_map,owner,showvo):
+def showsummary(hosts, res, user_map, owner, showvo):
     """
     Show summary info
     -- owner first if possible
     """
-    summUserHosts={}
-    summaryUsers={} # summary per user
-    summaryHosts={} # summary per host
-    summ=[0,0,0,0,0,0,0,0] # overall summary
+
+    job_data = {
+        'jobs running': 0,
+        'jobs idle': 0,
+        'jobs blocked': 0,
+        'jobs total': 0,
+        'cpus running': 0,
+        'cpus idle': 0,
+        'cpus blocked': 0,
+        'cpus total': 0,
+    }
+
+    summ = copy.deepcopy(job_data)
+    summUserHosts = {}
+    summaryUsers = {} # summary per user
+    summaryHosts = {} # summary per host
+
     for us in res.keys():
-        # total for this user (jobs running, jobs idle, jobs blocked,  total jobs, cpus running, cpus idle, cpus blocked, cpus total)
-        ru=[0,0,0,0,0,0,0,0]
+
+        summary_user = copy.deepcopy(job_data)
+
         if not summUserHosts.has_key(us):
             summUserHosts[us] = {}
+
         for host in res[us].keys():
             if not summaryHosts.has_key(host):
-                summaryHosts[host]=[0,0,0,0,0,0,0,0]
-            if not summUserHosts[us].has_key(host):
-                r = [0,0,0,0,0,0,0,0]
-            for st in res[us][host].keys():
-                for j in res[us][host][st]:
-                    if st in ('Running'):
-                        r[0]+=1
-                        r[4]+=int(j['ReqProcs'])
-                    else:
-                        ## all idle, also blocked jobs
-                        r[1]+=1
-                        r[5]+=int(j['ReqProcs'])
-                        if not st in ('Running','Idle'):
-                            r[2]+=1
-                            r[6]+=int(j['ReqProcs'])
-            r[3]=r[0]+r[1]
-            r[7]=r[4]+r[5]
-            summUserHosts[us][host]=tuple(r)
-            for x in xrange(len(ru)):
-                ru[x]+=r[x]
-            for x in xrange(len(summaryHosts[host])):
-                summaryHosts[host][x]+=r[x]
-        summaryUsers[us]=tuple(ru)
-        for x in xrange(len(summ)):
-            summ[x]+=ru[x]
-    summ=tuple(summ)
+                summaryHosts[host] = copy.deepcopy(job_data)
 
-    users=res.keys()
+            if not summUserHosts[us].has_key(host):
+                summary = copy.deepcopy(job_data)
+
+            for state in res[us][host].keys():
+                for j in res[us][host][state]:
+                    if state in ('Running'):
+                        summary['jobs running'] += 1
+                        summary['cpus running'] += int(j['ReqProcs'])
+                    else:
+                        ## all idle, also Blocked jobs
+                        summary['jobs idle'] += 1
+                        summary['cpus idle'] += int(j['ReqProcs'])
+                        if not state in ('Running', 'Idle'):
+                            summary['jobs blocked'] += 1
+                            summary['cpus blocked'] += int(j['ReqProcs'])
+            summary['jobs total'] = summary['jobs running']+summary['jobs idle']
+            summary['cpus total'] = summary['cpus running']+summary['cpus idle']
+            summUserHosts[us][host] = summary
+
+            for k in summary_user.keys():
+                summary_user[k] += summary[k]
+
+            for k in summaryHosts[host].keys():
+                summaryHosts[host][k] += summary[k]
+
+        summaryUsers[us] = summary_user
+
+        for k in summ.keys():
+            summ[k] += summary_user[k]
+
+    users = res.keys()
     users.sort()
     if owner in users:
         users.remove(owner)
         users.insert(0,owner)
 
-    usernames=[]
+    usernames = []
     for user in users:
         usernames.append(user_map[user])
     #usernames=makemap(users,owner)
 
     totalStr="TOTAL"
     overallStr="OVERALL"
-
-    hosts=["gengar","gastly","haunter","gulpin","dugtrio","raichu"]
 
     ## maximum namelength + extra whitespace
     maxlen=max([len(x) for x in usernames])+2
@@ -223,8 +245,16 @@ def showsummary(res,user_map,owner,showvo):
     rit=templ%('Run','Idle','(Blocked)','Total')
     lrit=(len(rit)-4+1)/2
 
-    tmp='%'+str(maxint)+'i'
-    templ=tmp*8
+    # dirty :)
+    tmp='%%%s'+str(maxint)+'i'
+    templ=(tmp * 8) % ('(jobs running)',
+                       '(jobs idle)',
+                       '(jobs blocked)',
+                       '(jobs total)',
+                       '(cpus running)',
+                       '(cpus idle)',
+                       '(cpus blocked)',
+                       '(cpus total)')
 
     padding=''
     if showvo:
@@ -268,10 +298,12 @@ def main():
         "running": ("Display running job information", None, "store_true", False, 'r'),
         "idle": ("Display idle job information", None, "store_true", False, 'i'),
         "blocked": ("Dispay blocked job information", None, "store_true", False, 'b'),
+        'hosts': ("Hosts/clusters to check", None, 'extend', []),
         'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_HOME'),
     }
 
-    opts = simple_option(options)
+    opts = simple_option(options, config_files=['/etc/myshowq.conf'])
+
 
     if not (opts.options.running or opts.options.idle or opts.options.blocked):
         opts.options.running = True
@@ -293,9 +325,9 @@ def main():
         sys.exit(0)
 
     if opts.options.summary:
-        showsummary(res, user_map, my_name, opts.options.virtualorganisation)
+        showsummary(opts.options.hosts, res, user_map, my_name, opts.options.virtualorganisation)
     if opts.options.detail:
-        showdetail(res, user_map, my_name, opts.options.virtualorganisation)
+        showdetail(opts.options.hosts, res, user_map, my_name, opts.options.virtualorganisation)
 
 
 if __name__ == '__main__':
