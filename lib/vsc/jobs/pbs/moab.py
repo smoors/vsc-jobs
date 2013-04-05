@@ -80,7 +80,7 @@ def get_nodes_dict(something=None, xml=None):
         # STATMODIFYTIME="1363076905" STATTOTALTIME="25499884" STATUPTIME="24971920">
         host = node.get("NODEID")
         nodes[host] = {}
-        nodes[host]['xml'] = nodes.items()
+        nodes[host]['xml'] = node.items()
         states = MOAB_PBS_NODEMAP[node.get("NODESTATE").lower()]
         derived = {
                    'states': states,
