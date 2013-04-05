@@ -73,7 +73,7 @@ def get_size(width, items, mode=None):
     fmt_w = "%%%ds" % width
 
     col_per_node = width + 1
-    row_per_node = 2  # node + state
+    row_per_node = 3  # node + state
 
     max_num_nodes_per_row = col // col_per_node
 
@@ -125,11 +125,11 @@ def display_cluster_status(nl, sl):
 
         txt.append(' ' + ' '.join([fmt_w % (nl[j]) for j in range(start, end)]))
         txt.append(' ' + ' '.join([fmt_w % (TRANSLATE_STATE[sl[j]]) for j in range(start, end)]))
-
+        txt.append('')  # empty line under each row
         start = end
         end += step
 
-    print "\n".join(txt + [''])
+    print "\n".join(txt)
 
     # good = left = even , bad = right = odd
     # - others should be odd

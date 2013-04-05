@@ -149,14 +149,16 @@ for name, full_state in nodes:
         nagios_res[nagios_state] = []
 
     state = full_state['derived']['state']
-    if state == ND_free and ND_idle in full_state['state']:
+    states = full_state['derived']['states']
+
+    if state == ND_free and ND_idle in states:
         state = ND_idle  # special case for idle
     if not state in detailed_res:
         detailed_res[state] = []
 
     if state in report_states:  # filter the allowed states
-        nagios_res[nagios_state].append(full_state['derived']['states'])
-        detailed_res[state].append(full_state['derived']['states'])
+        nagios_res[nagios_state].append(states)
+        detailed_res[state].append(states)
         nodes_found.append(name)
 
         if go.options.regex and not go.options.allregex:
