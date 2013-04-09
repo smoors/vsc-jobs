@@ -27,7 +27,7 @@ Several formating options are provided:
         - Blocked jobs
 
 @author Stijn De Weirdt
-@author Wouter De Pypere
+@author Wouter Depypere
 @author Andy Georges
 """
 
