@@ -75,7 +75,7 @@ def main():
         'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_HOME'),
     }
 
-    opts = simple_option(options)
+    opts = simple_option(options, config_files='/etc/mycheckjob.conf')
 
     my_uid = os.geteuid()
     my_name = pwd.getpwuid(my_uid)[0]
