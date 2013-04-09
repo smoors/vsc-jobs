@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 ##
 #
 # Copyright 2013-2013 Ghent University
@@ -22,7 +22,6 @@ import os
 import pwd
 import time
 
-from vsc.administration.user import MukUser, VscUser
 from vsc.utils import fancylogger
 from vsc.utils.generaloption import simple_option
 
@@ -72,8 +71,8 @@ def read_checkjob_data(path):
 def main():
 
     options = {
-        'jobid': ('jobid', 'Fully qualified identification of the job', None, 'store', None),
-         'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_HOME'),
+        'jobid': ('Fully qualified identification of the job', None, 'store', None),
+        'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_HOME'),
     }
 
     opts = simple_option(options)
@@ -81,7 +80,7 @@ def main():
     my_uid = os.geteuid()
     my_name = pwd.getpwuid(my_uid)[0]
 
-    path = checkjob_data_location(opts.options.location)
+    path = checkjob_data_location(my_name, opts.options.location_environment)
     (timeinfo, checkjob) = read_checkjob_data(path)
 
     age = time.time() - timeinfo
