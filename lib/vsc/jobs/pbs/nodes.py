@@ -38,22 +38,24 @@ from vsc.jobs.pbs.tools import str2byte
 
 _log = fancylogger.getLogger('pbs.nodes', fname=False)
 
-
+# OK
+ND_idle = 'idle'
+ND_free_and_job = 'partial'
 ND_free = pbs.ND_free
-ND_down = pbs.ND_down
-ND_offline = pbs.ND_offline
-ND_reserve = pbs.ND_reserve
 ND_job_exclusive = pbs.ND_job_exclusive
+# problem
+ND_offline = pbs.ND_offline
+ND_down = pbs.ND_down
+ND_down_on_error = 'down_on_error'
+ND_error = 'error'
+ND_bad = 'bad'
+# other
+ND_reserve = pbs.ND_reserve
 ND_job_sharing = pbs.ND_job_sharing
 ND_busy = pbs.ND_busy
 ND_state_unknown = pbs.ND_state_unknown
 ND_timeshared = pbs.ND_timeshared
 ND_cluster = pbs.ND_cluster
-ND_down_on_error = 'down_on_error'
-ND_free_and_job = 'partial'
-ND_error = 'error'
-ND_bad = 'bad'
-ND_idle = 'idle'
 
 TRANSLATE_STATE = {
                    ND_free: '_',
@@ -108,6 +110,7 @@ ND_NAGIOS_OK = [
                 ND_job_exclusive,
                 ND_free_and_job,
                 ND_free,
+                ND_idle,
                 ]
 
 ND_NAGIOS_WARNING = [x for x in TRANSLATE_STATE.keys() if not x in ND_NAGIOS_CRITICAL + ND_NAGIOS_OK]
