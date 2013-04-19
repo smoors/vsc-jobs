@@ -33,6 +33,7 @@ show_nodes prints nodes and node state information
 import sys
 from vsc import fancylogger
 from vsc.utils.generaloption import simple_option
+from vsc.utils.missing import any
 from vsc.jobs.pbs.nodes import get_nodes, collect_nodeinfo, NDNAG_CRITICAL, NDNAG_WARNING, NDNAG_OK
 from vsc.jobs.pbs.nodes import ND_NAGIOS_CRITICAL, ND_NAGIOS_WARNING, ND_NAGIOS_OK, ND_down, ND_offline, ND_free
 from vsc.jobs.pbs.nodes import  ND_state_unknown, ND_bad, ND_error, ND_idle, ND_down_on_error, ND_job_exclusive
@@ -168,7 +169,8 @@ for name, full_state in nodes:
     else:
         states_to_check = [state]
 
-    if len([x for x in states_to_check if x in report_states]) > 0:  # filter the allowed states
+    # filter the allowed states
+    if any(x for x in states_to_check if x in report_states):
         nagios_res[nagios_state].append(states)
         detailed_res[state].append(states)
         nodes_found.append(name)
