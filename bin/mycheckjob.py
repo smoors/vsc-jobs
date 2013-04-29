@@ -62,7 +62,7 @@ def read_checkjob_data(path):
         (timeinfo, checkjob) = cPickle.load(f)
         f.close()
     except Exception, err:
-        logger.error("Cannot read pickle file", err)
+        logger.exception("Cannot read pickle file", err)
         return (0, None)
 
     return (timeinfo, checkjob)
@@ -75,7 +75,7 @@ def main():
         'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_HOME'),
     }
 
-    opts = simple_option(options, config_files='/etc/mycheckjob.conf')
+    opts = simple_option(options, config_files=['/etc/mycheckjob.conf'])
 
     my_uid = os.geteuid()
     my_name = pwd.getpwuid(my_uid)[0]
