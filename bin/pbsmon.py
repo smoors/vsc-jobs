@@ -137,8 +137,9 @@ def display_cluster_status(nl, sl):
     if len(ND_STATE_OK) > maxlen:
         maxlen = len(ND_STATE_OK)
 
-    fmt_filler = "%s %%-21s   %%s\t |" % fmt_w
-    fmt = "%s %%-21s : %%s\t |" % fmt_w
+    fmt_filler = "%s %%-20s   %%-3s |" % fmt_w
+    fmt = "%s %%-20s : %%-3s |" % fmt_w
+
     filler = fmt_filler % (' ', ' ', ' ')
 
     stats = [[filler, filler][:] for x in range(maxlen)]  # make explicit copies
