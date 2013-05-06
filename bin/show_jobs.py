@@ -111,7 +111,7 @@ if go.options.nagios:
     summary = "R=%s Q=%s O=%s RN=%s RC=%s RP=%s QN=%s QC=%s QP=%s RU=%s QU=%s UU=%s"
 
     values = (
-              agg_ans[cat_map['R']], agg_ans[cat_map['Q']], agg_ans[cat_map['O']],
+              agg_ans[cat_map['R']], agg_ans[cat_map['Q']], len(agg_ans[cat_map['O']]),
               agg_ans[cat_map['RN']], agg_ans[cat_map['RC']], int(agg_ans[cat_map['RP']] / 3600),
               agg_ans[cat_map['QN']], agg_ans[cat_map['QC']], int(agg_ans[cat_map['QP']] / 3600),
               runuser, queueuser, uniqueuser,
