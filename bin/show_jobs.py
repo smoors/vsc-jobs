@@ -57,10 +57,7 @@ try:
         go.log.debug("Faults %s" % (faults))
     cat_map = dict([(x[0], idx) for idx, x in enumerate(categories)])
 except Exception, err:
-    if go.options.nagios:
-        msg = "show_jobs CRITICAL %s" % err
-    else:
-        msg = "show_jobs %s" % err
+    msg = "show_jobs %s" % err
     critical_exit(msg)
 
 if len(go.options.users):
@@ -81,13 +78,20 @@ if go.options.nagios:
     maxuserchars = 20
     msg = NagiosResult('show_jobs')
 
-    for i in 'R Q RN RC RP QN QC QP'.split():
-        msg.__dict__[i] = agg_ans[cat_map[i]]
+    for i in ['R', 'Q', 'RN', 'RC', 'RP', 'QN', 'QC', 'QP']:
+        setattr(msg, i, agg_ans[cat_map[i]])
     msg.O = len(agg_ans[cat_map['O']])
     msg.QP /= 3600
     msg.RP /= 3600
     msg.running = agg_ans[0]
     msg.queued = agg_ans[4]
+    # users with Running jobs
+    msg.RU = sum([x[cat_map['R']] > 0 for x in ustats.values()])
+    # users with Queued jobs
+    msg.QU = sum([x[cat_map['Q']] > 0 for x in ustats.values()])
+    # unique users
+    msg.UU = sum([x[cat_map['R']] + x[cat_map['Q']] > 0 for x in ustats.values()])
+
     ok_exit(msg)
 
 else:
