@@ -33,6 +33,7 @@ import sys
 
 from vsc.utils.generaloption import simple_option
 from vsc.jobs.pbs.jobs import get_userjob_stats
+from vsc.utils.nagios import NagiosResult, warning_exit, ok_exit, critical_exit, unknown_exit
 
 options = {
            'detailed':('Report detailed information', None, 'store_true', False, 'D'),
@@ -56,12 +57,8 @@ try:
         go.log.debug("Faults %s" % (faults))
     cat_map = dict([(x[0], idx) for idx, x in enumerate(categories)])
 except Exception, err:
-    if go.options.nagios:
-        msg = "show_jobs CRITICAL %s" % err
-    else:
-        msg = "show_jobs %s" % err
-    print msg
-    sys.exit(2)
+    msg = "show_jobs %s" % err
+    critical_exit(msg)
 
 if len(go.options.users):
     # remove all non-listed users
@@ -79,49 +76,24 @@ if go.options.nagios:
     # maxchars: total should be 80, - 2*6 + 1 ' '
     absmaxchars = 200
     maxuserchars = 20
+    msg = NagiosResult('show_jobs')
 
-    # sort by queued jobs (index 3)
-    uns = [(tmp[cat_map['Q']], user) for user, tmp in ustats.items()]
-    users_by_queued = [y for x, y in sorted(uns, reverse=True)]
-    restr = 0
-    restq = 0
-    runuser = 0
-    queueuser = 0
-    uniqueuser = 0
-    txt = ''
-    for idx, user in enumerate(users_by_queued):
-        if ustats[user][cat_map['R']] > 0:
-            runuser += 1
-        if ustats[user][cat_map['Q']] > 0:
-            queueuser += 1
-        if ustats[user][cat_map['R']] + ustats[user][cat_map['Q']] > 0:
-            uniqueuser += 1
+    for i in ['R', 'Q', 'RN', 'RC', 'RP', 'QN', 'QC', 'QP']:
+        setattr(msg, i, agg_ans[cat_map[i]])
+    msg.O = len(agg_ans[cat_map['O']])
+    msg.QP /= 3600
+    msg.RP /= 3600
+    msg.running = agg_ans[0]
+    msg.queued = agg_ans[4]
+    # users with Running jobs
+    msg.RU = sum([x[cat_map['R']] > 0 for x in ustats.values()])
+    # users with Queued jobs
+    msg.QU = sum([x[cat_map['Q']] > 0 for x in ustats.values()])
+    # unique users
+    msg.UU = sum([x[cat_map['R']] + x[cat_map['Q']] > 0 for x in ustats.values()])
 
-        if len(txt) > absmaxchars - 2 * maxuserchars:
-            restr += ustats[user][cat_map['R']]
-            restq += ustats[user][cat_map['Q']]
-            continue
+    ok_exit(msg)
 
-        txt = "r_%s=%s q_%s=%s %s" % (idx, ustats[user][cat_map['R']], idx, ustats[user][cat_map['Q']], txt)
-    if (restr + restq) > 0:
-        txt = "r_rest=%s q_rest=%s %s" % (restr, restq, txt)
-
-    header = "show_jobs OK"
-    summ = "Running:%s Queued:%s" % (agg_ans[0], agg_ans[4])
-    summary = "R=%s Q=%s O=%s RN=%s RC=%s RP=%s QN=%s QC=%s QP=%s RU=%s QU=%s UU=%s"
-
-    values = (
-              agg_ans[cat_map['R']], agg_ans[cat_map['Q']], len(agg_ans[cat_map['O']]),
-              agg_ans[cat_map['RN']], agg_ans[cat_map['RC']], int(agg_ans[cat_map['RP']] / 3600),
-              agg_ans[cat_map['QN']], agg_ans[cat_map['QC']], int(agg_ans[cat_map['QP']] / 3600),
-              runuser, queueuser, uniqueuser,
-              )
-    # # too much chars for icinga/ido2db
-    txt = ''
-    msg = "%s - %s | %s %s" % (header, summ, summary % values, txt)
-
-    print msg
-    sys.exit(0)
 else:
     txt = []
     run_values = (agg_ans[cat_map['R']], agg_ans[cat_map['RN']], agg_ans[cat_map['RC']], int(agg_ans[cat_map['RP']] / 3600),)
