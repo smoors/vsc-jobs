@@ -59,12 +59,13 @@ def show_individual():
             all_jobs.pop(jobid)
 
     # do something
-    if len(go.options.show):
+    if go.options.show:
         if 'nodes' in go.options.show:
             # show the unqiue nodes, comma separated
             nodes = set()
-            for jobnodes in [x['derived']['exec_hosts'].keys() for x in all_jobs.values()]:
-                nodes.update(jobnodes)
+            for job in all_jobs.values():
+                for jobnodes in job['derived']['exec_hosts'].keys():
+                    nodes.update(jobnodes)
 
             print "Nodes: %s" % ' '.join(nodes)
 
@@ -79,7 +80,7 @@ def show_summary():
 
     try:
         ustats, faults, categories = get_userjob_stats()
-        if len(faults) > 0 and not go.options.nagios:
+        if faults and not go.options.nagios:
             go.log.warning("Faults %s" % ([x[0] for x in faults]))
             go.log.debug("Faults %s" % (faults))
         cat_map = dict([(x[0], idx) for idx, x in enumerate(categories)])
@@ -87,7 +88,7 @@ def show_summary():
         msg = "show_jobs %s" % err
         critical_exit(msg)
 
-    if len(go.options.users):
+    if go.options.users:
         # remove all non-listed users
         for user in ustats.keys():
             if not user in go.options.users:
@@ -125,7 +126,7 @@ def show_summary():
         txt.append("%s queued jobs for %s nodes (%s cores, %s prochours)" % queued_values)
 
         others = agg_ans[cat_map['O']]
-        if  len(others) > 0:
+        if  others:
             txt.append("Other jobs: %s (%s)" % (len(others), ','.join(others)))
 
         if go.options.detailed:
