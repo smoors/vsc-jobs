@@ -64,8 +64,8 @@ def show_individual():
             # show the unqiue nodes, comma separated
             nodes = set()
             for job in all_jobs.values():
-                for jobnodes in job['derived']['exec_hosts'].keys():
-                    nodes.update(jobnodes)
+                if 'exec_hosts' in job['derived']:
+                    nodes.update(job['derived']['exec_hosts'].keys())
 
             print "Nodes: %s" % ' '.join(nodes)
 
