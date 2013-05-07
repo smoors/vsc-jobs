@@ -32,12 +32,13 @@ show_nodes prints nodes and node state information
 
 import sys
 from vsc import fancylogger
-from vsc.utils.generaloption import simple_option
-from vsc.utils.missing import any
 from vsc.jobs.pbs.nodes import get_nodes, collect_nodeinfo, NDNAG_CRITICAL, NDNAG_WARNING, NDNAG_OK
 from vsc.jobs.pbs.nodes import ND_NAGIOS_CRITICAL, ND_NAGIOS_WARNING, ND_NAGIOS_OK, ND_down, ND_offline, ND_free
 from vsc.jobs.pbs.nodes import  ND_state_unknown, ND_bad, ND_error, ND_idle, ND_down_on_error, ND_job_exclusive
 from vsc.jobs.pbs.moab import get_nodes_dict as moab_get_nodes_dict
+from vsc.utils.generaloption import simple_option
+from vsc.utils.missing import any
+from vsc.utils.nagios import NagiosResult, warning_exit, ok_exit, critical_exit, unknown_exit
 
 _log = fancylogger.getLogger('show_nodes')
 
@@ -139,9 +140,9 @@ else:
 # WARNING first, since that is the one that gives dependency on others
 nagiosstatesorder = [NDNAG_WARNING, NDNAG_CRITICAL, NDNAG_OK]
 nagiosexit = {
-              NDNAG_CRITICAL: 2,
-              NDNAG_WARNING: 1,
-              NDNAG_OK: 0,
+              NDNAG_CRITICAL: critical_exit,
+              NDNAG_WARNING: warning_exit,
+              NDNAG_OK: ok_exit,
               }
 
 nagios_res = {}
@@ -184,15 +185,14 @@ if go.options.regex and not go.options.allregex:
     nagios_state, all_states = nagios_res.items()[0]
     states = all_states[0]
     if go.options.nagios:
-        txt = "show_nodes %s - %s" % (nagios_state, ",".join(states))
-        print txt
-        sys.exit(nagiosexit[nagios_state])
+        msg = "show_nodes - %s" % ",".join(states)
+        nagiosexit[nagios_state](msg)
     else:
         txt = "%s %s" % (nagios_state, ",".join(states))
         print txt
 else:
     if go.options.nagios:
-        header = 'show_nodes '
+        msg = NagiosResult('show_nodes')
         txt = []
         total = 0
         for state in all_states:
@@ -201,15 +201,14 @@ else:
             else:
                 nr = 0
             total += nr
-            txt.append("%s=%s" % (state, nr))
-        txt.append("total=%s" % total)
+            setattr(msg, state, nr)
+        msg.total = total
 
         reported_state = [str(NDNAG_OK), '']
         if ND_bad in detailed_res:
             reported_state[0] = NDNAG_CRITICAL
-            reported_state[1] = ' - %s bad nodes' % (len(detailed_res[ND_bad]))
-        print "%s %s%s | %s" % (header, reported_state[0], reported_state[1], " ".join(txt))
-        sys.exit(nagiosexit[reported_state[0]])
+            msg.message += ' - %s bad nodes' % (len(detailed_res[ND_bad]))
+        nagiosexit[reported_state[0]](msg)
     else:
         # just print the nodes
         if go.options.shorthost:
