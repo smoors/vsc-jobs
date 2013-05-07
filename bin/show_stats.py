@@ -33,15 +33,16 @@ The script prints moab/maui scheduler details like teh showstats command.
 # this does something interesting with maui showstats and diagnose
 import sys
 from vsc import fancylogger
-from vsc.utils.generaloption import simple_option
 from vsc.jobs.pbs.moab import showstats
+from vsc.utils.generaloption import simple_option
+from vsc.utils.nagios import NagiosResult, ok_exit
 
 _log = fancylogger.getLogger('show_stats')
 
 options = {
-           'detailed':('Report detailed information', None, 'store_true', False, 'D'),
-           'nagios':('Report in nagios format', None, 'store_true', False, 'n'),
-           'moabxml':('Use xml moab data from file (for testing)', None, 'store', None),
+           'detailed': ('Report detailed information', None, 'store_true', False, 'D'),
+           'nagios': ('Report in nagios format', None, 'store_true', False, 'n'),
+           'moabxml': ('Use xml moab data from file (for testing)', None, 'store', None),
            }
 
 go = simple_option(options)
@@ -62,16 +63,15 @@ except Exception, err:
     sys.exit(2)
 
 if go.options.nagios:
-    header = "show_stats OK"
     summ = "short %.3f long %.3f" % (summary_stats['STE'], summary_stats['LTE'])
-    summary = "STE=%.1f LTE=%.1f DPH=%.0f TPH=%.0f AP=%s TP=%s"
-    values = tuple([summary_stats[x] for x in ['STE', 'LTE', 'DPH', 'TPH', 'CAP', 'CTP']])
-
-    # first 2 in
-    msg = "%s - %s | %s" % (header, summ, summary % values)
-
-    print msg
-    sys.exit(0)
+    msg = NagiosResult('show_stats - %s' % summ)
+    msg.STE = "%.1f" % summary_stats['STE']
+    msg.LTE = "%.1f" % summary_stats['LTE']
+    msg.DPH = "%.0f" % summary_stats['DPH']
+    msg.TPH = "%.0f" % summary_stats['TPH']
+    msg.AP = "%s" % summary_stats['CAP']
+    msg.TP = "%s" % summary_stats['CTP']
+    ok_exit(msg)
 else:
     msg = []
     msg.append("Shortterm/Longterm efficiency %.3f/%.3f\n" % (summary_stats['STE'], summary_stats['LTE']))
