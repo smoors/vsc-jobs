@@ -72,11 +72,12 @@ def show_individual():
 
 def show_summary():
     """Show summary data"""
-    for gr in go.options.groups:
+    for group in go.options.groups:
         # get the members
-        g = grp.getgrnam(gr)
-        if g:
-            go.options.users += g[3]
+        found_group = grp.getgrnam(group)
+        group_members_idx = 3
+        if found_group:
+            go.options.users += found_group[group_members_idx]
 
     try:
         ustats, faults, categories = get_userjob_stats()
@@ -99,50 +100,56 @@ def show_summary():
         for i in range(len(categories)):
             agg_ans[i] += tmp[i]
 
-    if go.options.nagios:
-        msg = NagiosResult('show_jobs')
+    def make_msg(ans, msgtxt, ustats=None):
+        """Make a NagiosResult instance from agg_ans"""
+        msg = NagiosResult(msgtxt)
 
         for i in ['R', 'Q', 'RN', 'RC', 'RP', 'QN', 'QC', 'QP']:
-            setattr(msg, i, agg_ans[cat_map[i]])
-        msg.O = len(agg_ans[cat_map['O']])
+            setattr(msg, i, ans[cat_map[i]])
+        msg.O = len(ans[cat_map['O']])
         msg.QP /= 3600
         msg.RP /= 3600
-        msg.running = agg_ans[0]
-        msg.queued = agg_ans[4]
-        # users with Running jobs
-        msg.RU = sum([x[cat_map['R']] > 0 for x in ustats.values()])
-        # users with Queued jobs
-        msg.QU = sum([x[cat_map['Q']] > 0 for x in ustats.values()])
-        # unique users
-        msg.UU = sum([x[cat_map['R']] + x[cat_map['Q']] > 0 for x in ustats.values()])
+        if ustats is not None:
+            msg.running = ans[0]
+            msg.queued = ans[4]
+            # users with Running jobs
+            msg.RU = sum([x[cat_map['R']] > 0 for x in ustats.values()])
+            # users with Queued jobs
+            msg.QU = sum([x[cat_map['Q']] > 0 for x in ustats.values()])
+            # unique users
+            msg.UU = sum([x[cat_map['R']] + x[cat_map['Q']] > 0 for x in ustats.values()])
+        return msg
 
+    msg = make_msg(agg_ans, 'show_jobs', ustats=ustats)
+    if go.options.nagios:
         ok_exit(msg)
-
     else:
         txt = []
-        run_values = (agg_ans[cat_map['R']], agg_ans[cat_map['RN']], agg_ans[cat_map['RC']], int(agg_ans[cat_map['RP']] / 3600),)
-        txt.append("%s running jobs on %s nodes (%s cores, %s prochours)" % run_values)
-        queued_values = (agg_ans[cat_map['Q']], agg_ans[cat_map['QN']], agg_ans[cat_map['QC']], int(agg_ans[cat_map['QP']] / 3600),)
-        txt.append("%s queued jobs for %s nodes (%s cores, %s prochours)" % queued_values)
+        run_template = "%s%s running jobs on %s nodes (%s cores, %s prochours)"
+        queued_template = "%s%s queued jobs for %s nodes (%s cores, %s prochours)"
+        other_template = "%sOther jobs: %s (%s)"
 
-        others = agg_ans[cat_map['O']]
-        if  others:
-            txt.append("Other jobs: %s (%s)" % (len(others), ','.join(others)))
+        run_values = ('', msg.R, msg.RN, msg.RC, int(msg.RP),)
+        txt.append(run_template % run_values)
+        queued_values = ('', msg.Q, msg.QN, msg.QC, int(msg.QP),)
+        txt.append(queued_template % queued_values)
+
+        if msg.O:
+            txt.append(other_template % ('', msg.O, ','.join(agg_ans[cat_map['O']])))
 
         if go.options.detailed:
-            indent = "  "
+            indent = " " * 2
             users = ustats.keys()
             for user in sorted(users):
                 txt.append("%s%s" % (indent, user))
                 ans = ustats[user]
-                run_values = (indent * 2, ans[cat_map['R']], ans[cat_map['RN']], ans[cat_map['RC']], int(ans[cat_map['RP']] / 3600),)
-                txt.append("%s%s running jobs on %s nodes (%s cores, %s prochours)" % run_values)
-                queued_values = (indent * 2, ans[cat_map['Q']], ans[cat_map['QN']], ans[cat_map['QC']], int(ans[cat_map['QP']] / 3600),)
-                txt.append("%s%s queued jobs for %s nodes (%s cores, %s prochours)" % queued_values)
-
-                others = ans[cat_map['O']]
-                if  len(others) > 0:
-                    txt.append("%sOther jobs: %s (%s)" % (indent * 2, len(others), ','.join(others)))
+                tmpmsg = make_msg(ans, 'tmp')
+                run_values = (indent * 2, tmpmsg.R, tmpmsg.RN, tmpmsg.RC, int(tmpmsg.RP),)
+                txt.append(run_template % run_values)
+                queued_values = (indent * 2, tmpmsg.Q, tmpmsg.QN, tmpmsg.QC, int(tmpmsg.QP),)
+                txt.append(queued_template % queued_values)
+                if  tmpmsg.O:
+                    txt.append(other_template % (indent * 2, tmpmsg.O, ','.join(ans[cat_map['O']])))
 
         print "\n".join(txt)
         sys.exit(0)
