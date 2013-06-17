@@ -90,11 +90,11 @@ def get_size(width, items, mode=None):
         max_per_row = max_num_nodes_per_row
     elif mode == 'squarish':
         # try make it appear like a square
-        max_per_row = (math.sqrt(tot_node_area) / col_per_node).__trunc__() + 1
+        max_per_row = int(math.sqrt(tot_node_area) / col_per_node) + 1
     elif mode == 'ratio':
         # try make keep the screen ratio
         screen_ratio = col / (col * row_col_ratio)
-        max_per_row = (math.sqrt(tot_node_area / screen_ratio) / col_per_node).__trunc__() + 1
+        max_per_row = int(math.sqrt(tot_node_area / screen_ratio) / col_per_node) + 1
     else:
         _log.raiseException('get_size: unknown mode %s' % mode)
 
