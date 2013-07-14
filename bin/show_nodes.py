@@ -33,8 +33,9 @@ show_nodes prints nodes and node state information
 import sys
 from vsc import fancylogger
 from vsc.jobs.pbs.nodes import get_nodes, collect_nodeinfo, NDNAG_CRITICAL, NDNAG_WARNING, NDNAG_OK
-from vsc.jobs.pbs.nodes import ND_NAGIOS_CRITICAL, ND_NAGIOS_WARNING, ND_NAGIOS_OK, ND_down, ND_offline, ND_free
-from vsc.jobs.pbs.nodes import  ND_state_unknown, ND_bad, ND_error, ND_idle, ND_down_on_error, ND_job_exclusive
+from vsc.jobs.pbs.nodes import ND_NAGIOS_CRITICAL, ND_NAGIOS_WARNING, ND_NAGIOS_OK, ND_down, ND_offline
+from vsc.jobs.pbs.nodes import ND_free, ND_free_and_job, ND_job_exclusive
+from vsc.jobs.pbs.nodes import ND_state_unknown, ND_bad, ND_error, ND_idle, ND_down_on_error
 from vsc.jobs.pbs.moab import get_nodes_dict as moab_get_nodes_dict
 from vsc.utils.generaloption import simple_option
 from vsc.utils.missing import any
@@ -51,8 +52,9 @@ options = {
     'down':('Down nodes', None, 'store_true', False, 'D'),
     'downonerror':('Down on error nodes', None, 'store_true', False, 'E'),
     'offline':('Offline nodes', None, 'store_true', False, 'o'),
-    'free':('Free nodes', None, 'store_true', False, 'f'),
+    'partial':('Patial nodes (jobs and free)', None, 'store_true', False, 'p'),
     'job-exclusive':('Job-exclusive nodes', None, 'store_true', False, 'x'),
+    'free':('Free nodes (free as seen by PBS, i.e. partial)', None, 'store_true', False, 'f'),
     'unknown':('State unknown nodes', None, 'store_true', False, 'u'),
     'bad':('Bad nodes (broken jobregex)', None, 'store_true', False, 'b'),
     'error':('Error nodes', None, 'store_true', False, 'e'),
@@ -78,6 +80,8 @@ if go.options.offline:
     report_states.append(ND_offline)
 if go.options.free:
     report_states.append(ND_free)
+if go.options.partial:
+    report_states.append(ND_free_and_job)
 if go.options.job_exclusive:
     report_states.append(ND_job_exclusive)
 if go.options.unknown:
