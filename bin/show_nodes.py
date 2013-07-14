@@ -66,6 +66,7 @@ options = {
     'moab':('Use moab information (mdiag -n)', None, 'store_true', False, 'm'),
     'moabxml':('Use xml moab data from file (for testing)', None, 'store', None),
     'shorthost':('Return (short) hostname', None, 'store_true', False, 's'),
+    'invert':('Return inverted selection', None, 'store_true', False, 'v'),
     }
 
 go = simple_option(options)
@@ -153,7 +154,11 @@ nagios_res = {}
 detailed_res = {}
 nodes_found = []
 
+all_nodes = []
+
 for name, full_state in nodes:
+    all_nodes.append(name)
+
     if go.options.regex and not go.options.regex.search(name):
         continue
 
@@ -183,6 +188,8 @@ for name, full_state in nodes:
         if go.options.regex and not go.options.allregex:
             break
 
+if go.options.invert:
+    nodes_found = [x for x in all_nodes if not x in nodes_found]
 
 if go.options.regex and not go.options.allregex:
     # there should only be one node
