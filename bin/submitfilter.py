@@ -47,6 +47,11 @@ DEFAULT_SERVER = "default"
 
 # these amounts are in kilobytes as reported by pnbsnodes
 CLUSTERDATA = {
+                'delcatty' : {
+                              'PHYSMEM' : 66045320 << 10,
+                              'TOTMEM' : 87016832 << 10,
+                              'NP': 16
+                              },
                 'gengar' : {
                             'PHYSMEM' : 16439292 << 10,
                             'TOTMEM': 37410804 << 10,
