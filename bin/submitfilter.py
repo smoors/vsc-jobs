@@ -48,38 +48,38 @@ DEFAULT_SERVER = "default"
 # these amounts are in kilobytes as reported by pbsnodes
 CLUSTERDATA = {
     'delcatty': {
-        'PHYSMEM': 66045320 << 10,
-        'TOTMEM': 87016832 << 10,
+        'PHYSMEM': 66045320 << 10,  # ~62.9GB
+        'TOTMEM': 87016832 << 10,  # ~82.9GB
         'NP': 16,
         },
     'gengar': {
-        'PHYSMEM': 16439292 << 10,
-        'TOTMEM': 37410804 << 10,
+        'PHYSMEM': 16439292 << 10,  # 15.6GB
+        'TOTMEM': 37410804 << 10,  # 35.6GB
         'NP': 8,
         },
     'gastly': {
-        'PHYSMEM': 12273152 << 10,
-        'TOTMEM': 33244664 << 10,
+        'PHYSMEM': 12273152 << 10,  # 11.7GB
+        'TOTMEM': 33244664 << 10,  # 31.7GB
         'NP': 8,
         },
     'haunter': {
-        'PHYSMEM': 12273152 << 10,
-        'TOTMEM': 33244664 << 10,
+        'PHYSMEM': 12273152 << 10,  # 11.7GB
+        'TOTMEM': 33244664 << 10,  # 31.7
         'NP': 8,
         },
     'gulpin': {
-        'PHYSMEM': 66093364 << 10,
-        'TOTMEM': 87064892 << 10,
+        'PHYSMEM': 66093364 << 10,  # 63.0GB
+        'TOTMEM': 87064892 << 10,  # 83.0GB
         'NP': 32,
         },
     'raichu': {
-        'PHYSMEM': 32973320 << 10,
-        'TOTMEM': 53944832 << 10,
+        'PHYSMEM': 32973320 << 10,  # 31.4GB
+        'TOTMEM': 53944832 << 10,  # 51.4GB
         'NP': 16,
         },
     'muk': {
-        'PHYSMEM': 66068964 << 10,
-        'TOTMEM': 99623388 << 10,
+        'PHYSMEM': 66068964 << 10,  # 63.0GB
+        'TOTMEM': 99623388 << 10,  # 95.0GB
         'NP': 16,
         },
     'dugtrio': {
