@@ -45,48 +45,48 @@ DEFAULT_SERVER_CLUSTER = 'gengar'
 
 DEFAULT_SERVER = "default"
 
-# these amounts are in kilobytes as reported by pnbsnodes
+# these amounts are in kilobytes as reported by pbsnodes
 CLUSTERDATA = {
-                'delcatty' : {
-                              'PHYSMEM' : 66045320 << 10,
-                              'TOTMEM' : 87016832 << 10,
-                              'NP': 16
-                              },
-                'gengar' : {
-                            'PHYSMEM' : 16439292 << 10,
-                            'TOTMEM': 37410804 << 10,
-                            'NP' : 8
-                            },
-                'gastly': {
-                           'PHYSMEM': 12273152 << 10,
-                           'TOTMEM' : 33244664 << 10,
-                           'NP' : 8
-                           },
-                'haunter': {
-                           'PHYSMEM': 12273152 << 10,
-                           'TOTMEM' : 33244664 << 10,
-                           'NP' : 8
-                           },
-                'gulpin' : {
-                            'PHYSMEM': 66093364 << 10,
-                            'TOTMEM': 87064892 << 10,
-                            'NP' : 32,
-                            },
-                'raichu' : {
-                            'PHYSMEM' : 32973320 << 10,
-                            'TOTMEM' : 53944832 << 10,
-                            'NP': 16
-                            },
-                'muk' : {
-                            'PHYSMEM' : 66068964 << 10,
-                            'TOTMEM' : 99623388 << 10,
-                            'NP': 16
-                            },
-                'dugtrio' : {
-                             'TOTMEM' : 1395439 << 20,  # total amount of ram in dugtrio cluster
-                             'DEFMAXNP' : 48,  # # default maximum np in case of ppn=full
-                             },
-               }
+    'delcatty': {
+        'PHYSMEM': 66045320 << 10,
+        'TOTMEM': 87016832 << 10,
+        'NP': 16,
+        },
+    'gengar': {
+        'PHYSMEM': 16439292 << 10,
+        'TOTMEM': 37410804 << 10,
+        'NP': 8,
+        },
+    'gastly': {
+        'PHYSMEM': 12273152 << 10,
+        'TOTMEM': 33244664 << 10,
+        'NP': 8,
+        },
+    'haunter': {
+        'PHYSMEM': 12273152 << 10,
+        'TOTMEM': 33244664 << 10,
+        'NP': 8,
+        },
+    'gulpin': {
+        'PHYSMEM': 66093364 << 10,
+        'TOTMEM': 87064892 << 10,
+        'NP': 32,
+        },
+    'raichu': {
+        'PHYSMEM': 32973320 << 10,
+        'TOTMEM': 53944832 << 10,
+        'NP': 16,
+        },
+    'muk': {
+        'PHYSMEM': 66068964 << 10,
+        'TOTMEM': 99623388 << 10,
+        'NP': 16,
+        },
+    'dugtrio': {
+        'TOTMEM': 1395439 << 20,  # total amount of ram in dugtrio cluster
+        'DEFMAXNP': 48,  # default maximum np in case of ppn=full
+        },
+    }
 
 
 MIN_VMEM = 1536 << 20  # minimum amount of ram in our machines.
