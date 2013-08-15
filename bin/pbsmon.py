@@ -167,7 +167,7 @@ def display_node_types(types):
         txt[-1].replace(':', 's:')
         offset = " " * 2
 
-    for typ, freq in sorted(types.items(), key=lambda x: x[1], reverse=True):
+    for typ, nodes in sorted(types.items(), key=lambda x: len(x[1]), reverse=True):
         # most frequent first
         cores, phys, swap, disk = typ
         txt.append(template % (offset, cores, phys, swap, phys + swap, disk))

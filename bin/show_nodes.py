@@ -103,7 +103,7 @@ if go.options.singlenodeinfo or go.options.reportnodeinfo:
         _log.error('No nodeinfo found')
         sys.exit(1)
 
-    ordered = sorted(nodeinfo.items(), key=lambda x: x[1], reverse=True)
+    ordered = sorted(nodeinfo.items(), key=lambda x: len(x[1]), reverse=True)
 
     if go.options.singlenodeinfo:
         if len(nodeinfo) > 1:
@@ -120,8 +120,12 @@ if go.options.singlenodeinfo or go.options.reportnodeinfo:
         msg.append("SHOWNODES_PHYSMEMMB=%d" % (most_freq[1] * 1024))
     else:
         msg = []
-        for info, freq in ordered:
-            msg.append("%d nodes with %d cores and %s MB physmem" % (freq, info[0], info[1] * 1024))
+        for info, nodes in ordered:
+            txt = "%d nodes with %d cores, %s MB physmem, %s GB swap and %s GB local disk" % (
+                    len(nodes), info[0], info[1] * 1024, info[2], info[3])
+            msg.append(txt)
+            # print and _log are dumped to stdout at different moment, repeat the txt in the debug log
+            _log.debug("Found %s with matching nodes: %s" % (txt, nodes))
 
     print "\n".join(msg)
     sys.exit(0)
