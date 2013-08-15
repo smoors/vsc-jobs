@@ -117,11 +117,11 @@ if go.options.singlenodeinfo or go.options.reportnodeinfo:
         most_freq = ordered[0][0]
         msg = []
         msg.append("SHOWNODES_PPN=%d" % most_freq[0])
-        msg.append("SHOWNODES_PHYSMEMMB=%d" % most_freq[1] / 1024 ** 2)
+        msg.append("SHOWNODES_PHYSMEMMB=%d" % (most_freq[1] * 1024))
     else:
         msg = []
         for info, freq in ordered:
-            msg.append("%d nodes with %d cores and %s MB physmem" % (freq, info[0], info[1] / 1024 ** 2))
+            msg.append("%d nodes with %d cores and %s MB physmem" % (freq, info[0], info[1] * 1024))
 
     print "\n".join(msg)
     sys.exit(0)
