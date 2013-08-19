@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
-##
+# #
 # Copyright 2013-2013 Ghent University
 #
 # This file is part of vsc-jobs,
@@ -12,7 +12,7 @@
 #
 # All rights reserved.
 #
-##
+# #
 """
 All things moab that are similar to all moab commands from which we want output.
 
@@ -160,15 +160,17 @@ class MoabCommand(object):
             return None
 
         parsed = self.parser(cluster, output)
-        if parsed:
-            self.logger.debug("Returning parsed output for cluster %s" % (cluster))
-            return parsed
-        else:
+        if parsed is None:
             self.logger.debug("Returning raw output")
             return output
+        else:
+            self.logger.debug("Returning parsed output for cluster %s" % (cluster))
+            return parsed
 
     def parser(self, host, txt):
-        """Parse the returned XML into the desired data structure for further processing."""
+        """Parse the returned XML into the desired data structure for further processing.
+            When None is returned, it assumes nothing is parsed, and raw unparsed output is used.
+        """
         self.logger.debug("Empty parser used.")
         return None
 
