@@ -239,8 +239,8 @@ def collect_nodeinfo():
                 dsize = ceil(10 * size / (5 * GB)) / 2
                 typ = (cores, pmem, swap, dsize)
                 if not typ in types:
-                    types[typ] = 0
-                types[typ] += 1
+                    types[typ] = []
+                types[typ].append(node)
 
         result = re_host_id.search(node)
         if result:
