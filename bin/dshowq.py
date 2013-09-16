@@ -26,29 +26,20 @@ import sys
 import time
 
 
-from vsc.utils import fancylogger
 from vsc.administration.user import cluster_user_pickle_store_map, cluster_user_pickle_location_map
-from vsc.utils.lock import lock_or_bork, release_or_bork
 from vsc.jobs.moab.showq import Showq
 from vsc.ldap.configuration import VscConfiguration
 from vsc.ldap.entities import VscLdapGroup, VscLdapUser
 from vsc.ldap.filters import InstituteFilter
 from vsc.ldap.utils import LdapQuery
-from vsc.utils.availability import proceed_on_ha_service
+from vsc.utils import fancylogger
 from vsc.utils.fs_store import UserStorageError, FileStoreError, FileMoveError
-from vsc.utils.generaloption import simple_option
-from vsc.utils.nagios import NagiosReporter, NagiosResult, NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING
-from vsc.utils.timestamp_pid_lockfile import TimestampedPidLockfile
+from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
+from vsc.utils.script_tools import ExtendedSimpleOption
 
 
 #Constants
-NAGIOS_CHECK_FILENAME = '/var/log/pickles/dshowq.nagios.pickle'
-NAGIOS_HEADER = 'dshowq'
 NAGIOS_CHECK_INTERVAL_THRESHOLD = 15 * 60  # 15 minutes
-# HostsReported HostsUnavailable UserCount UserNoStorePossible
-NAGIOS_REPORT_VALUES_TEMPLATE = "HR=%d, HU=%d, UC=%d, NS=%d"
-
-DSHOWQ_LOCK_FILE = '/var/run/dshowq_tpid.lock'
 
 DEFAULT_VO = 'gvo00012'
 
@@ -143,103 +134,73 @@ def main():
     # Note: debug option is provided by generaloption
     # Note: other settings, e.g., ofr each cluster will be obtained from the configuration file
     options = {
-        'nagios': ('print out nagion information', None, 'store_true', False, 'n'),
-        'nagios_check_filename': ('filename of where the nagios check data is stored', str, 'store', NAGIOS_CHECK_FILENAME),
-        'nagios_check_interval_threshold': ('threshold of nagios checks timing out', None, 'store', NAGIOS_CHECK_INTERVAL_THRESHOLD),
+        'nagios-check-interval-threshold': ('threshold of nagios checks timing out', None, 'store', NAGIOS_CHECK_INTERVAL_THRESHOLD),
         'hosts': ('the hosts/clusters that should be contacted for job information', None, 'extend', []),
         'information': ('the sort of information to store: user, vo, project', None, 'store', 'user'),
         'location': ('the location for storing the pickle file: gengar, muk', str, 'store', 'gengar'),
-        'ha': ('high-availability master IP address', None, 'store', None),
-        'dry-run': ('do not make any updates whatsoever', None, 'store_true', False),
     }
 
-    opts = simple_option(options)
+    opts = ExtendedSimpleOption(options)
 
-    if opts.options.debug:
-        fancylogger.setLogLevelDebug()
+    try:
+        LdapQuery(VscConfiguration())
 
-    nagios_reporter = NagiosReporter(NAGIOS_HEADER, NAGIOS_CHECK_FILENAME, NAGIOS_CHECK_INTERVAL_THRESHOLD)
-    if opts.options.nagios:
-        logger.debug("Producing Nagios report and exiting.")
-        nagios_reporter.report_and_exit()
-        sys.exit(0)  # not reached
+        clusters = {}
+        for host in opts.options.hosts:
+            master = opts.configfile_parser.get(host, "master")
+            showq_path = opts.configfile_parser.get(host, "showq_path")
+            clusters[host] = {
+                'master': master,
+                'path': showq_path
+            }
 
-    if not proceed_on_ha_service(opts.options.ha):
-        logger.warning("Not running on the target host in the HA setup. Stopping.")
-        nagios_reporter.cache(NAGIOS_EXIT_WARNING,
-                        NagiosResult("Not running on the HA master."))
-        sys.exit(NAGIOS_EXIT_WARNING)
+        showq = Showq(clusters, cache_pickle=True, dry_run=opts.options.dry_run)
 
-    lockfile = TimestampedPidLockfile(DSHOWQ_LOCK_FILE)
-    lock_or_bork(lockfile, nagios_reporter)
+        (queue_information, reported_hosts, failed_hosts) = showq.get_moab_command_information()
+        timeinfo = time.time()
 
-    logger.info("starting dshowq run")
+        active_users = queue_information.keys()
 
-    clusters = {}
-    for host in opts.options.hosts:
-        master = opts.configfile_parser.get(host, "master")
-        showq_path = opts.configfile_parser.get(host, "showq_path")
-        clusters[host] = {
-            'master': master,
-            'path': showq_path
-        }
+        logger.debug("Active users: %s" % (active_users))
+        logger.debug("Queue information: %s" % (queue_information))
 
-    showq = Showq(clusters, cache_pickle=True, dry_run=opts.options.dry_run)
+        # We need to determine which users should get an updated pickle. This depends on
+        # - the active user set
+        # - the information we want to provide on the cluster(set) where this script runs
+        # At the same time, we need to determine the job information each user gets to see
+        (target_users, target_queue_information, user_map) = determine_target_information(opts.options.information,
+                                                                                        active_users,
+                                                                                        queue_information)
 
-    (queue_information, reported_hosts, failed_hosts) = showq.get_moab_command_information()
-    timeinfo = time.time()
+        nagios_user_count = 0
+        nagios_no_store = 0
 
-    active_users = queue_information.keys()
+        stats = {}
 
-    logger.debug("Active users: %s" % (active_users))
-    logger.debug("Queue information: %s" % (queue_information))
+        for user in target_users:
+            if not opts.options.dry_run:
+                try:
+                    (path, store) = get_pickle_path(opts.options.location, user)
+                    user_queue_information = target_queue_information[user]
+                    user_queue_information['timeinfo'] = timeinfo
+                    store(user, path, (user_queue_information, user_map[user]))
+                    nagios_user_count += 1
+                except (UserStorageError, FileStoreError, FileMoveError), err:
+                    logger.error("Could not store pickle file for user %s" % (user))
+                    nagios_no_store += 1
+            else:
+                logger.info("Dry run, not actually storing data for user %s at path %s" % (user, get_pickle_path(opts.options.location, user)[0]))
+                logger.debug("Dry run, queue information for user %s is %s" % (user, target_queue_information[user]))
 
-    # We need to determine which users should get an updated pickle. This depends on
-    # - the active user set
-    # - the information we want to provide on the cluster(set) where this script runs
-    # At the same time, we need to determine the job information each user gets to see
-    (target_users, target_queue_information, user_map) = determine_target_information(opts.options.information,
-                                                                                      active_users,
-                                                                                      queue_information)
+        stats["store+users"] = nagios_user_count
+        stats["store_fail"] = nagios_no_store
+        stats["store_fail_critical"] = 5
+    except:
+        logger.exception("critical exception caught: %s" % (err))
+        opts.epilogue_critical("Script failed in a horrible way")
+        sys.exit(NAGIOS_EXIT_CRITICAL)
 
-    nagios_user_count = 0
-    nagios_no_store = 0
-
-    LdapQuery(VscConfiguration())
-
-    for user in target_users:
-        if not opts.options.dry_run:
-            try:
-                (path, store) = get_pickle_path(opts.options.location, user)
-                user_queue_information = target_queue_information[user]
-                user_queue_information['timeinfo'] = timeinfo
-                store(user, path, (user_queue_information, user_map[user]))
-                nagios_user_count += 1
-            except (UserStorageError, FileStoreError, FileMoveError), err:
-                logger.error("Could not store pickle file for user %s" % (user))
-                nagios_no_store += 1
-        else:
-            logger.info("Dry run, not actually storing data for user %s at path %s" % (user, get_pickle_path(opts.options.location, user)[0]))
-            logger.debug("Dry run, queue information for user %s is %s" % (user, target_queue_information[user]))
-
-    logger.info("Finished dshowq")
-
-    #FIXME: this still looks fugly
-    bork_result = NagiosResult("lock release failed",
-                               hosts=len(reported_hosts),
-                               hosts_critical=len(failed_hosts),
-                               stored=nagios_user_count,
-                               stored_critical=nagios_no_store)
-    release_or_bork(lockfile, nagios_reporter, bork_result)
-
-    nagios_reporter.cache(NAGIOS_EXIT_OK,
-                          NagiosResult("run successful",
-                                       hosts=len(reported_hosts),
-                                       hosts_critical=len(failed_hosts),
-                                       stored=nagios_user_count,
-                                       stored_critical=nagios_no_store))
-
-    sys.exit(0)
+    opts.epilogue("dshowq finished", stats)
 
 
 if __name__ == '__main__':
