@@ -35,22 +35,16 @@ from vsc.ldap.entities import VscLdapUser
 from vsc.ldap.filters import LdapFilter
 from vsc.ldap.utils import LdapQuery
 from vsc.utils import fancylogger
-from vsc.utils.availability import proceed_on_ha_service
-from vsc.utils.generaloption import simple_option
 from vsc.utils.mail import VscMail
-from vsc.utils.nagios import NagiosResult, NagiosReporter, NAGIOS_EXIT_CRITICAL, NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING
+from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
+from vsc.utils.script_tools import ExtendedSimpleOption
 
 
-fancylogger.logToFile('/var/log/pbs_check_inactive_user_jobs.log')
+logger = fancylogger.getLogger(__name__)
+fancylogger.logToScreen(True)
 fancylogger.setLogLevelInfo()
 
-logger = fancylogger.getLogger(name='pbs_check_inactive_user_jobs')
-
-NAGIOS_CHECK_FILENAME = '/var/log/pickles/pbs_check_inactive_user_jobs.nagios.pickle'
-NAGIOS_HEADER = 'pbs_check_inactive_user_jobs'
 NAGIOS_CHECK_INTERVAL_THRESHOLD = 60 * 60  # 60 minutes
-
-PBS_CHECK_LOG_FILE = '/var/log/pbs_check_inactive_user_jobs.log'
 
 
 def get_user_with_status(status):
@@ -190,27 +184,11 @@ def main(args):
     """Main script."""
 
     options = {
-        'nagios': ('print out nagion information', None, 'store_true', False, 'n'),
-        'nagios_check_filename': ('filename of where the nagios check data is stored', str, 'store', NAGIOS_CHECK_FILENAME),
-        'nagios_check_interval_threshold': ('threshold of nagios checks timing out', None, 'store', NAGIOS_CHECK_INTERVAL_THRESHOLD),
+        'nagios-check-interval-threshold': ('threshold of nagios checks timing out', None, 'store', NAGIOS_CHECK_INTERVAL_THRESHOLD),
         'mail-report': ('mail a report to the hpc-admin list with job list for gracing or inactive users',
                         None, 'store_true', False),
-        'ha': ('high-availability master IP address', None, 'store', None),
-        'dry-run': ('do not make any updates whatsoever', None, 'store_true', False),
     }
-    opts = simple_option(options)
-
-    nagios_reporter = NagiosReporter(NAGIOS_HEADER, NAGIOS_CHECK_FILENAME, NAGIOS_CHECK_INTERVAL_THRESHOLD)
-
-    if opts.options.nagios:
-        nagios_reporter.report_and_exit()
-        sys.exit(0)  # not reached
-
-    if not proceed_on_ha_service(opts.options.ha):
-        logger.warning("Not running on the target host in the HA setup. Stopping.")
-        nagios_reporter(NAGIOS_EXIT_WARNING,
-                        NagiosResult("Not running on the HA master."))
-        sys.exit(NAGIOS_EXIT_WARNING)
+    opts = ExtendedSimpleOption(options)
 
     try:
         vsc_config = VscConfiguration()
@@ -231,21 +209,17 @@ def main(args):
             if len(removed_queued) > 0 or len(removed_running) > 0:
                 mail_report(t, removed_queued, removed_running)
     except Exception, err:
-        logger.exception("Something went wrong: {err}".format(err=err))
-        nagios_reporter.cache(NAGIOS_EXIT_CRITICAL,
-                              NagiosResult("Script failed, check log file ({logfile})".format(logfile=PBS_CHECK_LOG_FILE)))
+        logger.exception("critical exception caught: %s" % (err))
+        opts.epilogue_critical("Script failed in a horrible way")
         sys.exit(NAGIOS_EXIT_CRITICAL)
 
-    if len(removed_queued) > 0 or len(removed_running) > 0:
-        nagios_reporter.cache(NAGIOS_EXIT_CRITICAL,
-                              NagiosResult("grace or inactive user jobs queud",
-                                           queued=len(removed_queued),
-                                           running=len(remove_running_jobs)))
-    else:
-        nagios_reporter.cache(NAGIOS_EXIT_OK,
-                              NagiosResult("no queued or running jobs for grace or inactive users",
-                                           queued=0,
-                                           running=0))
+    stats = {}
+    stats['removed_queued'] = len(removed_queued)
+    stats['removed_queued_critical'] = 1
+    stats['removed_running'] = len(removed_running)
+    stats['removed_running_critical'] = 1
+
+    opts.epilogue("PBS inactive user check complete", stats)
 
 
 if __name__ == '__main__':
