@@ -18,6 +18,7 @@ All things checkjob.
 
 @author Andy Georges
 """
+import json
 import pprint
 
 from lxml import etree
@@ -103,3 +104,14 @@ class Checkjob(MoabCommand):
             checkjob_info[user][host] += [(dict(job.attrib.items()), map(lambda r: dict(r.attrib.items()), job.getchildren()))]
 
         return checkjob_info
+
+
+class CheckjobInfoJSONEncoder(json.JSONEncoder):
+    """Encoding for the CheckjobInfo class to a JSON format."""
+
+    def default(self, obj):
+
+        if isinstance(obj, CheckjobInfo):
+            return obj.encode_json()
+        else:
+            return json.JSONEncoder.default(self, obj)
