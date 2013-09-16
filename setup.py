@@ -35,14 +35,18 @@ shared_setup.SHARED_TARGET.update({
 
 PACKAGE = {
     'name': 'vsc-jobs',
-    'version': '0.5.9',
+    'version': '0.6',
     'author': [sdw, ag],
     'maintainer': [sdw, ag],
     'packages': ['vsc', 'vsc.jobs', 'vsc.jobs.moab', 'vsc.jobs.pbs'],
     'namespace_packages': ['vsc'],
-    'scripts': ['bin/mycheckjob.py',
+    'scripts': ['bin/dcheckjob.py',
+                'bin/dshowq.py',
+                'bin/mycheckjob.py',
                 'bin/myshowq.py',
+                'bin/pbs_check_inactive_user_jobs.py',
                 'bin/pbsmon.py',
+                'bin/release_jobholds.py'
                 'bin/show_jobs.py',
                 'bin/show_mem.py',
                 'bin/show_nodes.py',
