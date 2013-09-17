@@ -114,12 +114,12 @@ def determine_target_information(information, active_users, queue_information):
 
 
 def get_pickle_path(location, user_id):
-    """Determine the path (directory) where the pickle file qith the queue information should be stored.
+    """Determine the path (directory) where the pickle file with the queue information should be stored.
 
     @type location: string
     @type user_id: string
 
-    @param location: indication of the user accesible storage spot to use, e.g., home or scratch
+    @param location: indication of the user accessible storage spot to use, e.g., home or scratch
     @param user_id: VSC user ID
 
     @returns: tuple of (string representing the directory where the pickle file should be stored,
@@ -134,7 +134,7 @@ def main():
     # Note: debug option is provided by generaloption
     # Note: other settings, e.g., ofr each cluster will be obtained from the configuration file
     options = {
-        'nagios-check-interval-threshold': ('threshold of nagios checks timing out', None, 'store', NAGIOS_CHECK_INTERVAL_THRESHOLD),
+        'nagios-check-interval-threshold': NAGIOS_CHECK_INTERVAL_THRESHOLD,
         'hosts': ('the hosts/clusters that should be contacted for job information', None, 'extend', []),
         'information': ('the sort of information to store: user, vo, project', None, 'store', 'user'),
         'location': ('the location for storing the pickle file: gengar, muk', str, 'store', 'gengar'),
