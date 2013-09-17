@@ -50,7 +50,8 @@ def get_pickle_path(location, user_id):
     @returns: tuple of (string representing the directory where the pickle file should be stored,
                         the relevant storing function in vsc.utils.fs_store).
     """
-    return (os.path.join(cluster_user_pickle_location_map[location](user_id).pickle_path(), ".checkjob.pickle"), cluster_user_pickle_store_map[location])
+    return (os.path.join(cluster_user_pickle_location_map[location](user_id).pickle_path(), ".checkjob.pickle"),
+            cluster_user_pickle_store_map[location])
 
 
 def main():
@@ -104,13 +105,14 @@ def main():
                     logger.exception("Could not store pickle file for user %s" % (user))
                     nagios_no_store += 1
             else:
-                logger.info("Dry run, not actually storing data for user %s at path %s" % (user, get_pickle_path(opts.options.location, user)[0]))
+                logger.info("Dry run, not actually storing data for user %s at path %s" %
+                            (user, get_pickle_path(opts.options.location, user)[0]))
                 logger.debug("Dry run, queue information for user %s is %s" % (user, job_information[user]))
 
         stats["store+users"] = nagios_user_count
         stats["store_fail"] = nagios_no_store
         stats["store_fail_critical"] = 5
-    except:
+    except Exception, err:
         logger.exception("critical exception caught: %s" % (err))
         opts.epilogue_critical("Script failed in a horrible way")
         sys.exit(NAGIOS_EXIT_CRITICAL)

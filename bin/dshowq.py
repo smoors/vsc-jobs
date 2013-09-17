@@ -195,7 +195,7 @@ def main():
         stats["store+users"] = nagios_user_count
         stats["store_fail"] = nagios_no_store
         stats["store_fail_critical"] = 5
-    except:
+    except Exception, err:
         logger.exception("critical exception caught: %s" % (err))
         opts.epilogue_critical("Script failed in a horrible way")
         sys.exit(NAGIOS_EXIT_CRITICAL)

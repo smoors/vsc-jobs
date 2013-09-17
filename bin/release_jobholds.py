@@ -172,7 +172,7 @@ def main():
 
         # process the new and previous data
         released_jobids, stats = process_hold(clusters, dry_run=opts.options.dry_run)
-    except:
+    except Exception, err:
         logger.exception("critical exception caught: %s" % (err))
         opts.epilogue_critical("Script failed in a horrible way")
         sys.exit(NAGIOS_EXIT_CRITICAL)
