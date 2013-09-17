@@ -12,7 +12,7 @@
 ##
 """
 mycheckjob shows the contents of the information that was saved to the
-.checkjob.pickle file in the user's home directory.
+.checkjob.json.gz file in the user's home directory.
 
 This mimics the result of Moab's checkjob command, but without the
 risks of letting users see job information of jobs that are not theirs.
@@ -33,19 +33,19 @@ fancylogger.setLogLevelWarning()
 
 
 def checkjob_data_location(user_name, location):
-    """Retrieve the pickled data form the right file.
+    """Retrieve the gzipped JSON data form the right file.
 
     @type user_name: string
     @type location: string
 
     @param user_name: VSC user name (vscxyzuv)
-    @param location: string defining the location of the pickle file
+    @param location: string defining the location of the gzipped JSON file
         - home: user's home directory
         - scratch: user's personal fileset on muk
 
-    @returns: absolute path to the pickle file
+    @returns: absolute path to the gzipped JSON file
     """
-    return os.path.join(os.getenv(location), ".checkjob.pickle")
+    return os.path.join(os.getenv(location), ".checkjob.json.gz")
 
 
 def read_checkjob_data(path):
