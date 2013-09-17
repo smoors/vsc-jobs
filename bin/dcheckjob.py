@@ -59,7 +59,7 @@ def main():
     # Note: debug option is provided by generaloption
     # Note: other settings, e.g., ofr each cluster will be obtained from the configuration file
     options = {
-        'nagios-check-interval-threshold': ('threshold of nagios checks timing out', None, 'store', NAGIOS_CHECK_INTERVAL_THRESHOLD),
+        'nagios-check-interval-threshold': NAGIOS_CHECK_INTERVAL_THRESHOLD,
         'hosts': ('the hosts/clusters that should be contacted for job information', None, 'extend', []),
         'location': ('the location for storing the pickle file: home, scratch', str, 'store', 'home'),
     }
