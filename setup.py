@@ -46,7 +46,7 @@ PACKAGE = {
                 'bin/myshowq.py',
                 'bin/pbs_check_inactive_user_jobs.py',
                 'bin/pbsmon.py',
-                'bin/release_jobholds.py'
+                'bin/release_jobholds.py',
                 'bin/show_jobs.py',
                 'bin/show_mem.py',
                 'bin/show_nodes.py',
