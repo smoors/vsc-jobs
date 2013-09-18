@@ -150,7 +150,8 @@ def main():
     options = {
         'nagios-check-interval-threshold': NAGIOS_CHECK_INTERVAL_THRESHOLD,
         'hosts': ('the hosts/clusters that should be contacted for job information', None, 'extend', []),
-        'location': ('the location for storing the pickle file: gengar, muk', str, 'store', 'gengar'),
+        'cache': ('the location to store the cache with previous release hold data', None, 'store',
+                  RELEASEJOB_CACHE_FILE)
     }
 
     opts = ExtendedSimpleOption(options)
