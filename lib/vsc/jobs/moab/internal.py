@@ -149,11 +149,13 @@ class MoabCommand(object):
 
         if exit_code != 0:
             if self.cache_pickle:
+                self.logger.debug("Loading cached data")
                 output = self._load_pickle_cluster_file(cluster)
             else:
                 return None
         else:
             if self.cache_pickle:
+                self.logger.debug("Storing cached data")
                 self._store_pickle_cluster_file(cluster, output)
 
         if not output:

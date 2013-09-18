@@ -99,6 +99,8 @@ def collect_vo_ldap(active_users):
 def determine_target_information(information, active_users, queue_information):
     """Determine for the given information type, what should be stored for which users."""
 
+    logger.debug("Determining target information for %s" % (information,))
+
     if information == 'user':
         user_info = dict([(u, {u: ""}) for u in active_users])  # FIXME: faking it
         return (active_users, dict([(user, {user: queue_information[user]}) for user in active_users]), user_info)
@@ -156,7 +158,10 @@ def main():
                 'path': showq_path
             }
 
+        logger.debug("clusters = %s" % (clusters,))
         showq = Showq(clusters, cache_pickle=True, dry_run=opts.options.dry_run)
+
+        logger.debug("Getting showq information ...")
 
         (queue_information, reported_hosts, failed_hosts) = showq.get_moab_command_information()
         timeinfo = time.time()
