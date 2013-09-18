@@ -88,9 +88,9 @@ def process_hold(clusters, dry_run=False):
                         release_jobids.append(jid)
                         # release the job
                         cmd = [m.clusters[cluster]['path'], '-u', jid]
-                        _log.info("Releasing job %s cluster %s for the %s-th time." % (jid, cluster, release))
+                        logger.info("Releasing job %s cluster %s for the %s-th time." % (jid, cluster, release))
                         if dry_run:
-                            _log.info("Dry run %s" % cmd)
+                            logger.info("Dry run %s" % cmd)
                         else:
                             m._run_moab_command(cmd, cluster, [])
                     else:
@@ -121,7 +121,7 @@ def process_hold(clusters, dry_run=False):
         stats['peruser'] = max(stats['peruser'], totaluser)
         stats['total'] += totaluser
 
-    _log.info("Release statistics: total jobs in hold %(total)s; max in hold per user %(peruser)s; max releases per job %(release)s" % stats)
+    logger.info("Release statistics: total jobs in hold %(total)s; max in hold per user %(peruser)s; max releases per job %(release)s" % stats)
 
     # update and close
     releasejob_cache.update('queue_information', queue_information, 0)
