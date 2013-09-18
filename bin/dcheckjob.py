@@ -79,7 +79,7 @@ def main():
                 'path': checkjob_path
             }
 
-        checkjob = Checkjob(clusters, cache_pickle=True, dry_run=True)
+        checkjob = Checkjob(clusters, cache_pickle=True, dry_run=opts.options.dry_run)
 
         (job_information, reported_hosts, failed_hosts) = checkjob.get_moab_command_information()
         timeinfo = time.time()
