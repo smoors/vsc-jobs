@@ -210,7 +210,7 @@ def main(args):
                 mail_report(t, removed_queued, removed_running)
     except Exception, err:
         logger.exception("critical exception caught: %s" % (err))
-        opts.epilogue_critical("Script failed in a horrible way")
+        opts.critical("Script failed in a horrible way")
         sys.exit(NAGIOS_EXIT_CRITICAL)
 
     stats = {}
