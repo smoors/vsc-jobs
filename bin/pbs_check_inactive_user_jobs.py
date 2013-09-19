@@ -39,6 +39,8 @@ from vsc.utils.mail import VscMail
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
 from vsc.utils.script_tools import ExtendedSimpleOption
 
+REMOVED_QUEUEING_LIMIT_CRITICAL = 1
+REMOVED_RUNNING_LIMIT_CRITICAL = 1
 
 logger = fancylogger.getLogger(__name__)
 fancylogger.logToScreen(True)
@@ -215,9 +217,9 @@ def main(args):
 
     stats = {}
     stats['removed_queued'] = len(removed_queued)
-    stats['removed_queued_critical'] = 1
+    stats['removed_queued_critical'] = REMOVED_QUEUEING_LIMIT_CRITICAL
     stats['removed_running'] = len(removed_running)
-    stats['removed_running_critical'] = 1
+    stats['removed_running_critical'] = REMOVED_RUNNING_LIMIT_CRITICAL
 
     opts.epilogue("PBS inactive user check complete", stats)
 
