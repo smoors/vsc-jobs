@@ -26,23 +26,17 @@ from vsc.ldap.configuration import VscConfiguration
 from vsc.ldap.utils import LdapQuery
 from vsc.utils import fancylogger
 from vsc.utils.fs_store import UserStorageError, FileStoreError, FileMoveError
-from vsc.utils.availability import proceed_on_ha_service
-from vsc.utils.generaloption import simple_option
-from vsc.utils.lock import lock_or_bork, release_or_bork
-from vsc.utils.nagios import NagiosReporter, NagiosResult, NAGIOS_EXIT_OK, NAGIOS_EXIT_WARNING
-from vsc.utils.timestamp_pid_lockfile import TimestampedPidLockfile
+from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
+from vsc.utils.script_tools import ExtendedSimpleOption
 
 #Constants
-NAGIOS_CHECK_FILENAME = '/var/log/pickles/dcheckjob.nagios.pickle'
-NAGIOS_HEADER = 'dcheckjob'
 NAGIOS_CHECK_INTERVAL_THRESHOLD = 30 * 60  # 30 minutes
-
-DCHECKJOB_LOCK_FILE = '/var/run/dcheckjob_tpid.lock'
 
 logger = fancylogger.getLogger(__name__)
 fancylogger.logToScreen(True)
 fancylogger.setLogLevelInfo()
 
+STORE_LIMIT_CRITICAL = 5
 
 # FIXME: common
 def get_pickle_path(location, user_id):
@@ -57,7 +51,8 @@ def get_pickle_path(location, user_id):
     @returns: tuple of (string representing the directory where the pickle file should be stored,
                         the relevant storing function in vsc.utils.fs_store).
     """
-    return (os.path.join(cluster_user_pickle_location_map[location](user_id).pickle_path(), ".checkjob.pickle"), cluster_user_pickle_store_map[location])
+    return (os.path.join(cluster_user_pickle_location_map[location](user_id).pickle_path(), ".checkjob.pickle"),
+            cluster_user_pickle_store_map[location])
 
 
 def main():
@@ -66,95 +61,65 @@ def main():
     # Note: debug option is provided by generaloption
     # Note: other settings, e.g., ofr each cluster will be obtained from the configuration file
     options = {
-        'nagios': ('print out nagios information', None, 'store_true', False, 'n'),
-        'nagios_check_filename': ('filename of where the nagios check data is stored', str, 'store', NAGIOS_CHECK_FILENAME),
-        'nagios_check_interval_threshold': ('threshold of nagios checks timing out', None, 'store', NAGIOS_CHECK_INTERVAL_THRESHOLD),
+        'nagios-check-interval-threshold': NAGIOS_CHECK_INTERVAL_THRESHOLD,
         'hosts': ('the hosts/clusters that should be contacted for job information', None, 'extend', []),
         'location': ('the location for storing the pickle file: home, scratch', str, 'store', 'home'),
-        'ha': ('high-availability master IP address', None, 'store', None),
-        'dry-run': ('do not make any updates whatsoever', None, 'store_true', False),
     }
 
-    opts = simple_option(options)
+    opts = ExtendedSimpleOption(options)
 
-    if opts.options.debug:
-        fancylogger.setLogLevelDebug()
+    try:
+        LdapQuery(VscConfiguration())
 
-    nagios_reporter = NagiosReporter(NAGIOS_HEADER,
-                                     opts.options.nagios_check_filename,
-                                     opts.options.nagios_check_interval_threshold)
-    if opts.options.nagios:
-        logger.debug("Producing Nagios report and exiting.")
-        nagios_reporter.report_and_exit()
-        sys.exit(0)  # not reached
+        clusters = {}
+        for host in opts.options.hosts:
+            master = opts.configfile_parser.get(host, "master")
+            checkjob_path = opts.configfile_parser.get(host, "checkjob_path")
+            clusters[host] = {
+                'master': master,
+                'path': checkjob_path
+            }
 
-    if not proceed_on_ha_service(opts.options.ha):
-        logger.warning("Not running on the target host in the HA setup. Stopping.")
-        nagios_reporter.cache(NAGIOS_EXIT_WARNING,
-                        NagiosResult("Not running on the HA master."))
-        sys.exit(NAGIOS_EXIT_WARNING)
+        checkjob = Checkjob(clusters, cache_pickle=True, dry_run=opts.options.dry_run)
 
-    lockfile = TimestampedPidLockfile(DCHECKJOB_LOCK_FILE)
-    lock_or_bork(lockfile, nagios_reporter)
+        (job_information, reported_hosts, failed_hosts) = checkjob.get_moab_command_information()
+        timeinfo = time.time()
 
-    logger.info("Starting dcheckjob")
+        active_users = job_information.keys()
 
-    LdapQuery(VscConfiguration())
+        logger.debug("Active users: %s" % (active_users))
+        logger.debug("Checkjob information: %s" % (job_information))
 
-    clusters = {}
-    for host in opts.options.hosts:
-        master = opts.configfile_parser.get(host, "master")
-        checkjob_path = opts.configfile_parser.get(host, "checkjob_path")
-        clusters[host] = {
-            'master': master,
-            'path': checkjob_path
-        }
+        nagios_user_count = 0
+        nagios_no_store = 0
 
-    checkjob = Checkjob(clusters, cache_pickle=True, dry_run=True)
+        stats = {}
 
-    (job_information, reported_hosts, failed_hosts) = checkjob.get_moab_command_information()
-    timeinfo = time.time()
+        for user in active_users:
+            if not opts.options.dry_run:
+                try:
+                    (path, store) = get_pickle_path(opts.options.location, user)
+                    user_queue_information = CheckjobInfo({user: job_information[user]})
+                    store(user, path, (timeinfo, user_queue_information))
+                    nagios_user_count += 1
+                except (UserStorageError, FileStoreError, FileMoveError), _:
+                    logger.exception("Could not store pickle file for user %s" % (user))
+                    nagios_no_store += 1
+            else:
+                logger.info("Dry run, not actually storing data for user %s at path %s" %
+                            (user, get_pickle_path(opts.options.location, user)[0]))
+                logger.debug("Dry run, queue information for user %s is %s" % (user, job_information[user]))
 
-    active_users = job_information.keys()
+        stats["store+users"] = nagios_user_count
+        stats["store_fail"] = nagios_no_store
+        stats["store_fail_critical"] = STORE_LIMIT_CRITICAL
+    except Exception, err:
+        logger.exception("critical exception caught: %s" % (err))
+        opts.critical("Script failed in a horrible way")
+        sys.exit(NAGIOS_EXIT_CRITICAL)
 
-    logger.debug("Active users: %s" % (active_users))
-    logger.debug("Checkjob information: %s" % (job_information))
+    opts.epilogue("dcheckjob finished", stats)
 
-    nagios_user_count = 0
-    nagios_no_store = 0
-
-    for user in active_users:
-        if not opts.options.dry_run:
-            try:
-                (path, store) = get_pickle_path(opts.options.location, user)
-                user_queue_information = CheckjobInfo({user: job_information[user]})
-                store(user, path, (timeinfo, user_queue_information))
-                nagios_user_count += 1
-            except (UserStorageError, FileStoreError, FileMoveError), _:
-                logger.error("Could not store pickle file for user %s" % (user))
-                nagios_no_store += 1
-        else:
-            logger.info("Dry run, not actually storing data for user %s at path %s" % (user, get_pickle_path(opts.options.location, user)[0]))
-            logger.debug("Dry run, queue information for user %s is %s" % (user, job_information[user]))
-
-    logger.info("Finished dcheckjobd")
-
-    #FIXME: this still looks fugly
-    bork_result = NagiosResult("lock release failed",
-                               hosts=len(reported_hosts),
-                               hosts_critical=len(failed_hosts),
-                               stored=nagios_user_count,
-                               stored_critical=nagios_no_store)
-    release_or_bork(lockfile, nagios_reporter, bork_result)
-
-    nagios_reporter.cache(NAGIOS_EXIT_OK,
-                          NagiosResult("run successful",
-                                       hosts=len(reported_hosts),
-                                       hosts_critical=len(failed_hosts),
-                                       stored=nagios_user_count,
-                                       stored_critical=nagios_no_store))
-
-    sys.exit(0)
 
 if __name__ == '__main__':
     main()

@@ -7,19 +7,15 @@ from vsc.jobs.moab.internal import MoabCommand
 from vsc.jobs.moab.showq import Showq
 from vsc.utils.availability import proceed_on_ha_service
 from vsc.utils.cache import FileCache
-from vsc.utils.fancylogger import getLogger, logToScreen, setLogLevelInfo
-from vsc.utils.generaloption import simple_option
-from vsc.utils.lock import lock_or_bork, release_or_bork
-from vsc.utils.nagios import SimpleNagios
-from vsc.utils.timestamp_pid_lockfile import TimestampedPidLockfile
+from vsc.utils import fancylogger
+from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
+from vsc.utils.script_tools import ExtendedSimpleOption
 
 # Constants
-NAGIOS_HEADER = 'release_jobholds'
-NAGIOS_CHECK_FILENAME = '/var/cache/icinga/%s.nagios.json.gz' % NAGIOS_HEADER
+NAGIOS_HEADER = "release_jobholds"
 NAGIOS_CHECK_INTERVAL_THRESHOLD = 60 * 60  # 60 minutes
 
 RELEASEJOB_CACHE_FILE = '/var/cache/%s.json.gz' % NAGIOS_HEADER
-RELEASEJOB_LOCK_FILE = '/var/run/%s.lock' % NAGIOS_HEADER
 
 RELEASEJOB_LIMITS = {
     # jobs in hold per user (maximum of all users)
@@ -35,9 +31,9 @@ RELEASEJOB_LIMITS = {
 
 RELEASEJOB_SUPPORTED_HOLDTYPES = ('BatchHold',)
 
-_log = getLogger(__name__, fname=False)
-logToScreen(True)
-setLogLevelInfo()
+logger = fancylogger.getLogger(__name__)
+fancylogger.logToScreen(True)
+fancylogger.setLogLevelInfo()
 
 def process_hold(clusters, dry_run=False):
     """Process a filtered queueinfo dict"""
@@ -92,9 +88,9 @@ def process_hold(clusters, dry_run=False):
                         release_jobids.append(jid)
                         # release the job
                         cmd = [m.clusters[cluster]['path'], '-u', jid]
-                        _log.info("Releasing job %s cluster %s for the %s-th time." % (jid, cluster, release))
+                        logger.info("Releasing job %s cluster %s for the %s-th time." % (jid, cluster, release))
                         if dry_run:
-                            _log.info("Dry run %s" % cmd)
+                            logger.info("Dry run %s" % cmd)
                         else:
                             m._run_moab_command(cmd, cluster, [])
                     else:
@@ -125,7 +121,7 @@ def process_hold(clusters, dry_run=False):
         stats['peruser'] = max(stats['peruser'], totaluser)
         stats['total'] += totaluser
 
-    _log.info("Release statistics: total jobs in hold %(total)s; max in hold per user %(peruser)s; max releases per job %(release)s" % stats)
+    logger.info("Release statistics: total jobs in hold %(total)s; max in hold per user %(peruser)s; max releases per job %(release)s" % stats)
 
     # update and close
     releasejob_cache.update('queue_information', queue_information, 0)
@@ -152,22 +148,15 @@ def get_queue_information(clusters):
 def main():
     """Main function"""
     options = {
-        'nagios_check_filename': ('filename of where the nagios check data is stored', str, 'store', NAGIOS_CHECK_FILENAME),
-        'nagios_check_interval_threshold': ('threshold of nagios checks timing out', None, 'store', NAGIOS_CHECK_INTERVAL_THRESHOLD),
+        'nagios-check-interval-threshold': NAGIOS_CHECK_INTERVAL_THRESHOLD,
         'hosts': ('the hosts/clusters that should be contacted for job information', None, 'extend', []),
-        'location': ('the location for storing the pickle file: gengar, muk', str, 'store', 'gengar'),
-        'ha': ('high-availability master IP address', None, 'store', None),
-        'dry-run': ('do not make any updates whatsoever', None, 'store_true', False),
+        'cache': ('the location to store the cache with previous release hold data', None, 'store',
+                  RELEASEJOB_CACHE_FILE)
     }
 
-    opts = simple_option(options)
+    opts = ExtendedSimpleOption(options)
 
-    nag = SimpleNagios(_cache=NAGIOS_CHECK_FILENAME)
-
-    if opts.options.ha and not proceed_on_ha_service(opts.options.ha):
-        _log.info("Not running on the target host in the HA setup. Stopping.")
-        nag.ok("Not running on the HA master.")
-    else:
+    try:
         # parse config file
         clusters = {}
         for host in opts.options.hosts:
@@ -182,13 +171,16 @@ def main():
 
         # process the new and previous data
         released_jobids, stats = process_hold(clusters, dry_run=opts.options.dry_run)
+    except Exception, err:
+        logger.exception("critical exception caught: %s" % (err))
+        opts.critical("Script failed in a horrible way")
+        sys.exit(NAGIOS_EXIT_CRITICAL)
 
-        # nagios state
-        stats.update(RELEASEJOB_LIMITS)
-        stats['message'] = "released %s jobs in hold" % len(released_jobids)
-        nag._eval_and_exit(**stats)
+    # nagios state
+    stats.update(RELEASEJOB_LIMITS)
+    stats['message'] = "released %s jobs in hold" % len(released_jobids)
+    opts.epilogue("Release jobholds finished", stats)
 
-    _log.info("Cached nagios state: %s %s" % (nag._final_state[0][1], nag._final_state[1]))
 
 if __name__ == '__main__':
     main()

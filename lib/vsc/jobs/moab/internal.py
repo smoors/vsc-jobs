@@ -149,11 +149,17 @@ class MoabCommand(object):
 
         if exit_code != 0:
             if self.cache_pickle:
-                output = self._load_pickle_cluster_file(cluster)
+                self.logger.debug("Loading cached data")
+                try:
+                    output = self._load_pickle_cluster_file(cluster)
+                except IOError, _:
+                    self.logger.exception("Cannot load cached data")
+                    return None
             else:
                 return None
         else:
             if self.cache_pickle:
+                self.logger.debug("Storing cached data")
                 self._store_pickle_cluster_file(cluster, output)
 
         if not output:
@@ -197,7 +203,6 @@ class MoabCommand(object):
             if not host_job_information:
                 failed_hosts.append(host)
                 self.logger.error("Couldn't collect info for host %s" % (host))
-                self.logger.info("Trying to load cached pickle file for host %s" % (host))
             else:
                 job_information.update(host_job_information)
                 reported_hosts.append(host)

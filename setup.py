@@ -46,7 +46,7 @@ PACKAGE = {
                 'bin/myshowq.py',
                 'bin/pbs_check_inactive_user_jobs.py',
                 'bin/pbsmon.py',
-                'bin/release_jobholds.py'
+                'bin/release_jobholds.py',
                 'bin/show_jobs.py',
                 'bin/show_mem.py',
                 'bin/show_nodes.py',
@@ -55,8 +55,8 @@ PACKAGE = {
                 'bin/submitfilter.py'
                 ],
     'install_requires': [
-        'vsc-base >= 1.6',
-        'vsc-utils >= 1.3',
+        'vsc-base >= 1.6.3',
+        'vsc-utils >= 1.4.2',
         'lxml',
         'pbs_python >= 4.3',
     ],
