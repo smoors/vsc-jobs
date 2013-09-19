@@ -36,6 +36,7 @@ logger = fancylogger.getLogger(__name__)
 fancylogger.logToScreen(True)
 fancylogger.setLogLevelInfo()
 
+STORE_LIMIT_CRITICAL = 5
 
 # FIXME: common
 def get_pickle_path(location, user_id):
@@ -111,7 +112,7 @@ def main():
 
         stats["store+users"] = nagios_user_count
         stats["store_fail"] = nagios_no_store
-        stats["store_fail_critical"] = 5
+        stats["store_fail_critical"] = STORE_LIMIT_CRITICAL
     except Exception, err:
         logger.exception("critical exception caught: %s" % (err))
         opts.critical("Script failed in a horrible way")
