@@ -62,6 +62,7 @@ PACKAGE = {
     ],
     'release': 2,
     'provides': ['python-vsc-jobs = 0.3'],
+    'obsoletes': ['python-master-scripts'],
 }
 
 
