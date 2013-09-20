@@ -57,12 +57,12 @@ PACKAGE = {
     'install_requires': [
         'vsc-base >= 1.6.3',
         'vsc-utils >= 1.4.2',
-        'lxml',
         'pbs_python >= 4.3',
+        'lxml',
     ],
     'release': 2,
     'provides': ['python-vsc-jobs = 0.3'],
-    'obsoletes': ['python-master-scripts'],
+    'install_obsoletes': ['python-master-scripts'],
 }
 
 
