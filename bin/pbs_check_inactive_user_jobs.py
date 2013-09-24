@@ -186,7 +186,7 @@ def main(args):
     """Main script."""
 
     options = {
-        'nagios-check-interval-threshold': ('threshold of nagios checks timing out', None, 'store', NAGIOS_CHECK_INTERVAL_THRESHOLD),
+        'nagios-check-interval-threshold': NAGIOS_CHECK_INTERVAL_THRESHOLD,
         'mail-report': ('mail a report to the hpc-admin list with job list for gracing or inactive users',
                         None, 'store_true', False),
     }
