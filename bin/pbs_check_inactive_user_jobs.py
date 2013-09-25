@@ -87,7 +87,7 @@ def remove_queued_jobs(jobs, grace_users, inactive_users, dry_run=True):
 
     jobs_to_remove = []
     for (job_name, job) in jobs.items():
-        user_id = jobs[job_name]['euser'][0]
+        user_id = jobs[job_name]['user'][0]
         if user_id in uids:
             jobs_to_remove.append((job_name, job))
 
