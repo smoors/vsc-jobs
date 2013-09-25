@@ -87,15 +87,12 @@ def remove_queued_jobs(jobs, grace_users, inactive_users, dry_run=True):
 
     jobs_to_remove = []
     for (job_name, job) in jobs.items():
-        user_id = jobs[job_name]['user'][0]
+        user_id = job['Job_Owner'][0].split('@')[0]  # This is always mapped to the euser for running jobs
         if user_id in uids:
             jobs_to_remove.append((job_name, job))
 
     logger.info("Found {queued_count} queued jobs belonging to gracing or inactive users".format(queued_count=len(jobs_to_remove)))
     logger.debug("These are the jobs names: {job_names}".format(job_names=[n for (n, _) in jobs_to_remove]))
-
-    if not dry_run:
-        pass
 
     return jobs_to_remove
 
