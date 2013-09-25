@@ -138,11 +138,18 @@ def showstats(xml=None):
     # QPS="537871292" RMPI="20" SCJC="742474" UPMEM="2488215" UPN="155" UPP="1240" statInitTime="1337163945"
     # time="1363212082"></sys></Data>
 
+    # fresh moab gives
+    # <Data><stats Duration="1380095491" GPHAvl="4900.22" MinEffIteration="6" SpecDuration="1800"
+    # StartTime="1380059385" TMSA="71111193148.80" TSchedDuration="3430048"></stats><sys ATAPH="0"
+    # ATQPH="0" IC="1701" IMEM="2063904" INC="32" IPC="512" RMPI="20" UPMEM="2063904" UPN="32" UPP="512"
+    # statInitTime="1380059220" time="1380093691"></sys></Data>
+
     # build tree
-    res = {}
+    # GPHDed is missing with initial moab restart, would trigger KeyError later on
+    res = {'stats':{'GPHDed': 0.0, }}
     tree = etree.fromstring(xml)
     for el in  tree.getchildren():
-        res[el.tag] = {}
+        elres = res.setdefault(el.tag, {})
         for k, v in el.items():
             try:
                 v = int(v)
@@ -151,7 +158,7 @@ def showstats(xml=None):
                     v = float(v)
                 except:
                     pass
-            res[el.tag][k] = v
+            elres[k] = v
 
     summary = {
                'DPH': res['stats']['GPHDed'],  # Dedicated ProcHours
