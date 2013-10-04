@@ -44,9 +44,9 @@ def main():
     """The script"""
 
     options = {
-            'detailed': ('Report detailed information', None, 'store_true', False, 'D'),
-            'moabxml': ('Use xml moab data from file (for testing)', None, 'store', None),
-            }
+        'detailed': ('Report detailed information', None, 'store_true', False, 'D'),
+        'moabxml': ('Use xml moab data from file (for testing)', None, 'store', None),
+    }
 
     opts = ExtendedSimpleOption(options)
 
