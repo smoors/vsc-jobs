@@ -71,13 +71,20 @@ def main():
             stats = moab_stats['summary']
 
             if opts.options.detailed:
-                print """Shortterm/Longterm efficiency %.3f/%.3f
-    Dedicate/total prochours %s/%s
-    Active/Total procs %s/%s""" % (stats['STE'], stats['LTE'],
-                                stats['DPH'], stats['TPH'],
-                                stats['CAP'], stats['CTP'],)
+                detailed_info_string = """Shortterm/Longterm efficiency %.3f/%.3f
+Dedicate/total prochours %s/%s
+Active/Total procs %s/%s""" % (stats['STE'], stats['LTE'],
+                               stats['DPH'], stats['TPH'],
+                               stats['CAP'], stats['CTP'],)
+                logger.info("detailed result STE = %s LTE = %s DPH = %s CAP = %s CTP = %s" %
+                            (stats['STE'], stats['LTE'],
+                             stats['DPH'], stats['TPH'],
+                             stats['CAP'], stats['CTP'],))
+                print detailed_info_string
 
-            msg += " short %.3f long %.3f" % (stats['STE'], stats['LTE'])
+            info_string = "short %.3f long %.3f" % (stats['STE'], stats['LTE'])
+            logger.info("result: %s" % (info_string,))
+            msg += " %s" % (info_string,)
     except Exception, err:
         logger.exception("critical exception caught: %s" % (err))
         opts.critical("Script failed in a horrible way")
