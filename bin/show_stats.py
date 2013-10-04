@@ -61,16 +61,23 @@ def main():
             moabxml = None
 
         moab_stats = showstats(xml=moabxml)
-        stats = moab_stats['summary']
 
-        if opts.options.detailed:
-            print """Shortterm/Longterm efficiency %.3f/%.3f
-Dedicate/total prochours %s/%s
-Active/Total procs %s/%s""" % (stats['STE'], stats['LTE'],
-                               stats['DPH'], stats['TPH'],
-                               stats['CAP'], stats['CTP'],)
+        if not moab_stats:
+            logger.error("Moab's showstats dit not provide useful output, likely timed out.")
+            opts.critical("Moab's showstats failed running correctly")
+            sys.exit(NAGIOS_EXIT_CRITICAL)
 
-        msg += " short %.3f long %.3f" % (stats['STE'], stats['LTE'])
+        else:
+            stats = moab_stats['summary']
+
+            if opts.options.detailed:
+                print """Shortterm/Longterm efficiency %.3f/%.3f
+    Dedicate/total prochours %s/%s
+    Active/Total procs %s/%s""" % (stats['STE'], stats['LTE'],
+                                stats['DPH'], stats['TPH'],
+                                stats['CAP'], stats['CTP'],)
+
+            msg += " short %.3f long %.3f" % (stats['STE'], stats['LTE'])
     except Exception, err:
         logger.exception("critical exception caught: %s" % (err))
         opts.critical("Script failed in a horrible way")
