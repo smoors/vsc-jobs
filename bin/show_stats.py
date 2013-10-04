@@ -56,7 +56,7 @@ def main():
             try:
                 moabxml = open(opts.options.moabxml).read()
             except:
-                logger.error('Failed to read moab xml from %s' % opts.options.moabxml)
+                logger.raiseException('Failed to read moab xml from %s' % opts.options.moabxml)
         else:
             moabxml = None
 
