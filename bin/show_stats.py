@@ -32,6 +32,8 @@ The script prints moab/maui scheduler details like teh showstats command.
 
 # this does something interesting with maui showstats and diagnose
 import sys
+import time
+
 from vsc import fancylogger
 from vsc.jobs.pbs.moab import showstats
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
@@ -46,11 +48,13 @@ def main():
     options = {
         'detailed': ('Report detailed information', None, 'store_true', False, 'D'),
         'moabxml': ('Use xml moab data from file (for testing)', None, 'store', None),
+        'max-retries': ('Maximum number retries prior to going critical', 'int', 'store', 2),
+        'retry-interval': ('Seconds in between retries', 'int', 'store', 60),
     }
 
     opts = ExtendedSimpleOption(options)
 
-    msg = "show_stats completed"
+    msg = "show_stats completed (%d tries)"
     try:
         if opts.options.moabxml:
             try:
@@ -60,11 +64,17 @@ def main():
         else:
             moabxml = None
 
-        moab_stats = showstats(xml=moabxml)
+        for retry in xrange(0, opts.options.max_retries):
+            moab_stats = showstats(xml=moabxml)
+            if moab_stats:
+                break
+            else:
+                logger.info("Sleeping after retry %d" % (retry + 1,))
+                time.sleep(opts.options.retry_interval)
 
         if not moab_stats:
-            logger.error("Moab's showstats dit not provide useful output, likely timed out.")
-            opts.critical("Moab's showstats failed running correctly")
+            logger.error("Moab's showstats dit not provide useful output after %d, likely timed out." % (retry + 1,))
+            opts.critical("Moab's showstats failed running correctly (%d retries)" % (retry,))
             sys.exit(NAGIOS_EXIT_CRITICAL)
 
         else:
@@ -76,7 +86,7 @@ Dedicate/total prochours %s/%s
 Active/Total procs %s/%s""" % (stats['STE'], stats['LTE'],
                                stats['DPH'], stats['TPH'],
                                stats['CAP'], stats['CTP'],)
-                logger.info("detailed result STE = %s LTE = %s DPH = %s CAP = %s CTP = %s" %
+                logger.info("detailed result STE = %s LTE = %s DPH = %s TPH = %s CAP = %s CTP = %s" %
                             (stats['STE'], stats['LTE'],
                              stats['DPH'], stats['TPH'],
                              stats['CAP'], stats['CTP'],))
