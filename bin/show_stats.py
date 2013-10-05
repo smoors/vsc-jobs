@@ -74,7 +74,7 @@ def main():
 
         if not moab_stats:
             logger.error("Moab's showstats dit not provide useful output after %d, likely timed out." % (retry + 1,))
-            opts.critical("Moab's showstats failed running correctly (%d retries)" % (retry,))
+            opts.critical("Moab's showstats failed running correctly (%d retries)" % (retry + 1,))
             sys.exit(NAGIOS_EXIT_CRITICAL)
 
         else:
@@ -94,6 +94,7 @@ Active/Total procs %s/%s""" % (stats['STE'], stats['LTE'],
 
             info_string = "short %.3f long %.3f" % (stats['STE'], stats['LTE'])
             logger.info("result: %s" % (info_string,))
+            msg = msg % (retry + 1,)
             msg += " %s" % (info_string,)
     except Exception, err:
         logger.exception("critical exception caught: %s" % (err))
