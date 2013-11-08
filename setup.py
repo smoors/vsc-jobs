@@ -55,9 +55,9 @@ PACKAGE = {
                 'bin/submitfilter.py'
                 ],
     'install_requires': [
-        'vsc-administration >= 0.15.2',
-        'vsc-base >= 1.6.3',
-        'vsc-utils >= 1.4.2',
+        'vsc-administration >= 0.16.5',
+        'vsc-base >= 1.6.4',
+        'vsc-utils >= 1.4.5',
         'pbs_python >= 4.3',
         'lxml',
     ],
