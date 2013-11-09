@@ -27,12 +27,15 @@ import time
 
 
 from vsc.administration.user import cluster_user_pickle_store_map, cluster_user_pickle_location_map
+from vsc.config.base import VscStorage
+from vsc.filesystem.gpfs import GpfsOperations
 from vsc.jobs.moab.showq import Showq
 from vsc.ldap.configuration import VscConfiguration
 from vsc.ldap.entities import VscLdapGroup, VscLdapUser
 from vsc.ldap.filters import InstituteFilter
 from vsc.ldap.utils import LdapQuery
 from vsc.utils import fancylogger
+from vsc.utils.cache import FileCache
 from vsc.utils.fs_store import UserStorageError, FileStoreError, FileMoveError
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
 from vsc.utils.script_tools import ExtendedSimpleOption
@@ -129,7 +132,53 @@ def get_pickle_path(location, user_id):
     @returns: tuple of (string representing the directory where the pickle file should be stored,
                         the relevant storing function in vsc.utils.fs_store).
     """
-    return (os.path.join(cluster_user_pickle_location_map[location](user_id).pickle_path(), ".showq.pickle"), cluster_user_pickle_store_map[location])
+    return cluster_user_pickle_location_map[location](user_id).pickle_path()
+
+
+def new_store(user_name, path, showq_information, gpfs, login_mount_point, gpfs_mount_point, dry_run=False):
+
+    if user_name and user_name.startswith('vsc4'):
+        logger.debug("Storing showq information for user %s" % (user_name,))
+        logger.debug("queue information: %s" % (showq_information,))
+        logger.debug("path for storing queue information would be %s" % (path,))
+
+        # FIXME: We need some better way to address this
+        # Right now, we replace the nfs mount prefix which the symlink points to
+        # with the gpfs mount point. this is a workaround until we resolve the
+        # symlink problem once we take new default scratch into production
+        if gpfs.is_symlink(path):
+            target = os.path.realpath(path)
+            logger.debug("path is a symlink, target is %s" % (target,))
+            logger.debug("login_mount_point is %s" % (login_mount_point,))
+            if target.startswith(login_mount_point):
+                new_path = target.replace(login_mount_point, gpfs_mount_point, 1)
+                logger.info("Found a symlinked path %s to the nfs mount point %s. Replaced with %s" %
+                            (path, login_mount_point, gpfs_mount_point))
+            else:
+                logger.warning("Unable to store quota information for %s on %s; symlink cannot be resolved properly"
+                                % (user_name, storage_name))
+        else:
+            new_path = path
+
+        path_stat = os.stat(new_path)
+        filename = os.path.join(new_path, ".showq.json.gz")
+
+        if dry_run:
+            logger.info("Dry run: would update cache for at %s with %s" % (new_path, "%s" % (showq_information,)))
+            logger.info("Dry run: would chmod 640 %s" % (filename,))
+            logger.info("Dry run: would chown %s to %s %s" % (filename, path_stat.st_uid, path_stat.st_gid))
+        else:
+            cache = FileCache(filename)
+            cache.update(key="showq", data=showq_information, threshold=0)
+            cache.close()
+
+            gpfs.ignorerealpathmismatch = True
+            gpfs.chmod(0640, filename)
+            gpfs.chown(path_stat.st_uid, path_stat.st_uid, filename)
+            gpfs.ignorerealpathmismatch = False
+
+        logger.info("Stored user %s showq information at %s" % (user_name, filename))
+
 
 
 def main():
@@ -148,6 +197,11 @@ def main():
 
     try:
         LdapQuery(VscConfiguration())
+        gpfs = GpfsOperations()
+        storage = VscStorage()
+        storage_name = cluster_user_pickle_store_map[opts.options.location]
+        login_mount_point = storage[storage_name].login_mount_point
+        gpfs_mount_point = storage[storage_name].gpfs_mount_point
 
         clusters = {}
         for host in opts.options.hosts:
@@ -185,19 +239,16 @@ def main():
         stats = {}
 
         for user in target_users:
-            if not opts.options.dry_run:
-                try:
-                    (path, store) = get_pickle_path(opts.options.location, user)
-                    user_queue_information = target_queue_information[user]
-                    user_queue_information['timeinfo'] = timeinfo
-                    store(user, path, (user_queue_information, user_map[user]))
-                    nagios_user_count += 1
-                except (UserStorageError, FileStoreError, FileMoveError), err:
-                    logger.error("Could not store pickle file for user %s" % (user))
-                    nagios_no_store += 1
-            else:
-                logger.info("Dry run, not actually storing data for user %s at path %s" % (user, get_pickle_path(opts.options.location, user)[0]))
-                logger.debug("Dry run, queue information for user %s is %s" % (user, target_queue_information[user]))
+            try:
+                path = get_pickle_path(opts.options.location, user)
+                user_queue_information = target_queue_information[user]
+                user_queue_information['timeinfo'] = timeinfo
+                new_store(user, path, (user_queue_information, user_map[user]), gpfs, login_mount_point,
+                            gpfs_mount_point, opts.options.dry_run)
+                nagios_user_count += 1
+            except (UserStorageError, FileStoreError, FileMoveError), err:
+                logger.error("Could not store pickle file for user %s" % (user))
+                nagios_no_store += 1
 
         stats["store+users"] = nagios_user_count
         stats["store_fail"] = nagios_no_store
