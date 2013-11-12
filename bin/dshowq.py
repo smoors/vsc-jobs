@@ -156,7 +156,7 @@ def new_store(user_name, path, showq_information, gpfs, login_mount_point, gpfs_
                             (path, login_mount_point, gpfs_mount_point))
             else:
                 logger.warning("Unable to store quota information for %s on %s; symlink cannot be resolved properly"
-                                % (user_name, storage_name))
+                                % (user_name, path))
         else:
             new_path = path
 
