@@ -32,13 +32,15 @@ Several formating options are provided:
 """
 
 import copy
-import cPickle
 import os
-import pwd
 import sys
 import time
 
+from pwd import getpwuid
+from vsc.administration.user import VscUser
+from vsc.config.base import VscStorage
 from vsc.utils import fancylogger
+from vsc.utils.cache import FileCache
 from vsc.utils.generaloption import simple_option
 
 logger = fancylogger.getLogger("myshowq")
@@ -48,44 +50,24 @@ fancylogger.logToScreen(True)
 maxage = 60 * 30  # 30 minutes
 
 
-def readbuffer(owner, showvo, running, idle, blocked, location=None):
+def read_cache(owner, showvo, running, idle, blocked, path):
     """
     Unpickle the file and fill in the resulting datastructure.
     """
 
-    dest = None
-    if location:
-        dest = os.path.join(os.getenv(location), ".showq.pickle")
-
-    # defaults to the user's home
-    if not dest:
-        home = pwd.getpwnam(owner)[5]
-
-        if not os.path.isdir(home):
-            print "Homedir %s for owner %s not found" % (home, owner)
-            return (None, None)
-        dest = "%s/.showq.pickle" % home
-
-    logger.debug("data source expected at %s" % (dest))
-
     try:
-        f = open(dest)
-        (res, user_map) = cPickle.load(f)
-        f.close()
-    except Exception, err:
-        print "Failed to load showq information from file %s: %s" % (dest, err)
-        return (None, None)
+        cache = FileCache(path)
+    except:
+        print "Failed to load showq information from %s" % (path,)
 
-    if not 'timeinfo' in res:
-        print "The cache file is missing time info to determine its age. Please contact your admin to look into this."
-        return (None, None)
-
+    res = cache.load('showq')[1][0]
+    user_map = cache.load('showq')[1][1]
     ## check for timeinfo
     if res['timeinfo'] < (time.time() - maxage):
         print "The data in the showq cache is outdated. Please contact your admin to look into this."
-        return (None, None)
-    else:
-        del res['timeinfo']
+    #    return (None, None)
+
+    del res['timeinfo']
 
     logger.debug("Resulting cache data: %s" % (res))
 
@@ -299,35 +281,39 @@ def main():
         "idle": ("Display idle job information", None, "store_true", False, 'i'),
         "blocked": ("Dispay blocked job information", None, "store_true", False, 'b'),
         'hosts': ("Hosts/clusters to check", None, 'extend', []),
-        'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_HOME'),
+        'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_SCRATCH_GENGAR'),
     }
 
     opts = simple_option(options, config_files=['/etc/myshowq.conf'])
-
 
     if not (opts.options.running or opts.options.idle or opts.options.blocked):
         opts.options.running = True
         opts.options.idle = True
         opts.options.blocked = True
 
-    my_uid = os.geteuid()
-    my_name = pwd.getpwuid(my_uid)[0]
+    storage = VscStorage()
+    user_name = getpwuid(os.getuid())[0]
+    now = time.time()
 
-    (res, user_map) = readbuffer(my_name,
+    mount_point = storage[opts.options.location_environment].login_mount_point
+    path_template = storage.path_templates[opts.options.location_environment]['user']
+    path = os.path.join(mount_point, path_template[0], path_template[1](user_name), ".showq.json.gz")
+
+    (res, user_map) = read_cache(user_name,
                                  opts.options.virtualorganisation,
                                  opts.options.running,
                                  opts.options.idle,
                                  opts.options.blocked,
-                                 opts.options.location_environment)
+                                 path)
 
     if not res or len(res) == 0:
         print "no data"
         sys.exit(0)
 
     if opts.options.summary:
-        showsummary(opts.options.hosts, res, user_map, my_name, opts.options.virtualorganisation)
+        showsummary(opts.options.hosts, res, user_map, user_name, opts.options.virtualorganisation)
     if opts.options.detail:
-        showdetail(opts.options.hosts, res, user_map, my_name, opts.options.virtualorganisation)
+        showdetail(opts.options.hosts, res, user_map, user_name, opts.options.virtualorganisation)
 
 
 if __name__ == '__main__':
