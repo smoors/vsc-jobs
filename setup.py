@@ -57,7 +57,7 @@ PACKAGE = {
     'install_requires': [
         'vsc-administration >= 0.16.8',
         'vsc-base >= 1.6.4',
-        'vsc-utils >= 1.4.5',
+        'vsc-utils >= 1.4.6',
         'pbs_python >= 4.3',
         'lxml',
     ],
