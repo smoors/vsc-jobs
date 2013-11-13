@@ -21,11 +21,13 @@ import sys
 import time
 
 from vsc.administration.user import cluster_user_pickle_location_map, cluster_user_pickle_store_map
+from vsc.config.base import VscStorage
+from vsc.filesystem.gpfs import GpfsOperations
 from vsc.jobs.moab.checkjob import Checkjob, CheckjobInfo
 from vsc.ldap.configuration import VscConfiguration
 from vsc.ldap.utils import LdapQuery
 from vsc.utils import fancylogger
-from vsc.utils.fs_store import UserStorageError, FileStoreError, FileMoveError
+from vsc.utils.fs_store import UserStorageError, FileStoreError, FileMoveError, store_on_gpfs
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
 from vsc.utils.script_tools import ExtendedSimpleOption
 
@@ -70,6 +72,11 @@ def main():
 
     try:
         LdapQuery(VscConfiguration())
+        gpfs = GpfsOperations()
+        storage = VscStorage()
+        storage_name = cluster_user_pickle_store_map[opts.options.location]
+        login_mount_point = storage[storage_name].login_mount_point
+        gpfs_mount_point = storage[storage_name].gpfs_mount_point
 
         clusters = {}
         for host in opts.options.hosts:
@@ -98,12 +105,13 @@ def main():
         for user in active_users:
             if not opts.options.dry_run:
                 try:
-                    (path, store) = get_pickle_path(opts.options.location, user)
+                    path = get_pickle_path(opts.options.location, user)
                     user_queue_information = CheckjobInfo({user: job_information[user]})
-                    store(user, path, (timeinfo, user_queue_information))
+                    store_on_gpfs(user, path, "checkjob", user_queue_information, gpfs, login_mount_point,
+                            gpfs_mount_point, ".checkjob.json.gz", opts.options.dry_run)
                     nagios_user_count += 1
                 except (UserStorageError, FileStoreError, FileMoveError), _:
-                    logger.exception("Could not store pickle file for user %s" % (user))
+                    logger.exception("Could not store cache file for user %s" % (user))
                     nagios_no_store += 1
             else:
                 logger.info("Dry run, not actually storing data for user %s at path %s" %
