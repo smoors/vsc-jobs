@@ -16,7 +16,6 @@ users pickle directory.
 
 @author Andy Georges
 """
-import os
 import sys
 import time
 

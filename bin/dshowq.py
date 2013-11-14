@@ -21,7 +21,6 @@ showq pickle files in the users personal fileset.
 It should run on a regular bass to avoid information to become (too) outdated.
 """
 
-import os
 import sys
 import time
 
@@ -35,7 +34,7 @@ from vsc.ldap.entities import VscLdapGroup, VscLdapUser
 from vsc.ldap.filters import InstituteFilter
 from vsc.ldap.utils import LdapQuery
 from vsc.utils import fancylogger
-from vsc.utils.fs_store import UserStorageError, FileStoreError, FileMoveError, store_on_gpfs
+from vsc.utils.fs_store import store_on_gpfs
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
 from vsc.utils.script_tools import ExtendedSimpleOption
 
