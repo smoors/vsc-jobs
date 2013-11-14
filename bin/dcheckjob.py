@@ -27,7 +27,7 @@ from vsc.jobs.moab.checkjob import Checkjob, CheckjobInfo
 from vsc.ldap.configuration import VscConfiguration
 from vsc.ldap.utils import LdapQuery
 from vsc.utils import fancylogger
-from vsc.utils.fs_store import UserStorageError, FileStoreError, FileMoveError, store_on_gpfs
+from vsc.utils.fs_store import store_on_gpfs
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
 from vsc.utils.script_tools import ExtendedSimpleOption
 
@@ -103,13 +103,13 @@ def main():
 
         for user in active_users:
             if not opts.options.dry_run:
+                path = get_pickle_path(opts.options.location, user)
                 try:
-                    path = get_pickle_path(opts.options.location, user)
                     user_queue_information = CheckjobInfo({user: job_information[user]})
                     store_on_gpfs(user, path, "checkjob", user_queue_information, gpfs, login_mount_point,
                             gpfs_mount_point, ".checkjob.json.gz", opts.options.dry_run)
                     nagios_user_count += 1
-                except (UserStorageError, FileStoreError, FileMoveError), _:
+                except Exception:
                     logger.exception("Could not store cache file for user %s" % (user))
                     nagios_no_store += 1
             else:
