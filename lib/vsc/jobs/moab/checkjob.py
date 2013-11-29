@@ -93,7 +93,7 @@ class Checkjob(MoabCommand):
 
     def parser(self, host, txt):
         """Parse the checkjob XML and produce a corresponding CheckjobInfo instance."""
-        xml = etree.fromstring(txt)
+        xml = etree.fromstring(txt, parser=etree.XMLParser(huge_tree=True))
 
         checkjob_info = CheckjobInfo()
 
