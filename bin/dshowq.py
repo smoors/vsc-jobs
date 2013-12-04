@@ -197,11 +197,11 @@ def main():
                 store_on_gpfs(user, path, "showq", (user_queue_information, user_map[user]), gpfs, login_mount_point,
                             gpfs_mount_point, ".showq.json.gz", opts.options.dry_run)
                 nagios_user_count += 1
-            except (UserStorageError, FileStoreError, FileMoveError), err:
+            except Exception:
                 logger.error("Could not store pickle file for user %s" % (user))
                 nagios_no_store += 1
 
-        stats["store+users"] = nagios_user_count
+        stats["store_users"] = nagios_user_count
         stats["store_fail"] = nagios_no_store
         stats["store_fail_critical"] = STORE_LIMIT_CRITICAL
     except Exception, err:
