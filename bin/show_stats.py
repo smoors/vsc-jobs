@@ -73,8 +73,8 @@ def main():
                 time.sleep(opts.options.retry_interval)
 
         if not moab_stats:
-            logger.error("Moab's showstats dit not provide useful output after %d, likely timed out." % (retry + 1,))
-            opts.critical("Moab's showstats failed running correctly (%d retries)" % (retry + 1,))
+            logger.error("Moabs showstats dit not provide useful output after %d, likely timed out." % (retry + 1,))
+            opts.critical("Moabs showstats failed running correctly (%d retries)" % (retry + 1,))
             sys.exit(NAGIOS_EXIT_CRITICAL)
 
         else:
