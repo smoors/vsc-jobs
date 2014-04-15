@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 ##
 #
 # Copyright 2013-2014 Ghent University
@@ -28,6 +28,7 @@ from vsc.config.base import VscStorage
 from vsc.utils import fancylogger
 from vsc.utils.cache import FileCache
 from vsc.utils.generaloption import simple_option
+from vsc.utils.cache import FileCache
 
 MAXIMAL_AGE = 60 * 30  # 30 minutes
 
@@ -73,5 +74,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 
