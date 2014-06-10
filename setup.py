@@ -35,7 +35,7 @@ shared_setup.SHARED_TARGET.update({
 
 PACKAGE = {
     'name': 'vsc-jobs',
-    'version': '0.6.13',
+    'version': '0.7',
     'author': [sdw, ag],
     'maintainer': [sdw, ag],
     'packages': ['vsc', 'vsc.jobs', 'vsc.jobs.moab', 'vsc.jobs.pbs'],
@@ -56,7 +56,7 @@ PACKAGE = {
                 ],
     'install_requires': [
         'vsc-administration >= 0.16.8',
-        'vsc-base >= 1.6.4',
+        'vsc-base >= 1.9.0',
         'vsc-utils >= 1.4.6',
         'pbs_python >= 4.3',
         'lxml',
