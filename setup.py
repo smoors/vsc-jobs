@@ -18,8 +18,12 @@ vsc-jobs base distribution setup.py
 
 @author: Andy Georges (Ghent University)
 """
-import vsc.install.shared_setup as shared_setup
-from vsc.install.shared_setup import ag, sdw
+try:
+    import vsc.install.shared_setup as shared_setup
+    from vsc.install.shared_setup import ag, sdw
+except ImportError:
+    print "vsc.install could not be found, make sure a recent vsc-base is installed"
+    print "you might want to try 'easy_install [--user] https://github.com/hpcugent/vsc-base/archive/master.tar.gz'"
 
 
 def remove_bdist_rpm_source_file():
