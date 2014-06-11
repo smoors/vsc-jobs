@@ -57,7 +57,7 @@ def main():
 
     options = {
         'jobid': ('Fully qualified identification of the job', None, 'store', None),
-        'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_HOME'),
+        'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_SCRATCH_DELCATTY'),
     }
     opts = simple_option(options, config_files=['/etc/mycheckjob.conf'])
 
