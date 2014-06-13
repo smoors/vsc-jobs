@@ -35,8 +35,6 @@ from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
 from vsc.utils.rest import RestClient
 from vsc.utils.script_tools import ExtendedSimpleOption
 
-
-
 #Constants
 NAGIOS_CHECK_INTERVAL_THRESHOLD = 15 * 60  # 15 minutes
 
@@ -122,16 +120,20 @@ def get_pickle_path(location, user_id):
     return cluster_user_pickle_location_map[location](user_id).pickle_path()
 
 
-class DelcattySshShowq(SshShowq):
+class MasterSshShowq(SshShowq):
     """
     ssh into delcatty's master to run the showq command there for fetching information from other clusters
     """
-    def command(self, path, master):
-        """
-        Got through master15 instead of the master you iwsh to interrogate
-        """
-        return super(DelcattySshShowq, self).command(path, "master15.delcatty.gent.vsc")
+    def __init__(self, target_master, *args, **kwargs):
+        """Initialisation."""
+        super(MasterSshShowq, self).__init__(*args, **kwargs)
+        self.target_master = target_master
 
+    def _command(self, path, master):
+        """
+        Got through master15 instead of the master you wish to interrogate
+        """
+        return super(MasterSshShowq, self)._command("sudo %s" % (path,), self.target_master)
 
 
 def main():
@@ -144,8 +146,9 @@ def main():
         'hosts': ('the hosts/clusters that should be contacted for job information', None, 'extend', []),
         'information': ('the sort of information to store: user, vo, project', None, 'store', 'user'),
         'location': ('the location for storing the pickle file: delcatty, muk', str, 'store', 'delcatty'),
-        'account_page_url': ('the URL at which the account page resides', None, 'store', 'https://account.vscentrum.be/django'),
-        'access_token': ('the token that will allow authentiction against the account page', None, 'store', None),
+        'account_page_url': ('the URL at which the account page resides', None, 'store', None),
+        'access_token': ('the token that will allow authentication against the account page', None, 'store', None),
+        'target_master': ('the master used to execute showq commands', None, 'store', None)
     }
 
     opts = ExtendedSimpleOption(options)
@@ -169,7 +172,7 @@ def main():
             }
 
         logger.debug("clusters = %s" % (clusters,))
-        showq = DelcattySshShowq(clusters, cache_pickle=True, dry_run=opts.options.dry_run)
+        showq = MasterSshShowq(opts.options.target_master, clusters, cache_pickle=True, dry_run=opts.options.dry_run)
 
         logger.debug("Getting showq information ...")
 
@@ -185,11 +188,8 @@ def main():
         # - the active user set
         # - the information we want to provide on the cluster(set) where this script runs
         # At the same time, we need to determine the job information each user gets to see
-        (target_users, target_queue_information, user_map) = determine_target_information(opts.options.information,
-                                                                                          active_users,
-                                                                                          queue_information,
-                                                                                          rest_client)
-
+        tup = (opts.options.information, active_users, queue_information, rest_client)
+        (target_users, target_queue_information, user_map) = determine_target_information(*tup)
 
         nagios_user_count = 0
         nagios_no_store = 0
