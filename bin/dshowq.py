@@ -124,16 +124,17 @@ class MasterSshShowq(SshShowq):
     """
     ssh into delcatty's master to run the showq command there for fetching information from other clusters
     """
-    def __init__(self, target_master, *args, **kwargs):
+    def __init__(self, target_master, target_user, *args, **kwargs):
         """Initialisation."""
         super(MasterSshShowq, self).__init__(*args, **kwargs)
         self.target_master = target_master
+        self.target_user = target_user
 
     def _command(self, path, master):
         """
         Got through master15 instead of the master you wish to interrogate
         """
-        return super(MasterSshShowq, self)._command("sudo %s" % (path,), self.target_master)
+        return super(MasterSshShowq, self)._command("sudo %s" % (path,), "%s@%s" % (self.target_user, self.target_master))
 
 
 def main():
@@ -148,7 +149,8 @@ def main():
         'location': ('the location for storing the pickle file: delcatty, muk', str, 'store', 'delcatty'),
         'account_page_url': ('the URL at which the account page resides', None, 'store', None),
         'access_token': ('the token that will allow authentication against the account page', None, 'store', None),
-        'target_master': ('the master used to execute showq commands', None, 'store', None)
+        'target_master': ('the master used to execute showq commands', None, 'store', None),
+        'target_user': ('the user for ssh to the target master', None, 'store', None),
     }
 
     opts = ExtendedSimpleOption(options)
@@ -172,7 +174,11 @@ def main():
             }
 
         logger.debug("clusters = %s" % (clusters,))
-        showq = MasterSshShowq(opts.options.target_master, clusters, cache_pickle=True, dry_run=opts.options.dry_run)
+        showq = MasterSshShowq(opts.options.target_master,
+                               opts.options.target_user,
+                               clusters,
+                               cache_pickle=True,
+                               dry_run=opts.options.dry_run)
 
         logger.debug("Getting showq information ...")
 
