@@ -28,16 +28,12 @@ import time
 from vsc.administration.user import cluster_user_pickle_store_map, cluster_user_pickle_location_map
 from vsc.config.base import VscStorage
 from vsc.filesystem.gpfs import GpfsOperations
-from vsc.jobs.moab.showq import Showq
-from vsc.ldap.configuration import VscConfiguration
-from vsc.ldap.entities import VscLdapGroup, VscLdapUser
-from vsc.ldap.filters import InstituteFilter
-from vsc.ldap.utils import LdapQuery
+from vsc.jobs.moab.showq import SshShowq
 from vsc.utils import fancylogger
 from vsc.utils.fs_store import store_on_gpfs
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
+from vsc.utils.rest import RestClient
 from vsc.utils.script_tools import ExtendedSimpleOption
-
 
 #Constants
 NAGIOS_CHECK_INTERVAL_THRESHOLD = 15 * 60  # 15 minutes
@@ -45,59 +41,50 @@ NAGIOS_CHECK_INTERVAL_THRESHOLD = 15 * 60  # 15 minutes
 DEFAULT_VO = 'gvo00012'
 
 STORE_LIMIT_CRITICAL = 5
+INACTIVE = 'inactive'
 
 logger = fancylogger.getLogger(__name__)
 fancylogger.logToScreen(True)
 fancylogger.setLogLevelInfo()
 
 
-def collect_vo_ldap(active_users):
-    """Determine which active users are in the same VO.
-
-    @type active_users: list of strings
-
-    @param active_users: the users for which there currently are jobs running
-
-    Generates a mapping between each user that belongs to a VO for which a member has jobs running and the active users
-    from that VO. If the user belongs to the default VO, he cannot see any information of the other users from this VO.
-
-    @return: dict with vo IDs as keys (default VO members are their own VO) and dicts mapping uid to gecos as values.
+def collect_vo_account_page(active_users, rest_client):
     """
-    LdapQuery(VscConfiguration())
-    ldap_filter = InstituteFilter('antwerpen') | InstituteFilter('brussel') | InstituteFilter('gent') | InstituteFilter('leuven')
+    Determines a mapping between each active user and the fellow members of his VO.
 
-    vos = [g for g in VscLdapGroup.lookup(ldap_filter) if g.group_id.startswith('gvo')]
-    members = dict([(u.user_id, u) for u in VscLdapUser.lookup(ldap_filter)])
-    user_to_vo_map = dict([(u, vo) for vo in vos for u in vo.memberUid])
+    If the user belongs to a non-default VO, then the map will have a value that is a dict
+    of all other active users from the VO. Otherwise, it will have a singleton value. For
+    compatibility purposes, the values map user names to an empty string (previously to gecos).
+    """
+
+    all_vos = rest_client.api.vo.get()
+    vo_information = [rest_client.api.vo[vo[0]].get() for vo in all_vos if vo[1] not in (INACTIVE,)]
+    user_to_vo_map = dict((u, vo) for vo in vo_information for u in vo['members'])
 
     user_maps_per_vo = {}
     found = set()
     for user in active_users:
 
-        # If we already have a mapping for this user, we need not add him again
         if user in found:
             continue
 
-        # find VO of this user
         vo = user_to_vo_map.get(user, None)
         if vo:
-            if vo.group_id == DEFAULT_VO:
-                logger.debug("user %s belongs to the default vo %s" % (user, vo.group_id))
+            if vo['vsc_id'] in (DEFAULT_VO,):
+                logger.debug('user %s belongs to the default VO %s', user, vo['vsc_id'])
                 found.add(user)
-                name = members[user].gecos
-                user_maps_per_vo[user] = {user: name}
+                user_maps_per_vo[user] = {user: ""}
             else:
-                user_map = dict([(uid, members[uid].gecos) for uid in vo.memberUid and uid in active_users])
-                for uid in user_map:
-                    found.add(uid)
-                user_maps_per_vo[vo.group_id] = user_map
-                logger.debug("added userMap for the vo %s" % (vo.group_id))
-        # ignore users not in any VO (including default VO)
+                user_map = dict((u, "") for u in vo['members'] if u in active_users)
+                for u in user_map:
+                    found.add(u)
+
+                user_maps_per_vo[vo['vsc_id']] = user_map
 
     return (found, user_maps_per_vo)
 
 
-def determine_target_information(information, active_users, queue_information):
+def determine_target_information(information, active_users, queue_information, rest_client):
     """Determine for the given information type, what should be stored for which users."""
 
     logger.debug("Determining target information for %s" % (information,))
@@ -106,7 +93,7 @@ def determine_target_information(information, active_users, queue_information):
         user_info = dict([(u, {u: ""}) for u in active_users])  # FIXME: faking it
         return (active_users, dict([(user, {user: queue_information[user]}) for user in active_users]), user_info)
     elif information == 'vo':
-        (all_target_users, user_maps_per_vo) = collect_vo_ldap(active_users)
+        (all_target_users, user_maps_per_vo) = collect_vo_account_page(active_users, rest_client)
 
         target_queue_information = {}
         for vo in user_maps_per_vo.values():
@@ -132,6 +119,24 @@ def get_pickle_path(location, user_id):
     """
     return cluster_user_pickle_location_map[location](user_id).pickle_path()
 
+
+class MasterSshShowq(SshShowq):
+    """
+    ssh into delcatty's master to run the showq command there for fetching information from other clusters
+    """
+    def __init__(self, target_master, target_user, *args, **kwargs):
+        """Initialisation."""
+        super(MasterSshShowq, self).__init__(*args, **kwargs)
+        self.target_master = target_master
+        self.target_user = target_user
+
+    def _command(self, path, master):
+        """
+        Got through master15 instead of the master you wish to interrogate
+        """
+        return super(MasterSshShowq, self)._command("sudo %s" % (path,), "%s@%s" % (self.target_user, self.target_master))
+
+
 def main():
     # Collect all info
 
@@ -141,13 +146,18 @@ def main():
         'nagios-check-interval-threshold': NAGIOS_CHECK_INTERVAL_THRESHOLD,
         'hosts': ('the hosts/clusters that should be contacted for job information', None, 'extend', []),
         'information': ('the sort of information to store: user, vo, project', None, 'store', 'user'),
-        'location': ('the location for storing the pickle file: gengar, muk', str, 'store', 'gengar'),
+        'location': ('the location for storing the pickle file: delcatty, muk', str, 'store', 'delcatty'),
+        'account_page_url': ('the URL at which the account page resides', None, 'store', None),
+        'access_token': ('the token that will allow authentication against the account page', None, 'store', None),
+        'target_master': ('the master used to execute showq commands', None, 'store', None),
+        'target_user': ('the user for ssh to the target master', None, 'store', None),
     }
 
     opts = ExtendedSimpleOption(options)
 
     try:
-        LdapQuery(VscConfiguration())
+        rest_client = RestClient(opts.options.account_page_url, token=opts.options.access_token)
+
         gpfs = GpfsOperations()
         storage = VscStorage()
         storage_name = cluster_user_pickle_store_map[opts.options.location]
@@ -164,7 +174,11 @@ def main():
             }
 
         logger.debug("clusters = %s" % (clusters,))
-        showq = Showq(clusters, cache_pickle=True, dry_run=opts.options.dry_run)
+        showq = MasterSshShowq(opts.options.target_master,
+                               opts.options.target_user,
+                               clusters,
+                               cache_pickle=True,
+                               dry_run=opts.options.dry_run)
 
         logger.debug("Getting showq information ...")
 
@@ -180,9 +194,8 @@ def main():
         # - the active user set
         # - the information we want to provide on the cluster(set) where this script runs
         # At the same time, we need to determine the job information each user gets to see
-        (target_users, target_queue_information, user_map) = determine_target_information(opts.options.information,
-                                                                                        active_users,
-                                                                                        queue_information)
+        tup = (opts.options.information, active_users, queue_information, rest_client)
+        (target_users, target_queue_information, user_map) = determine_target_information(*tup)
 
         nagios_user_count = 0
         nagios_no_store = 0
