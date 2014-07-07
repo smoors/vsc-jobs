@@ -56,6 +56,7 @@ PACKAGE = {
                 ],
     'install_requires': [
         'vsc-administration >= 0.16.8',
+        'vsc-accountpage-client >= 0.1.2',
         'vsc-base >= 1.9.0',
         'vsc-utils >= 1.4.6',
         'pbs_python >= 4.3',
