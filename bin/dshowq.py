@@ -26,6 +26,7 @@ import time
 
 
 from vsc.administration.user import cluster_user_pickle_store_map, cluster_user_pickle_location_map
+from vsc.accountpage.client import AccountpageClient
 from vsc.config.base import VscStorage
 from vsc.filesystem.gpfs import GpfsOperations
 from vsc.jobs.moab.showq import SshShowq
@@ -57,8 +58,8 @@ def collect_vo_account_page(active_users, rest_client):
     compatibility purposes, the values map user names to an empty string (previously to gecos).
     """
 
-    all_vos = rest_client.api.vo.get()
-    vo_information = [rest_client.api.vo[vo[0]].get() for vo in all_vos if vo[1] not in (INACTIVE,)]
+    all_vos = rest_client.vo.get()
+    vo_information = [rest_client.vo[vo[0]].get() for vo in all_vos if vo[1] not in (INACTIVE,)]
     user_to_vo_map = dict((u, vo) for vo in vo_information for u in vo['members'])
 
     user_maps_per_vo = {}
@@ -156,7 +157,7 @@ def main():
     opts = ExtendedSimpleOption(options)
 
     try:
-        rest_client = RestClient(opts.options.account_page_url, token=opts.options.access_token)
+        rest_client = AccountpageClient(token=opts.options.access_token)
 
         gpfs = GpfsOperations()
         storage = VscStorage()
