@@ -37,7 +37,6 @@ import sys
 import time
 
 from pwd import getpwuid
-from vsc.administration.user import VscUser
 from vsc.config.base import VscStorage
 from vsc.utils import fancylogger
 from vsc.utils.cache import FileCache
@@ -47,7 +46,7 @@ logger = fancylogger.getLogger("myshowq")
 fancylogger.setLogLevelWarning()
 fancylogger.logToScreen(True)
 
-maxage = 60 * 30  # 30 minutes
+MAXIMAL_AGE = 60 * 30  # 30 minutes
 
 
 def read_cache(owner, showvo, running, idle, blocked, path):
@@ -63,8 +62,8 @@ def read_cache(owner, showvo, running, idle, blocked, path):
     res = cache.load('showq')[1][0]
     user_map = cache.load('showq')[1][1]
     ## check for timeinfo
-    if res['timeinfo'] < (time.time() - maxage):
-        print "The data in the showq cache is outdated. Please contact your admin to look into this."
+    if res['timeinfo'] < (time.time() - MAXIMAL_AGE):
+        print "The data in the showq cache may be outdated. Please contact your admin to look into this."
     #    return (None, None)
 
     del res['timeinfo']
