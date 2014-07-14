@@ -23,7 +23,7 @@ import pprint
 
 from lxml import etree
 
-from vsc.jobs.moab.internal import MoabCommand
+from vsc.jobs.moab.internal import MoabCommand, SshMoabCommand
 from vsc.utils.fancylogger import getLogger
 from vsc.utils.missing import RUDict
 
@@ -88,7 +88,7 @@ class Checkjob(MoabCommand):
 
     def _run_moab_command(self, commandlist, cluster, options):
         """Override the default, need to add an option"""
-        options += ['all']
+        options += ['-vvv', 'all']
         return super(Checkjob, self)._run_moab_command(commandlist, cluster, options)
 
     def parser(self, host, txt):
@@ -115,3 +115,10 @@ class CheckjobInfoJSONEncoder(json.JSONEncoder):
             return obj.encode_json()
         else:
             return json.JSONEncoder.default(self, obj)
+
+
+class SshCheckjob(Checkjob, SshMoabCommand):
+    """
+    Allows for retrieving showq information through an ssh command to the remote master
+    """
+    pass

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ##
 #
-# Copyright 2013-2013 Ghent University
+# Copyright 2013-2014 Ghent University
 #
 # This file is part of the tools originally by the HPC team of
 # Ghent University (http://ugent.be/hpc).
@@ -16,56 +16,40 @@ mycheckjob shows the contents of the information that was saved to the
 
 This mimics the result of Moab's checkjob command, but without the
 risks of letting users see job information of jobs that are not theirs.
+
+@author: Andy Georges (Ghent University)
 """
 import cPickle
 import os
-import pwd
 import time
 
+from pwd import getpwuid
+from vsc.config.base import VscStorage
 from vsc.utils import fancylogger
+from vsc.utils.cache import FileCache
 from vsc.utils.generaloption import simple_option
 
 MAXIMAL_AGE = 60 * 30  # 30 minutes
 
-logger = fancylogger.getLogger("myshowq")
+logger = fancylogger.getLogger("mycheckjob")
 fancylogger.logToScreen(True)
 fancylogger.setLogLevelWarning()
 
 
-def checkjob_data_location(user_name, location):
-    """Retrieve the gzipped JSON data form the right file.
-
-    @type user_name: string
-    @type location: string
-
-    @param user_name: VSC user name (vscxyzuv)
-    @param location: string defining the location of the gzipped JSON file
-        - home: user's home directory
-        - scratch: user's personal fileset on muk
-
-    @returns: absolute path to the gzipped JSON file
+def read_cache(path):
     """
-    return os.path.join(os.getenv(location), ".checkjob.json.gz")
-
-
-def read_checkjob_data(path):
-    """Read the data from the pickle file.
-
-    @type path: string
-
-    @param path: absolute path to the pickle file
-
-    @returns: (timeinfo, CheckjobInfo instance (for a single user)) or (0, None) in case of failure.
+    Unpickle the file and fill in the resulting datastructure.
     """
     try:
-        f = open(path, 'r')
-        (timeinfo, checkjob) = cPickle.load(f)
-        f.close()
-    except Exception, err:
-        logger.exception("Cannot read pickle file", err)
-        return (0, None)
+        cache = FileCache(path)
+    except:
+        print "Failed to load checkjob information from %s" % (path,)
 
-    return (timeinfo, checkjob)
+    res = cache.load('checkjob')
+    if res[0] < (time.time() - MAXIMAL_AGE):
+        print "The data in the checkjob cache may be outdated. Please contact your admin to look into this."
+
+    return res[1]  # CheckjobInfo
 
 
 def main():
@@ -74,22 +58,18 @@ def main():
         'jobid': ('Fully qualified identification of the job', None, 'store', None),
         'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_HOME'),
     }
-
     opts = simple_option(options, config_files=['/etc/mycheckjob.conf'])
 
-    my_uid = os.geteuid()
-    my_name = pwd.getpwuid(my_uid)[0]
+    storage = VscStorage()
+    user_name = getpwuid(os.getuid())[0]
 
-    path = checkjob_data_location(my_name, opts.options.location_environment)
-    (timeinfo, checkjob) = read_checkjob_data(path)
+    mount_point = storage[opts.options.location_environment].login_mount_point
+    path_template = storage.path_templates[opts.options.location_environment]['user']
+    path = os.path.join(mount_point, path_template[0], path_template[1](user_name), ".checkjob.json.gz")
 
-    age = time.time() - timeinfo
+    (checkjob_info, user_map) = read_cache(path)
 
-    if age > MAXIMAL_AGE:
-        print "Job information is older than %d minutes (%f hours). Information may not be relevant any longer" % (age / 60, age / 60.0 / 60.0)
-
-    print checkjob.display(opts.options.jobid)
-
+    print checkjob_info.display(opts.options.jobid)
 
 if __name__ == '__main__':
     main()

@@ -20,11 +20,10 @@ import sys
 import time
 
 from vsc.administration.user import cluster_user_pickle_location_map, cluster_user_pickle_store_map
+from vsc.accountpage.client import AccountpageClient
 from vsc.config.base import VscStorage
 from vsc.filesystem.gpfs import GpfsOperations
-from vsc.jobs.moab.checkjob import Checkjob, CheckjobInfo
-from vsc.ldap.configuration import VscConfiguration
-from vsc.ldap.utils import LdapQuery
+from vsc.jobs.moab.checkjob import SshCheckjob, CheckjobInfo
 from vsc.utils import fancylogger
 from vsc.utils.fs_store import store_on_gpfs
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
@@ -55,6 +54,22 @@ def get_pickle_path(location, user_id):
     return cluster_user_pickle_location_map[location](user_id).pickle_path()
 
 
+class MasterSshCheckjob(SshCheckjob):
+    """
+    ssh into delcatty's master to run the showq command there for fetching information from other clusters
+    """
+    def __init__(self, target_master, target_user, *args, **kwargs):
+        """Initialisation."""
+        super(MasterSshCheckjob, self).__init__(*args, **kwargs)
+        self.target_master = target_master
+        self.target_user = target_user
+
+    def _command(self, path, master):
+        """
+        Got through master15 instead of the master you wish to interrogate
+        """
+        return super(MasterSshCheckjob, self)._command("sudo %s" % (path,), "%s@%s" % (self.target_user, self.target_master))
+
 def main():
     # Collect all info
 
@@ -64,12 +79,18 @@ def main():
         'nagios-check-interval-threshold': NAGIOS_CHECK_INTERVAL_THRESHOLD,
         'hosts': ('the hosts/clusters that should be contacted for job information', None, 'extend', []),
         'location': ('the location for storing the pickle file: home, scratch', str, 'store', 'home'),
+        'location': ('the location for storing the pickle file: delcatty, muk', str, 'store', 'delcatty'),
+        'access_token': ('the token that will allow authentication against the account page', None, 'store', None),
+        'account_page_url': ('',None, 'store', None),
+        'target_master': ('the master used to execute showq commands', None, 'store', None),
+        'target_user': ('the user for ssh to the target master', None, 'store', None),
     }
 
     opts = ExtendedSimpleOption(options)
 
     try:
-        LdapQuery(VscConfiguration())
+        rest_client = AccountpageClient(token=opts.options.access_token)
+
         gpfs = GpfsOperations()
         storage = VscStorage()
         storage_name = cluster_user_pickle_store_map[opts.options.location]
@@ -85,10 +106,14 @@ def main():
                 'path': checkjob_path
             }
 
-        checkjob = Checkjob(clusters, cache_pickle=True, dry_run=opts.options.dry_run)
+        checkjob = MasterSshCheckjob(
+            opts.options.target_master,
+            opts.options.target_user,
+            clusters,
+            cache_pickle=True,
+            dry_run=opts.options.dry_run)
 
         (job_information, reported_hosts, failed_hosts) = checkjob.get_moab_command_information()
-        timeinfo = time.time()
 
         active_users = job_information.keys()
 
@@ -101,22 +126,17 @@ def main():
         stats = {}
 
         for user in active_users:
-            if not opts.options.dry_run:
-                path = get_pickle_path(opts.options.location, user)
-                try:
-                    user_queue_information = CheckjobInfo({user: job_information[user]})
-                    store_on_gpfs(user, path, "checkjob", user_queue_information, gpfs, login_mount_point,
-                            gpfs_mount_point, ".checkjob.json.gz", opts.options.dry_run)
-                    nagios_user_count += 1
-                except Exception:
-                    logger.exception("Could not store cache file for user %s" % (user))
-                    nagios_no_store += 1
-            else:
-                logger.info("Dry run, not actually storing data for user %s at path %s" %
-                            (user, get_pickle_path(opts.options.location, user)[0]))
-                logger.debug("Dry run, queue information for user %s is %s" % (user, job_information[user]))
-
-        stats["store+users"] = nagios_user_count
+            path = get_pickle_path(opts.options.location, user)
+            try:
+                user_queue_information = CheckjobInfo({user: job_information[user]})
+                logger.info("user_map: %s" % (user_map,))
+                store_on_gpfs(user, path, "checkjob", user_queue_information, gpfs, login_mount_point,
+                        gpfs_mount_point, ".checkjob.json.gz", opts.options.dry_run)
+                nagios_user_count += 1
+            except Exception:
+                logger.exception("Could not store cache file for user %s" % (user))
+                nagios_no_store += 1
+        stats["store_users"] = nagios_user_count
         stats["store_fail"] = nagios_no_store
         stats["store_fail_critical"] = STORE_LIMIT_CRITICAL
     except Exception, err:
