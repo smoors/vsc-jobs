@@ -114,7 +114,6 @@ def main():
             dry_run=opts.options.dry_run)
 
         (job_information, reported_hosts, failed_hosts) = checkjob.get_moab_command_information()
-        timeinfo = time.time()
 
         active_users = job_information.keys()
 
@@ -130,9 +129,8 @@ def main():
             path = get_pickle_path(opts.options.location, user)
             try:
                 user_queue_information = CheckjobInfo({user: job_information[user]})
-                user_map = dict([(u, {u: ""}) for u in active_users])  # FIXME: faking it
                 logger.info("user_map: %s" % (user_map,))
-                store_on_gpfs(user, path, "checkjob", (user_queue_information, user_map[user]), gpfs, login_mount_point,
+                store_on_gpfs(user, path, "checkjob", user_queue_information, gpfs, login_mount_point,
                         gpfs_mount_point, ".checkjob.json.gz", opts.options.dry_run)
                 nagios_user_count += 1
             except Exception:
