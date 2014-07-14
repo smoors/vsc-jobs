@@ -67,7 +67,7 @@ def main():
     path_template = storage.path_templates[opts.options.location_environment]['user']
     path = os.path.join(mount_point, path_template[0], path_template[1](user_name), ".checkjob.json.gz")
 
-    (checkjob_info, user_map) = read_cache(path)
+    checkjob_info = read_cache(path)
 
     print checkjob_info.display(opts.options.jobid)
 

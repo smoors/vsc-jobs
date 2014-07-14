@@ -129,7 +129,6 @@ def main():
             path = get_pickle_path(opts.options.location, user)
             try:
                 user_queue_information = CheckjobInfo({user: job_information[user]})
-                logger.info("user_map: %s" % (user_map,))
                 store_on_gpfs(user, path, "checkjob", user_queue_information, gpfs, login_mount_point,
                         gpfs_mount_point, ".checkjob.json.gz", opts.options.dry_run)
                 nagios_user_count += 1
