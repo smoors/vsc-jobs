@@ -173,7 +173,7 @@ Your friendly pbs job checking script
         mail.sendTextMail(mail_to=mail_to,
                           mail_from='HPC-user-admin@ugent.be',
                           reply_to='hpc-admin@lists.ugent.be',
-                          subject='PBS check for jobs belonging to gracing or inactive users',
+                          mail_subject='PBS check for jobs belonging to gracing or inactive users',
                           message=message)
     except Exception, err:
         logger.error("Failed in sending mail to %s (%s)." % (mail_to, err))
