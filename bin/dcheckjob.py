@@ -42,12 +42,12 @@ STORE_LIMIT_CRITICAL = 5
 def get_pickle_path(location, user_id, rest_client):
     """Determine the path (directory) where the pickle file qith the queue information should be stored.
 
-    :param rest_client:
     @type location: string
     @type user_id: string
 
     @param location: indication of the user accesible storage spot to use, e.g., home or scratch
     @param user_id: VSC user ID
+    @param rest_client: VscAccountpageClient instance
 
     @returns: tuple of (string representing the directory where the pickle file should be stored,
                         the relevant storing function in vsc.utils.fs_store).
