@@ -206,11 +206,11 @@ def main():
 
         for user in target_users:
             try:
-                path = get_pickle_path(opts.options.location, user, None)
+                path = get_pickle_path(opts.options.location, user, rest_client)
                 user_queue_information = target_queue_information[user]
                 user_queue_information['timeinfo'] = timeinfo
                 store_on_gpfs(user, path, "showq", (user_queue_information, user_map[user]), gpfs, login_mount_point,
-                            gpfs_mount_point, ".showq.json.gz", opts.options.dry_run)
+                              gpfs_mount_point, ".showq.json.gz", opts.options.dry_run)
                 nagios_user_count += 1
             except Exception:
                 logger.error("Could not store pickle file for user %s" % (user))
