@@ -52,7 +52,7 @@ def get_pickle_path(location, user_id, rest_client):
     @returns: tuple of (string representing the directory where the pickle file should be stored,
                         the relevant storing function in vsc.utils.fs_store).
     """
-    return cluster_user_pickle_location_map[location](user_id).pickle_path()
+    return cluster_user_pickle_location_map[location](user_id, rest_client).pickle_path()
 
 
 class MasterSshCheckjob(SshCheckjob):
