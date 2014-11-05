@@ -39,7 +39,7 @@ shared_setup.SHARED_TARGET.update({
 
 PACKAGE = {
     'name': 'vsc-jobs',
-    'version': '0.8.2',
+    'version': '0.8.3',
     'author': [sdw, ag],
     'maintainer': [sdw, ag],
     'packages': ['vsc', 'vsc.jobs', 'vsc.jobs.moab', 'vsc.jobs.pbs'],
@@ -59,7 +59,7 @@ PACKAGE = {
                 'bin/submitfilter.py'
                 ],
     'install_requires': [
-        'vsc-administration >= 0.16.8',
+        'vsc-administration >= 0.20.1',
         'vsc-accountpage-clients >= 0.1.2',
         'vsc-base >= 1.9.0',
         'vsc-utils >= 1.4.6',

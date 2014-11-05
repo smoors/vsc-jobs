@@ -106,7 +106,7 @@ def determine_target_information(information, active_users, queue_information, r
         return (None, None, None)
 
 
-def get_pickle_path(location, user_id):
+def get_pickle_path(location, user_id, rest_client):
     """Determine the path (directory) where the pickle file with the queue information should be stored.
 
     @type location: string
@@ -114,11 +114,12 @@ def get_pickle_path(location, user_id):
 
     @param location: indication of the user accessible storage spot to use, e.g., home or scratch
     @param user_id: VSC user ID
+    @param rest_client: VscAccountpageClient instance
 
     @returns: tuple of (string representing the directory where the pickle file should be stored,
                         the relevant storing function in vsc.utils.fs_store).
     """
-    return cluster_user_pickle_location_map[location](user_id).pickle_path()
+    return cluster_user_pickle_location_map[location](user_id, rest_client=rest_client).pickle_path()
 
 
 class MasterSshShowq(SshShowq):
@@ -205,7 +206,7 @@ def main():
 
         for user in target_users:
             try:
-                path = get_pickle_path(opts.options.location, user)
+                path = get_pickle_path(opts.options.location, user, None)
                 user_queue_information = target_queue_information[user]
                 user_queue_information['timeinfo'] = timeinfo
                 store_on_gpfs(user, path, "showq", (user_queue_information, user_map[user]), gpfs, login_mount_point,
