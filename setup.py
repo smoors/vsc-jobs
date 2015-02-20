@@ -39,7 +39,7 @@ shared_setup.SHARED_TARGET.update({
 
 PACKAGE = {
     'name': 'vsc-jobs',
-    'version': '0.8.4',
+    'version': '0.8.5',
     'author': [sdw, ag],
     'maintainer': [sdw, ag],
     'packages': ['vsc', 'vsc.jobs', 'vsc.jobs.moab', 'vsc.jobs.pbs'],
@@ -67,7 +67,7 @@ PACKAGE = {
         'lxml',
     ],
     'release': 2,
-    'provides': ['python-vsc-jobs = 0.3'],
+    'provides': ['python-vsc-jobs = 0.4'],
     'install_obsoletes': ['python-master-scripts'],
 }
 
