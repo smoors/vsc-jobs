@@ -86,10 +86,9 @@ CLUSTERDATA = {
         'TOTMEM': 1395439 << 20,  # total amount of ram in dugtrio cluster
         'DEFMAXNP': 48,  # default maximum np in case of ppn=full
         },
-
     'phanpy': {
-        'PHYSMEM': 528271884 << 10,
-        'TOTMEM':  549243400 << 10,
+        'PHYSMEM': 487 << 30,  # 16GB reserved for pagepool 528271884 << 10,
+        'TOTMEM':  507 << 30,
         'NP': 24
     },
     'golett': {
