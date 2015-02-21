@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # #
-# Copyright 2013-2013 Ghent University
+# Copyright 2013-2015 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -86,7 +86,17 @@ CLUSTERDATA = {
         'TOTMEM': 1395439 << 20,  # total amount of ram in dugtrio cluster
         'DEFMAXNP': 48,  # default maximum np in case of ppn=full
         },
-    }
+    'phanpy': {
+        'PHYSMEM': 487 << 30,  # 16GB reserved for pagepool 528271884 << 10,
+        'TOTMEM':  507 << 30,
+        'NP': 24
+    },
+    'golett': {
+        'PHYSMEM': 65850124 << 10,
+        'TOTMEM':  86821640 << 10,
+        'NP': 24
+    },
+}
 
 
 MIN_VMEM = 1536 << 20  # minimum amount of ram in our machines.
@@ -224,7 +234,8 @@ def main(arguments=sys.argv):
         maxvmem = 0
         if opts.ppn in ('all', 'half'):
             opts.ppn = 1
-        sys.stderr.write("Warning: unknown server (%s) detected, see PBS_DEFAULT. This should not be happening...\n" % opts.server)
+        sys.stderr.write("Warning: unknown server (%s) detected, see"
+                         "PBS_DEFAULT. This should not be happening...\n" % opts.server)
 
     # always (and only here to replace ppn=all or ppn=half
     opts.ppn = int(opts.ppn)
@@ -232,7 +243,8 @@ def main(arguments=sys.argv):
     if not vmemDetected and not noVmemNeeded:
         # compute real vmem needed
         vmem = tvmem * opts.ppn >> 20  # change to mb
-        header += "# No vmem limit specified - added by submitfilter (server found: %s)\n#PBS -l vmem=%smb\n" % (opts.server, vmem)
+        header += "# No vmem limit specified - added by submitfilter (server found: %s)\n#PBS -l vmem=%smb\n" % \
+                  (opts.server, vmem)
     elif not noVmemNeeded:
         # parse detected vmem to check if to much was asked
         groupvmem = re.search('(\d+)(.*)', opts.vmem)
@@ -255,7 +267,8 @@ def main(arguments=sys.argv):
 
         if intvmem > maxvmem:
             # warn user that he's trying to request to much vmem
-            sys.stderr.write("Warning, requested %sb vmem per node, this is more then the available vmem (%sb), this job will never start.\n" % (intvmem, maxvmem))
+            sys.stderr.write("Warning, requested %sb vmem per node, this is more then the available vmem (%sb), this"
+                             " job will never start.\n" % (intvmem, maxvmem))
     # mail
     if not mailDetected:
         header += "# No mail specified - added by submitfilter\n#PBS -m n\n"
@@ -273,4 +286,3 @@ def main(arguments=sys.argv):
 
 if __name__ == '__main__':
     main()
-
