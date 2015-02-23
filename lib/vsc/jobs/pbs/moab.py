@@ -160,13 +160,19 @@ def showstats(xml=None):
                     pass
             elres[k] = v
 
+    upp = res['sys'].get('UPP', 0)
+    ipc = res['sys'].get('IPC',0)
+    if upp:
+        ste = 100.0 * (1.0 - 1.0 * ipc / upp)
+    else:
+        ste = 0
     summary = {
                'DPH': res['stats']['GPHDed'],  # Dedicated ProcHours
                'TPH': res['stats']['GPHAvl'],  # Total ProcHours
                'LTE': 100.0 * (res['stats']['GPHDed'] / res['stats']['GPHAvl']),  # LongTerm Efficiency in %
-               'CAP': res['sys']['UPP'] - res['sys']['IPC'],  # Current Active Procs
-               'CTP': res['sys']['UPP'],  # Current Total Procs
-               'STE': 100.0 * (1.0 - 1.0 * res['sys']['IPC'] / res['sys']['UPP']),  # ShortTerm Efficiency in %
+               'CAP': upp - ipc,  # Current Active Procs
+               'CTP': upp,  # Current Total Procs
+               'STE': upp,  # ShortTerm Efficiency in %
                }
 
     res['summary'] = summary
