@@ -171,12 +171,14 @@ def get_nodes_dict():
             _log.debug('Added down_on_error node %s' % (name))
             states.insert(0, ND_down_on_error)
 
-        if 'jobs' in full_state and not all([JOBID_REG.search(x.strip()) for x in full_state['jobs']]):
-            _log.debug('Added bad node %s for jobs %s' % (name, full_state['jobs']))
-            states.insert(0, ND_bad)
-
         # extend the node dict with derived dict (for convenience)
         derived = {}
+        if 'jobs' in full_state:
+            jobs = full_state.get_jobs()
+            if not all([JOBID_REG.search(x.strip()) for x in jobs]):
+                _log.debug('Added bad node %s for jobs %s' % (name, jobs))
+                states.insert(0, ND_bad)
+            derived['jobs']=jobs
 
         derived['states'] = [str(x) for x in states]
         make_state_map(derived)
@@ -249,5 +251,3 @@ def collect_nodeinfo():
             node_list.append(str(idx + 1))  # offset +1
 
     return node_list, state_list, types
-
-
