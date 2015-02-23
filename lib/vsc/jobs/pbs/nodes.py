@@ -186,7 +186,7 @@ def get_nodes_dict():
             if not all([JOBID_REG.search(x.strip()) for x in jobs]):
                 _log.debug('Added bad node %s for jobs %s' % (name, jobs))
                 states.insert(0, ND_bad)
-            derived[ATTR_JOBS]=jobs
+            derived[ATTR_JOBS] = jobs
 
         derived[ATTR_STATES] = [str(x) for x in states]
         make_state_map(derived)
