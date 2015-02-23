@@ -111,8 +111,9 @@ def get_jobs_dict():
                     derived['used_cput'] = sec
 
         if 'exec_host' in jobdata:
+            nodes = jobdata.get_nodes()
             exec_hosts = {}
-            for host in jobdata['exec_host'][0].split('+'):
+            for host in nodes:
                 hostname = host.split('/')[0]
                 if not hostname in exec_hosts:
                     exec_hosts[hostname] = 0
