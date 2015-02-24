@@ -118,13 +118,13 @@ ND_NAGIOS_WARNING = [x for x in TRANSLATE_STATE.keys() if not x in ND_NAGIOS_CRI
 
 JOBID_REG = re.compile(r"\w+/\w+(\.|\w|\[|\])+")
 
-ATTR_STATES = 'states'
-ATTR_STATE = 'state'
+ATTR_ERROR = 'error'
+ATTR_JOBS = 'jobs'
 ATTR_NODESTATE = 'nodestate'
 ATTR_NP = 'np'
+ATTR_STATE = 'state'
+ATTR_STATES = 'states'
 ATTR_STATUS = 'status'
-ATTR_JOBS = 'jobs'
-ATTR_ERROR = 'error'
 
 
 def make_state_map(derived):
