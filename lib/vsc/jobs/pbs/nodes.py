@@ -118,13 +118,21 @@ ND_NAGIOS_WARNING = [x for x in TRANSLATE_STATE.keys() if not x in ND_NAGIOS_CRI
 
 JOBID_REG = re.compile(r"\w+/\w+(\.|\w|\[|\])+")
 
+ATTR_ERROR = 'error'
+ATTR_JOBS = 'jobs'
+ATTR_NODESTATE = 'nodestate'
+ATTR_NP = 'np'
+ATTR_STATE = 'state'
+ATTR_STATES = 'states'
+ATTR_STATUS = 'status'
+
 
 def make_state_map(derived):
     """Make a mapping for OK/NOTOK?OTHER and nagios OK/WARNING/CRITICAL.
         derived: the (reference to the) dict that is added to the node state dict as returned by pbs
             it should already contain the 'states' of the node
     """
-    states = derived['states']
+    states = derived[ATTR_STATES]
     # what state to report?
     nd_not_ok = [x for x in ND_STATE_NOTOK if x in states]
     nd_ok = [x for x in ND_STATE_OK if x in states]
@@ -135,8 +143,8 @@ def make_state_map(derived):
     else:
         ndst = NDST_OTHER
     state = states[0]
-    derived['state'] = str(state)
-    derived['nodestate'] = ndst
+    derived[ATTR_STATE] = str(state)
+    derived[ATTR_NODESTATE] = ndst
 
     # what nagios state?
     nag_crit = [x for x in ND_NAGIOS_CRITICAL if x in states]
@@ -156,35 +164,37 @@ def get_nodes_dict():
     node_states = query.getnodes([])
     for name, full_state in node_states.items():
         # just add states
-        states = full_state['state']
-        if ND_free in states and 'jobs' in full_state:
+        states = full_state[ATTR_STATE]
+        if ND_free in states and ATTR_JOBS in full_state:
             _log.debug('Added free_and_job node %s' % (name))
             states.insert(0, ND_free_and_job)
-        if ND_free in states and not 'jobs' in full_state:
+        if ND_free in states and not ATTR_JOBS in full_state:
             _log.debug('Append idle node %s' % (name))
             states.append(ND_idle)  # append it, not insert
 
-        if 'error' in full_state:
+        if ATTR_ERROR in full_state:
             _log.debug('Added error node %s' % (name))
             states.insert(0, ND_error)
-        if ND_down in states and 'error' in full_state:
+        if ND_down in states and ATTR_ERROR in full_state:
             _log.debug('Added down_on_error node %s' % (name))
             states.insert(0, ND_down_on_error)
 
-        if 'jobs' in full_state and not all([JOBID_REG.search(x.strip()) for x in full_state['jobs']]):
-            _log.debug('Added bad node %s for jobs %s' % (name, full_state['jobs']))
-            states.insert(0, ND_bad)
-
         # extend the node dict with derived dict (for convenience)
         derived = {}
+        if ATTR_JOBS in full_state:
+            jobs = full_state.get_jobs()
+            if not all([JOBID_REG.search(x.strip()) for x in jobs]):
+                _log.debug('Added bad node %s for jobs %s' % (name, jobs))
+                states.insert(0, ND_bad)
+            derived[ATTR_JOBS] = jobs
 
-        derived['states'] = [str(x) for x in states]
+        derived[ATTR_STATES] = [str(x) for x in states]
         make_state_map(derived)
 
-        if 'np' in full_state:
-            derived['np'] = int(full_state['np'][0])
-        if 'status' in full_state:
-            status = full_state['status']
+        if ATTR_NP in full_state:
+            derived[ATTR_NP] = int(full_state[ATTR_NP][0])
+        if ATTR_STATUS in full_state:
+            status = full_state[ATTR_STATUS]
             for prop in ['physmem', 'totmem', 'size']:
                 if not prop in status:
                     continue
@@ -222,10 +232,10 @@ def collect_nodeinfo():
         derived = full_state['derived']
 
         # what state to report?
-        state_list.append(derived['state'])
+        state_list.append(derived[ATTR_STATE])
 
-        if derived['nodestate'] == NDST_OK:
-            cores = derived.get('np', None)
+        if derived[ATTR_NODESTATE] == NDST_OK:
+            cores = derived.get(ATTR_NP, None)
             physmem = derived.get('physmem', None)
             totmem = derived.get('totmem', None)
             size = derived.get('size', None)
@@ -249,5 +259,3 @@ def collect_nodeinfo():
             node_list.append(str(idx + 1))  # offset +1
 
     return node_list, state_list, types
-
-
