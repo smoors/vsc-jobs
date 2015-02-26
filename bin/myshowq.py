@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # -*- coding: latin-1 -*-
 ##
 # Copyright 2009-2013 Ghent University
@@ -280,7 +280,7 @@ def main():
         "idle": ("Display idle job information", None, "store_true", False, 'i'),
         "blocked": ("Dispay blocked job information", None, "store_true", False, 'b'),
         'hosts': ("Hosts/clusters to check", None, 'extend', []),
-        'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_SCRATCH_GENGAR'),
+        'location_environment': ('the location for storing the pickle file depending on the cluster', str, 'store', 'VSC_SCRATCH_DELCATTY'),
     }
 
     opts = simple_option(options, config_files=['/etc/myshowq.conf'])
