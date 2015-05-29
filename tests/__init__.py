@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: latin-1 -*-
 ##
 # Copyright 2015-2015 Ghent University
@@ -16,9 +15,7 @@
 """
 @author: Andy Georges (Ghent University)
 """
+from pkgutil import extend_path
 
-from unittest import TestCase
-
-
-class TestQstatWrapper(TestCase):
-    pass
+# we're not the only ones in this namespace
+__path__ = extend_path(__path__, __name__)  #@ReservedAssignment
