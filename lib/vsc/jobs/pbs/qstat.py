@@ -58,17 +58,13 @@ def convert_to_range(numbers):
     return ",".join(rng)
 
 
-def normalise_exec_host(nodes):
+def normalise_exec_host(job, nodes):
     """
     Convert a list of nodes nodeXYZ/C into nodeXYZ/C-D format.
     """
     nodecores = defaultdict(set)
 
-    # workaround for the format provided by PBSQuery
-    if isinstance(nodes, list) and len(nodes) == 1:
-        nodes_ = nodes[0].split("+")
-        if len(nodes_) > 1:
-            nodes = nodes_
+    nodes = job.get_nodes()
 
     for node in nodes:
         (name, core) = node.split("/")
@@ -82,7 +78,7 @@ def normalise_exec_host(nodes):
     return ",".join(s)
 
 
-def normalise_time(time):
+def normalise_time(job, time):
     """
     Convert a PBS time to a time in seconds. The time is expected to be given as [[[DD:]HH:]MM]:SS.
     """
@@ -132,7 +128,7 @@ def transform_info(job, info):
             value = job[input_key]
 
         try:
-            s.append("%s: %s" % (output_key, transformers[input_key](value)))
+            s.append("%s: %s" % (output_key, transformers[input_key](job, value)))
         except KeyError:
             s.append("%s: %s" % (output_key, value))
 
