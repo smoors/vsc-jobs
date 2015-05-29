@@ -24,7 +24,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(__file__))), 'lib'))
 sys.path.insert(0, '')
 
-import tests.qstat as qstat
+import test.qstat as qstat
 import unittest
 
 
