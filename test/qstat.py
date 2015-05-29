@@ -17,7 +17,7 @@
 @author: Andy Georges (Ghent University)
 """
 
-from unittest import TestCase
+from unittest import TestCase, TestLoader
 
 from vsc.jobs.pbs.qstat import ranges, convert_to_range, normalise_exec_host, normalise_time, transform_info
 
@@ -34,7 +34,7 @@ class TestQstatWrapper(TestCase):
         list1 = [1, 2, 3, 6, 7, 8, 12, 23, 25, 26]
         expected1 = [(1, 3), (6, 8), (12, 12), (23, 23), (25, 26)]
 
-        self.assertEqual(ranges(list1), expected1)
+        self.assertEqual(list(ranges(list1)), expected1)
 
     def test_convert_to_range(self):
         """
@@ -56,11 +56,16 @@ class TestQstatWrapper(TestCase):
         date_info1 = (1, 2, 3, 4)
         date1 = "%2d:%2s:%2d:%2d" % date_info1
 
-        dates = [date1,]
-        date_infos = [date_info1,]
+        dates = [date1]
+        date_infos = [date_info1]
 
         for d in zip(dates, date_infos):
             self.assertEqual(
                 normalise_time(date1),
-                sum([t*s for (t, s) in zip(date_info1, (24*60*60*60, 60*60, 60, 1))]
+                sum([t*s for (t, s) in zip(date_info1, (24*60*60, 60*60, 60, 1))])
             )
+
+
+def suite():
+    """ returns all the testcases in this module """
+    return TestLoader().loadTestsFromTestCase(TestQstatWrapper)
