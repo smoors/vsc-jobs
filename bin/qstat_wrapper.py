@@ -64,6 +64,7 @@ def normalise_exec_host(nodes):
     """
     nodecores = defaultdict(set)
 
+    # workaround for the format provided by PBSQuery
     if isinstance(nodes, list) and len(nodes) == 1:
         nodes_ = nodes[0].split("+")
         if len(nodes_) > 1:
@@ -86,6 +87,7 @@ def normalise_time(time):
     Convert a PBS time to a time in seconds
     """
 
+    # workaround for the format provided by PBSQuery
     if isinstance(time, list):
         time = time[0]
 
