@@ -27,7 +27,7 @@ from vsc.jobs.pbs.qstat import transform_info
 from vsc.utils import fancylogger
 from vsc.utils.generaloption import simple_option
 
-logger = fancylogger.getLogger(sys.args[0])
+logger = fancylogger.getLogger(sys.argv[0])
 
 
 def main():
@@ -49,7 +49,9 @@ def main():
     pquery = PBSQuery()
     current_job = pquery.getjob(opts.options.jobid)
 
-    transform_info(current_job, opts.options.information)
+    s = transform_info(current_job, opts.options.information)
+
+    print "\n".join(s)
 
 
 main()
