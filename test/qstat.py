@@ -73,9 +73,7 @@ class TestQstatWrapper(TestCase):
         list1 = ["node2400/0+node2400/1+node2400/2+node2401/3+node2401/4+node2402/5"]
         expected1 = "node2400/0-2,node2401/3-4,node2402/5"
 
-        self.assertEqual(normalise_exec_host(list1), expected1)       
-
-
+        self.assertEqual(normalise_exec_host(list1), expected1)
 
 
 def suite():
