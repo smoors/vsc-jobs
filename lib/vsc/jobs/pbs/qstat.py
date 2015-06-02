@@ -126,6 +126,9 @@ def transform_info(job, info):
             value = job[component][item]
         except ValueError:
             value = job[input_key]
+        except KeyError:
+            s.append("%s: %d" % (output_key, 0))
+            continue
 
         try:
             s.append("%s: %s" % (output_key, transformers[input_key](job, value)))
