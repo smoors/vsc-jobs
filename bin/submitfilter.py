@@ -83,8 +83,13 @@ CLUSTERDATA = {
         'NP': 16,
         },
     'dugtrio': {
-        'TOTMEM': 1395439 << 20,  # total amount of ram in dugtrio cluster
-        'DEFMAXNP': 48,  # default maximum np in case of ppn=full
+        # vSMP values
+        # 'TOTMEM': 1395439 << 20,  # total amount of ram in dugtrio cluster
+        # 'DEFMAXNP': 48,  # default maximum np in case of ppn=full
+        # regular nodes
+        'PHYSMEM': 99189980 << 10,  # 94.0GB
+        'TOTMEM': 120161496 << 10,  # 114.0GB
+        'NP': 12,
         },
     'phanpy': {
         'PHYSMEM': 487 << 30,  # 16GB reserved for pagepool 528271884 << 10,
