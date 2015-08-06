@@ -31,7 +31,7 @@ The main pbs module
 """
 import re
 from math import ceil
-from vsc import fancylogger
+from vsc.utils import fancylogger
 from vsc.utils.missing import all
 from vsc.jobs.pbs.interface import get_query, pbs
 from vsc.jobs.pbs.tools import str2byte

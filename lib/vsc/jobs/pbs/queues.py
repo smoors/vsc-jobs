@@ -30,8 +30,8 @@ The main pbs module
 @author: Stijn De Weirdt (Ghent University)
 """
 import re
-from vsc import fancylogger
 from vsc.jobs.pbs.interface import get_query
+from vsc.utils import fancylogger
 
 _log = fancylogger.getLogger('pbs.queues', fname=False)
 

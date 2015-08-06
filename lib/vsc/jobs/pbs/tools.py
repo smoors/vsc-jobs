@@ -30,7 +30,7 @@ Some convenient tools
 @author: Stijn De Weirdt (Ghent University)
 """
 import re
-from vsc import fancylogger
+from vsc.utils import fancylogger
 
 _log = fancylogger.getLogger('pbs.tools', fname=False)
 

@@ -29,7 +29,7 @@ The main pbs module
 
 @author: Stijn De Weirdt (Ghent University)
 """
-from vsc import fancylogger
+from vsc.utils import fancylogger
 
 _log = fancylogger.getLogger('pbs.interface', fname=False)
 

@@ -34,7 +34,7 @@ The ideas are based on the awk-script of Willem Vermin
 """
 import math
 import os
-from vsc import fancylogger
+from vsc.utils import fancylogger
 from vsc.jobs.pbs.nodes import ND_STATE_OK, ND_STATE_NOTOK, ND_STATE_OTHER, TRANSLATE_STATE, collect_nodeinfo
 
 _log = fancylogger.getLogger('pbsmon')

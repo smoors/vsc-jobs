@@ -35,8 +35,8 @@ from lxml import etree
 from vsc.utils.run import RunAsyncLoop
 import vsc.jobs.pbs.nodes as pbs_nodes
 from vsc.jobs.pbs.tools import str2byte
+from vsc.utils import fancylogger
 
-from vsc import fancylogger
 
 _log = fancylogger.getLogger('pbs.moab')
 
