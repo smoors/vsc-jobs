@@ -31,7 +31,7 @@ show_nodes prints nodes and node state information
 """
 
 import sys
-from vsc import fancylogger
+from vsc.utils import fancylogger
 from vsc.jobs.pbs.nodes import get_nodes, collect_nodeinfo, NDNAG_CRITICAL, NDNAG_WARNING, NDNAG_OK
 from vsc.jobs.pbs.nodes import ND_NAGIOS_CRITICAL, ND_NAGIOS_WARNING, ND_NAGIOS_OK, ND_down, ND_offline
 from vsc.jobs.pbs.nodes import ND_free, ND_free_and_job, ND_job_exclusive

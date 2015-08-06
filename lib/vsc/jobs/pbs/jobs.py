@@ -30,7 +30,7 @@ The main pbs module
 @author: Stijn De Weirdt (Ghent University)
 """
 import re
-from vsc import fancylogger
+from vsc.utils import fancylogger
 from vsc.utils.missing import all
 from vsc.jobs.pbs.interface import get_query
 from vsc.jobs.pbs.tools import str2byte, str2sec

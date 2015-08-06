@@ -30,7 +30,7 @@ This script reports jobs that are using more memory per core then the node avera
 @author: Stijn De Weirdt (Ghent University)
 """
 
-from vsc import fancylogger
+from vsc.utils import fancylogger
 from vsc.jobs.pbs.jobs import get_jobs_dict
 from vsc.jobs.pbs.nodes import get_nodes_dict
 

@@ -34,7 +34,7 @@ The script prints moab/maui scheduler details like teh showstats command.
 import sys
 import time
 
-from vsc import fancylogger
+from vsc.utils import fancylogger
 from vsc.jobs.pbs.moab import showstats
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
 from vsc.utils.script_tools import ExtendedSimpleOption
