@@ -172,17 +172,17 @@ def get_userjob_stats():
             ustat[-1].append(name)
             continue
 
-        if 'exec_hosts' in derived:
-            used_cores = sum(derived['exec_hosts'].values())
-            # derived['cores'] exists here (see nodes test above)
-            if not derived['nodes']*derived['cores'] == used_cores:
-                faults.append(('Mismatch requested/running cores in job %s. Marked as other.' % (name), jobdata))
-                ustat[-1].append(name)
-                continue
-
         nodes = derived['nodes']
         cores = derived['cores']
         corenodes = nodes * cores
+
+        if 'exec_hosts' in derived:
+            used_cores = sum(derived['exec_hosts'].values())
+            if not corenodes == used_cores:
+                faults.append(('Mismatch requested %s /running %s cores in job %s. Marked as other.' % 
+                               (corenodes, used_cores, name), jobdata))
+                ustat[-1].append(name)
+                continue
 
         state = derived['state']
         if state in ('R', 'Q',):
