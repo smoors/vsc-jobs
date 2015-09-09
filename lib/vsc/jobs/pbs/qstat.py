@@ -63,7 +63,6 @@ def normalise_exec_host(job, nodes):
     Convert a list of nodes nodeXYZ/C into nodeXYZ/C-D format.
     """
     nodecores = defaultdict(set)
-
     nodes = job.get_nodes()
 
     for node in nodes:
