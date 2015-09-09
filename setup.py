@@ -37,9 +37,11 @@ shared_setup.SHARED_TARGET.update({
     'download_url': 'https://github.ugent.be/hpcugent/vsc-jobs'
 })
 
+VERSION = '0.10.0'
+
 PACKAGE = {
     'name': 'vsc-jobs',
-    'version': '0.9',
+    'version': VERSION,
     'author': [sdw, ag],
     'maintainer': [sdw, ag],
     'packages': ['vsc', 'vsc.jobs', 'vsc.jobs.moab', 'vsc.jobs.pbs'],
@@ -68,7 +70,7 @@ PACKAGE = {
         'lxml',
     ],
     'release': 1,
-    'provides': ['python-vsc-jobs = 0.4'],
+    'provides': ['python-vsc-jobs = %s' % VERSION],
     'install_obsoletes': ['python-master-scripts'],
 }
 

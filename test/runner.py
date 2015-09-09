@@ -22,7 +22,12 @@ import sys
 
 # make sure what we're testing is first in the path
 sys.path.insert(0, os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(__file__))), 'lib'))
-sys.path.insert(0, '')
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+
+import test.pbs_clusterdata as pcd
+import test.pbs_submitfilter as psf
+import test.submitfilter_bin as sf
+#import test.submitfilter_legacy as sfl
 
 import test.qstat as qstat
 import unittest
@@ -31,7 +36,7 @@ import unittest
 from vsc.utils import fancylogger
 fancylogger.logToScreen(enable=False)
 
-suite = unittest.TestSuite([x.suite() for x in (qstat,)])
+suite = unittest.TestSuite([x.suite() for x in (qstat, pcd, psf, sf,)])
 
 try:
     import xmlrunner
