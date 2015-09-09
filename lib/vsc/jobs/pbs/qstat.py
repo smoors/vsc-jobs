@@ -130,8 +130,9 @@ def transform_info(job, info):
             continue
 
         try:
-            s.append("%s: %s" % (output_key, transformers[input_key](job, value)))
+            transformed_value = transformers[input_key](job, value)
         except KeyError:
-            s.append("%s: %s" % (output_key, value))
+            transformed_value = value
+        s.append("%s: %s" % (output_key, transformed_value))
 
     return s
