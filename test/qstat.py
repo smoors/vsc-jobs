@@ -61,7 +61,7 @@ class TestQstatWrapper(TestCase):
 
         for d in zip(dates, date_infos):
             self.assertEqual(
-                normalise_time(date1),
+                normalise_time(None, date1),
                 sum([t*s for (t, s) in zip(date_info1, (24*60*60, 60*60, 60, 1))])
             )
 
@@ -70,10 +70,16 @@ class TestQstatWrapper(TestCase):
         test the conversion of a list containing one or more strings of the form nodenameXYZ/C+nodenameUVW/D+...
         to nodenameXYZ/A-C,nodenameUVW/D-E,...
         """
-        list1 = ["node2400/0+node2400/1+node2400/2+node2401/3+node2401/4+node2402/5"]
+        list1 = "node2400/0+node2400/1+node2400/2+node2401/3+node2401/4+node2402/5"
         expected1 = "node2400/0-2,node2401/3-4,node2402/5"
 
-        self.assertEqual(normalise_exec_host(list1), expected1)
+        class Job(object):
+            def get_nodes(self):
+                return list1.split("+")
+
+        job = Job()
+
+        self.assertEqual(normalise_exec_host(job, None), expected1)
 
 
 def suite():
