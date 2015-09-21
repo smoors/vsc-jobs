@@ -33,9 +33,9 @@ import os
 import re
 import sys
 
-from vsc.jobs.pbs.clusterdata import get_clusterdata, MIN_VMEM, \
-                                     get_cluster_maxppn, get_cluster_mpp, \
-                                     DEFAULT_SERVER_CLUSTER
+from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER, MIN_VMEM
+from vsc.jobs.pbs.clusterdata import get_cluster_maxppn, get_cluster_mpp
+from vsc.jobs.pbs.clusterdata import get_clusterdata
 
 NODES_PREFIX = 'nodes'
 
@@ -110,7 +110,7 @@ class SubmitFilter(object):
 
     def parseline(self, line):
         """
-        Parse header for PBS directives.
+        Parse a single line of the header for PBS directives.
 
         Returns None if this is not a header
 
@@ -123,15 +123,11 @@ class SubmitFilter(object):
         if not line.startswith('#') and line.strip():
             return None
 
-        res = []
-
         pbsheader = self.regexp.search(line)
         if not pbsheader:
-            return res
+            return []
 
-        res = parse_commandline_string(pbsheader.group(1))
-
-        return res
+        return parse_commandline_string(pbsheader.group(1))
 
     def parse_header(self):
         """Parse the header (and add cmdline options too)"""
@@ -159,12 +155,15 @@ class SubmitFilter(object):
         """
         Build a total state as defined by the options from headers and commandline
         
-        Returns a dict, with key/values
-        - option and value
-            - resource option l is treated special
-        - extras
-            - _cluster : clustername
-        and a list with all newopts (in case they were modified)
+        Returns a tuple of a dict and a list:
+          dict, with key/values
+            - option and value
+                - resource option l is treated specially
+            - extras
+                - _cluster : clustername
+            (always contains the 'l' key).   
+
+          list with all newopts (in case they were modified)
         """
 
         # determine cluster for resources

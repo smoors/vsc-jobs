@@ -138,7 +138,6 @@ def get_cluster_mpp(cluster):
     """
     Return mpp (mem per processing unit):
         tuple with ppp (physmem) and vpp (vmem)
-
     """
 
     c_d = get_clusterdata(cluster)

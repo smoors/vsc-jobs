@@ -45,6 +45,9 @@ from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn
 def make_new_header(sf):
     """
     Generate a new header by rewriting selected options and add missing ones.
+
+    Takes a submitfilter instance as only argument,
+    returns the header as a list of strings (one line per element)
     """
 
     # very VSC specific (or only ugent?)
@@ -66,7 +69,7 @@ def make_new_header(sf):
     # fix missing
     #
     #    mail: force no mail when no mail is specified
-    if not 'm' in state:
+    if 'm' not in state:
         header.extend([
             "# No mail specified - added by submitfilter",
             make("-m","n"),
@@ -82,13 +85,13 @@ def make_new_header(sf):
         })
         header.extend([
             "# No vmem limit specified - added by submitfilter (server found: %s)" % state['_cluster'],
-            make("-l", "vmem=%s" %  vmem),
+            make("-l", "vmem=%s" % vmem),
         ])
 
     #    check whether VSC_NODE_PARTITION environment variable is set
     if 'VSC_NODE_PARTITION' in os.environ:
         header.extend([
-            "# Adding PARTTION as specified in VSC_NODE_PARTITION",
+            "# Adding PARTITION as specified in VSC_NODE_PARTITION",
             make("-W", "x=PARTITION:%s" % os.environ['VSC_NODE_PARTITION']),
         ])
 
@@ -96,7 +99,7 @@ def make_new_header(sf):
     cl_data = get_clusterdata(state['_cluster'])
 
     #    cores on cluster: warn when non-ideal number of cores is used (eg 8 cores on 6-core numa domain etc)
-    #    non-ideal: either less then NP_LCD or multiple of NP_LCD
+    #    ideal: either less than NP_LCD or multiple of NP_LCD
     np_lcd = cl_data['NP_LCD']
 
     if ppn > np_lcd and ppn % np_lcd:
@@ -105,7 +108,7 @@ def make_new_header(sf):
 
     #    vmem too high: job will not start
     if state['l'].get('_vmem') > cl_data['TOTMEM']:
-        warn("Warning, requested %sb vmem per node, this is more then the available vmem (%sb), this"
+        warn("Warning, requested %sb vmem per node, this is more than the available vmem (%sb), this"
              " job will never start." % (state['l']['_vmem'], cl_data['TOTMEM']))
 
     #    TODO: mem too low on big-memory systems ?

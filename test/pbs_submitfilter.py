@@ -386,6 +386,8 @@ class TestSubmitfilter(TestCase):
 
         state, newopts = h.gather_state(MASTER_REGEXP)
 
+        self.assertTrue('l' in state, msg='state retruned by gather_state always contains key "l"')
+
         self.assertEqual(state, {
             'e': 'error_testrun.txt',
             'm': 'bea',
