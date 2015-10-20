@@ -7,16 +7,14 @@ import os
 import sys
 
 import pprint
-from difflib import ndiff
+import submitfilter
 
-from unittest import TestCase, TestLoader, main
+from difflib import ndiff
+from unittest import TestCase
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, reset_warnings
 from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER
-
 from vsc.utils.run import run_simple
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'bin')))
-import submitfilter
 
 SCRIPTS = ["""#!/bin/sh
 #
@@ -76,7 +74,7 @@ class TestSubmitfilter(TestCase):
             # max 20 lines
             diff = list(ndiff(txta.splitlines(1), txtb.splitlines(1)))[:12]
 
-            raise AssertionError("%s:\n%s" % (msg, ''.join(diff)))
+            raise AssertionError("%s:\nDIFF:\n%s" % (msg, ''.join(diff)))
 
     def setUp(self):
         reset_warnings()
@@ -129,7 +127,7 @@ class TestSubmitfilter(TestCase):
             '#PBS -m n',
             '# No vmem limit specified - added by submitfilter (server found: delcatty)',
             '#PBS -l vmem=4897988864',
-            '# Adding PARTTION as specified in VSC_NODE_PARTITION',
+            '# Adding PARTITION as specified in VSC_NODE_PARTITION',
             '#PBS -W x=PARTITION:%s' % partname,
         ], msg='added missing defaults and pratiton information to header')
 
@@ -170,7 +168,7 @@ class TestSubmitfilter(TestCase):
         self.assertEqual(header, sf.header, msg='unmodified header')
         self.assertEqual(get_warnings(), [
             'The chosen ppn 4 is not considered ideal: should use either lower than or multiple of 3',
-            'Warning, requested 1099511627776b vmem per node, this is more then the available vmem (88905359360b), this job will never start.',
+            'Warning, requested 1099511627776b vmem per node, this is more than the available vmem (88905359360b), this job will never start.',
         ], msg='warnings for ideal ppn and vmmem too high')
 
 
@@ -208,14 +206,3 @@ class TestSubmitfilter(TestCase):
                 res += open(err).read()
             
             self.assertEqual(output, res, msg="expected output for script %s and cmdline %s" % (name, cmd))
-
-
-def suite():
-    """ return all the tests"""
-    return TestLoader().loadTestsFromTestCase(TestSubmitfilter)
-
-if __name__ == '__main__':
-    """Use this __main__ block to help write and test unittests
-        just uncomment the parts you need
-    """
-    main()

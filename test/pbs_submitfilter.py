@@ -4,7 +4,7 @@
 import os
 import re
 import sys
-from unittest import TestCase, TestLoader, main
+from unittest import TestCase
 
 from vsc.jobs.pbs.submitfilter import parse_resources, parse_resources_nodes, SubmitFilter, \
                                 parse_commandline_string, parse_commandline_list, \
@@ -421,16 +421,3 @@ class TestSubmitfilter(TestCase):
         ], msg="expected newopts %s" % newopts)
 
         del os.environ['PBS_DEFAULT']
-
-
-
-def suite():
-    """ return all the tests"""
-    return TestLoader().loadTestsFromTestCase(TestSubmitfilter)
-
-if __name__ == '__main__':
-    """Use this __main__ block to help write and test unittests
-        just uncomment the parts you need
-    """
-    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-    main()

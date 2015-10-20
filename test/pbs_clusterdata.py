@@ -3,7 +3,7 @@
 """
 import os
 import sys
-from unittest import TestCase, TestLoader, main
+from unittest import TestCase
 
 from vsc.jobs.pbs.clusterdata import get_clusterdata, \
     get_cluster_maxppn, get_cluster_mpp, \
@@ -53,15 +53,3 @@ class TestPbsClusterdata(TestCase):
         """Test get_cluster_vpp"""
         for cl, mpp in [('delcatty', (4226900480, 4897988864)), ('zzzmytest', (2116052906, 2339749077))]:
             self.assertEqual(get_cluster_mpp(cl), mpp, msg="expected mpp %s for %s" % (mpp, cl,))
-
-
-def suite():
-    """ return all the tests"""
-    return TestLoader().loadTestsFromTestCase(TestPbsClusterdata)
-
-if __name__ == '__main__':
-    """Use this __main__ block to help write and test unittests
-        just uncomment the parts you need
-    """
-    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-    main()
