@@ -87,7 +87,7 @@ class SubmitFilter(object):
         self.allopts = []
         self.occur = []
 
-        if isinstance(stdin, (list,tuple)):
+        if isinstance(stdin, (list, tuple)):
             stdin_iter = iter(stdin)
         else:
             stdin_iter = iter(stdin, '')
@@ -190,7 +190,7 @@ class SubmitFilter(object):
 
 def parse_commandline_list(args):
     """
-    Parse the command line when passed as pre-split list of strings (typically sysv.args).
+    Parse the command line when passed as pre-split list of strings (typically sys.argv).
     Returns list of tuples (option, value)
     """
     res = []
@@ -216,23 +216,21 @@ def parse_commandline_string(line):
     Parse the command line when passed as single line string (e.g. the text after a #PBS in the header)
     Returns list of tuples (option, value)
     """
-    res = []
-
-    for reg_opt in PBS_OPTION_REGEXP.finditer(line):
-        res.append(reg_opt.groups())
-
-    return res
+    return [reg_opt.groups() for reg_opt in PBS_OPTION_REGEXP.finditer(line)]
 
 
 def parse_resources(txt, cluster, resources, update=False):
     """
     Handle any specified resources via -l option (or directive)
 
-    If update is True, values will be updated; if not existing resources will not be reparsed
+    Returns string with resources (which might be different from original 'txt'
+    due to templating, e.g. ppn=all -> ppn=16)
 
+    If update is True, resources will be updated with new values will be updated
     """
-    # resources are , separated
     newtxt = []
+
+    # multiple resources in same txt are ',' separated
     for r in txt.split(','):
         values = r.split('=')
         key = values[0]
@@ -244,7 +242,7 @@ def parse_resources(txt, cluster, resources, update=False):
             value = None
 
         newvalue = {}
-        if key == 'nodes':
+        if key == NODES_PREFIX:
             newvtxt = parse_resources_nodes(value, cluster, newvalue)
         elif MEM_REGEXP.search(key):
             newvtxt = parse_mem(key, value, cluster, newvalue)
@@ -304,7 +302,7 @@ def parse_mem(name, txt, cluster, resources):
             'vmem': maxppn * vpp,
         }
 
-        # identity op
+        # multiplier 1 == identity op
         multi = lambda x: x
         if not name in ('pmem', 'vmem'):
             # TODO: and do what? use pmem?
@@ -338,7 +336,6 @@ def parse_resources_nodes(txt, cluster, resources):
 
     Supported modifications:
         ppn=all/full ; ppn=half
-
     """
     # syntax is a +-separated node_spec
     # each node_spec has id[:prop[:prop[:...]]]
@@ -346,9 +343,6 @@ def parse_resources_nodes(txt, cluster, resources):
     # property: either special ppn=integer or something else/arbitrary
 
     maxppn = get_cluster_maxppn(cluster)
-
-    if txt.startswith(NODES_PREFIX+'='):
-        txt=txt[len(NODES_REPFIX)+1:]
 
     nrnodes = 0
     nrcores = 0
@@ -394,10 +388,10 @@ def parse_resources_nodes(txt, cluster, resources):
         '_nrnodes' : nrnodes,
         '_nrcores': nrcores,
         '_ppn': max(1, int(nrcores / nrnodes)),
-        'nodes': '+'.join(newtxt),
+        NODES_PREFIX: '+'.join(newtxt),
     })
 
-    return "%s=%s" % (NODES_PREFIX, resources['nodes'])
+    return "%s=%s" % (NODES_PREFIX, resources[NODES_PREFIX])
 
 
 def cluster_from_options(opts, master_reg):
