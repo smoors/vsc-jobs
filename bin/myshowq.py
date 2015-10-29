@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: latin-1 -*-
 ##
-# Copyright 2009-2013 Ghent University
+# Copyright 2009-2015 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -273,7 +273,7 @@ def main():
     """Yeah, so, erm. The main function and such."""
 
     options = {
-        "summary": ("Give the summary", None, "store_true", False, 's'),
+        "summary": ("Give the summary", None, "store_true", True, 's'),
         "detail": ("Detailed information", None, "store_true", False,),
         "virtualorganisation": ("Give VO details if available", None, "store_true", False, 'v'),
         "running": ("Display running job information", None, "store_true", False, 'r'),
