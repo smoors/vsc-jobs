@@ -29,6 +29,7 @@ Several formating options are provided:
 @author Stijn De Weirdt
 @author Wouter Depypere
 @author Andy Georges
+@author Ward Poelmans
 """
 
 import copy
