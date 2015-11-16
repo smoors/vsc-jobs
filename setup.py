@@ -20,28 +20,24 @@ vsc-jobs base distribution setup.py
 """
 
 import vsc.install.shared_setup as shared_setup
-from vsc.install.shared_setup import ag, sdw, URL_GH_HPCUGENT
-
-import glob
+from vsc.install.shared_setup import ag, sdw
 
 VERSION = '0.11.0'
 
 PACKAGE = {
-    'name': 'vsc-jobs',
     'version': VERSION,
     'author': [sdw, ag],
     'maintainer': [sdw, ag],
-    'scripts': glob.glob('bin/*.py'),
     'install_requires': [
         'vsc-administration >= 0.20.1',
         'vsc-accountpage-clients >= 0.1.2',
         'vsc-base >= 2.4.2',
         'vsc-utils >= 1.4.6',
-        'pbs_python >= 4.3',
+        'pbs_python >= 4.6', # don't use installs from pypi
         'lxml',
     ],
 }
 
 
 if __name__ == '__main__':
-    shared_setup.action_target(PACKAGE, urltemplate=URL_GH_HPCUGENT)
+    shared_setup.action_target(PACKAGE)

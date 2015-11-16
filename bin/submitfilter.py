@@ -9,7 +9,7 @@
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-jobs
+# https://github.com/hpcugent/vsc-jobs
 #
 # vsc-jobs is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -24,7 +24,6 @@
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-jobs. If not, see <http://www.gnu.org/licenses/>.
 #
-
 """
 Filters scripts submitted by qsub,
 adds default values and command line parameters to the script

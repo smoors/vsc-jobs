@@ -9,8 +9,8 @@ import sys
 import pprint
 import submitfilter
 
-from difflib import ndiff
-from unittest import TestCase
+from vsc.install.shared_setup import REPO_BASE_DIR
+from vsc.install.testing import TestCase
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, reset_warnings
 from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER
 from vsc.utils.run import run_simple
@@ -53,34 +53,12 @@ whatever
 
 class TestSubmitfilter(TestCase):
 
-    def assertEqual(self, a, b, msg=None):
-        try:
-            super(TestSubmitfilter, self).assertEqual(a, b)
-        except AssertionError as e:
-            if msg is None:
-                msg = str(e)
-            else:
-                msg = "%s: %s" % (msg, e)
-
-            if isinstance(a, basestring):
-                txta = a
-            else:
-                txta = pprint.pformat(a)
-            if isinstance(b, basestring):
-                txtb = b
-            else:
-                txtb = pprint.pformat(b)
-
-            # max 20 lines
-            diff = list(ndiff(txta.splitlines(1), txtb.splitlines(1)))[:12]
-
-            raise AssertionError("%s:\nDIFF:\n%s" % (msg, ''.join(diff)))
-
     def setUp(self):
         reset_warnings()
         for env in ['PBS_DEFAULT', 'PBS_DPREFIX', 'VSC_NODE_PARTITION']:
             if env in os.environ:
                 del os.environ[env]
+        super(TestSubmitfilter, self).setUp()
 
     def test_make_new_header_basic(self):
         """Basic test for make_new_header"""
@@ -186,7 +164,8 @@ class TestSubmitfilter(TestCase):
             cmdline = os.path.join(testdir, "%s.cmdline" % name)
 
             # avoid pyc files in e.g. bin
-            cmd = "python -B %s" % submitfilter.__file__
+            cmd = 'PYTHONPATH=%s ' % os.pathsep.join([p for p in sys.path if p.startswith(REPO_BASE_DIR)])
+            cmd += "python -B %s" % submitfilter.__file__
             if os.path.exists(cmdline):
                 cmd += " " + open(cmdline).readline().strip()
 

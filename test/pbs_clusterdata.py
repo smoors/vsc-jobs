@@ -3,7 +3,7 @@
 """
 import os
 import sys
-from unittest import TestCase
+from vsc.install.testing import TestCase
 
 from vsc.jobs.pbs.clusterdata import get_clusterdata, \
     get_cluster_maxppn, get_cluster_mpp, \

@@ -4,7 +4,7 @@
 import os
 import re
 import sys
-from unittest import TestCase
+from vsc.install.testing import TestCase
 
 from vsc.jobs.pbs.submitfilter import parse_resources, parse_resources_nodes, SubmitFilter, \
                                 parse_commandline_string, parse_commandline_list, \
@@ -157,6 +157,7 @@ class TestSubmitfilter(TestCase):
         for env in ['PBS_DEFAULT', 'PBS_DPREFIX', 'VSC_NODE_PARTITION']:
             if env in os.environ:
                 del os.environ[env]
+        super(TestSubmitfilter, self).setUp()
 
     def test_nodesfilter(self):
         """Test parse_resources_nodes"""

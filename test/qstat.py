@@ -17,7 +17,7 @@
 @author: Andy Georges (Ghent University)
 """
 
-from unittest import TestCase
+from vsc.install.testing import TestCase
 
 from vsc.jobs.pbs.qstat import ranges, convert_to_range, normalise_exec_host, normalise_time, transform_info
 
