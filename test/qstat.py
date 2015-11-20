@@ -17,7 +17,7 @@
 @author: Andy Georges (Ghent University)
 """
 
-from unittest import TestCase, TestLoader
+from vsc.install.testing import TestCase
 
 from vsc.jobs.pbs.qstat import ranges, convert_to_range, normalise_exec_host, normalise_time, transform_info
 
@@ -80,8 +80,3 @@ class TestQstatWrapper(TestCase):
         job = Job()
 
         self.assertEqual(normalise_exec_host(job, None), expected1)
-
-
-def suite():
-    """ returns all the testcases in this module """
-    return TestLoader().loadTestsFromTestCase(TestQstatWrapper)
