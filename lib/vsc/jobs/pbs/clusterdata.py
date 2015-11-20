@@ -108,6 +108,12 @@ CLUSTERDATA = {
         'NP': 24,
         'NP_LCD': 3,
     },
+    'shuppet': {
+        'PHYSMEM': 4056736 << 10,
+        'TOTMEM':  12445340 << 10,
+        'NP': 2,
+        'NP_LCD': 2,
+    },
 }
 
 
