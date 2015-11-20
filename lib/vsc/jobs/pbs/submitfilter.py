@@ -236,7 +236,7 @@ def parse_resources(txt, cluster, resources, update=False):
 
         try:
             value = '='.join(values[1:])
-        except:
+        except IndexError:
             # no '=' in resource
             value = None
 
