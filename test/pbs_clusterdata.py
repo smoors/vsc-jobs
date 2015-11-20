@@ -16,11 +16,11 @@ CLUSTERDATA['zzzmytest'] = {
     'DEFMAXNP': 48,
 }
 
-SORTED_CLUSTERS = ['delcatty', 'dugtrio', 'gastly', 'gengar', 'golett', 'gulpin', 'haunter', 'muk', 'phanpy', 'raichu']
+SORTED_CLUSTERS = ['delcatty', 'dugtrio', 'gastly', 'gengar', 'golett', 'gulpin', 'haunter', 'muk', 'phanpy', 'raichu', 'shuppet']
 
 class TestPbsClusterdata(TestCase):
     def test_consts(self):
-        """The constants should change by accident"""
+        """The constants shouldn't change by accident"""
         self.assertEqual(MIN_VMEM, 1536 * 1024 * 1024, msg="MIN_VMEM as expected")
         self.assertEqual(DEFAULT_SERVER_CLUSTER, 'delcatty', msg="DEFAULT_SERVER_CLUSTER, as expected")
 
