@@ -97,8 +97,8 @@ CLUSTERDATA = {
         'NP_LCD': 3,
         },
     'phanpy': {
-        'PHYSMEM': 487 << 30,  # 16GB reserved for pagepool 528271884 << 10,
-        'TOTMEM':  507 << 30,
+        'PHYSMEM': 483 << 30,  # 16GB reserved for pagepool + 4GB for other services
+        'TOTMEM':  483 << 30,  # no swap on phanpy
         'NP': 24,
         'NP_LCD': 3,
     },
