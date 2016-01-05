@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2015 Ghent University
+# Copyright 2015-2016 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -29,6 +29,7 @@ Module with UGent cluster data
 TODO: read this (once) from config file
 
 @author: Stijn De Weirdt (Ghent University)
+@author: Jens Timmerman (Ghent University)
 """
 
 import copy
