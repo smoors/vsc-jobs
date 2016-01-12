@@ -51,30 +51,6 @@ CLUSTERDATA = {
         'NP': 16,
         'NP_LCD': 4,
         },
-    'gengar': {
-        'PHYSMEM': 16439292 << 10,  # 15.6GB
-        'TOTMEM': 37410804 << 10,  # 35.6GB
-        'NP': 8,
-        'NP_LCD': 2,
-        },
-    'gastly': {
-        'PHYSMEM': 12273152 << 10,  # 11.7GB
-        'TOTMEM': 33244664 << 10,  # 31.7GB
-        'NP': 8,
-        'NP_LCD': 2,
-        },
-    'haunter': {
-        'PHYSMEM': 12273152 << 10,  # 11.7GB
-        'TOTMEM': 33244664 << 10,  # 31.7
-        'NP': 8,
-        'NP_LCD': 2,
-        },
-    'gulpin': {
-        'PHYSMEM': 66093364 << 10,  # 63.0GB
-        'TOTMEM': 87064892 << 10,  # 83.0GB
-        'NP': 32,
-        'NP_LCD': 4,
-        },
     'raichu': {
         'PHYSMEM': 32973320 << 10,  # 31.4GB
         'TOTMEM': 53944832 << 10,  # 51.4GB
@@ -86,16 +62,6 @@ CLUSTERDATA = {
         'TOTMEM': 99623388 << 10,  # 95.0GB
         'NP': 16,
         'NP_LCD': 4,
-        },
-    'dugtrio': {
-        # vSMP values
-        # 'TOTMEM': 1395439 << 20,  # total amount of ram in dugtrio cluster
-        # 'DEFMAXNP': 48,  # default maximum np in case of ppn=full
-        # regular nodes
-        'PHYSMEM': 99189980 << 10,  # 94.0GB
-        'TOTMEM': 120161496 << 10,  # 114.0GB
-        'NP': 12,
-        'NP_LCD': 3,
         },
     'phanpy': {
         'PHYSMEM': 483 << 30,  # 16GB reserved for pagepool + 4GB for other services
