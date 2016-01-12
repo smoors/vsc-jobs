@@ -75,6 +75,11 @@ def main():
 
     go = simple_option(options)
 
+    if go.options.nagios and not go.options.debug:
+        fancylogger.logToDevLog(enable=True)
+        fancylogger.logToScreen(enable=False)
+        fancylogger.setLogLevelInfo()
+
     all_states = ND_NAGIOS_CRITICAL + ND_NAGIOS_WARNING + ND_NAGIOS_OK
     report_states = []
     if go.options.down:
