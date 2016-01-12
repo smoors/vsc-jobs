@@ -31,7 +31,7 @@ A moab module to be used
 # TODO proper moab namespace and tools
 
 from lxml import etree
-from vsc.utils.run import RunAsyncLoop
+from vsc.utils.run import RunTimeout
 import vsc.jobs.pbs.nodes as pbs_nodes
 from vsc.jobs.pbs.tools import str2byte
 from vsc.utils import fancylogger
@@ -58,7 +58,7 @@ def get_nodes_dict(something=None, xml=None):
     """
     if xml is None:
         cmd = "mdiag -n --format=xml"
-        err, xml = RunAsyncLoop.run(cmd.split())
+        err, xml = RunTimeout.run(cmd.split(), timeout=60)
         if err:
             _log.error("Problem occurred running %s: %s (%s)" % (cmd, err, xml))
             return None

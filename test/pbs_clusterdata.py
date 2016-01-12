@@ -9,16 +9,29 @@ from vsc.jobs.pbs.clusterdata import get_clusterdata, \
     get_cluster_maxppn, get_cluster_mpp, \
     MIN_VMEM, DEFAULT_SERVER_CLUSTER, DEFAULT_SERVER, CLUSTERDATA
 
-# insert test cluster to test
-CLUSTERDATA['zzzmytest'] = {
-    'PHYSMEM': 99189980 << 10,  # 94.0GB
-    'TOTMEM': 120161496 << 10,  # 114.0GB
-    'DEFMAXNP': 48,
-}
-
-SORTED_CLUSTERS = ['delcatty', 'dugtrio', 'gastly', 'gengar', 'golett', 'gulpin', 'haunter', 'muk', 'phanpy', 'raichu', 'shuppet']
+SORTED_CLUSTERS = ['delcatty', 'golett', 'muk', 'phanpy', 'raichu', 'shuppet']
 
 class TestPbsClusterdata(TestCase):
+    def setUp(self):
+        # insert test cluster to test
+        CLUSTERDATA['zzzmytest'] = {
+            'PHYSMEM': 99189980 << 10,  # 94.0GB
+            'TOTMEM': 120161496 << 10,  # 114.0GB
+            'DEFMAXNP': 48,
+        }
+        CLUSTERDATA['zzzmytestavail'] = {
+            'PHYSMEM': 99189980 << 10,  # 94.0GB
+            'TOTMEM': 120161496 << 10,  # 114.0GB
+            'AVAILMEM': 110161496 << 10, # 105 GB
+            'DEFMAXNP': 48,
+        }
+        super(TestPbsClusterdata, self).setUp()
+
+    def tearDown(self):
+        CLUSTERDATA.pop('zzzmytest')
+        CLUSTERDATA.pop('zzzmytestavail')
+        super(TestPbsClusterdata, self).tearDown()
+
     def test_consts(self):
         """The constants shouldn't change by accident"""
         self.assertEqual(MIN_VMEM, 1536 * 1024 * 1024, msg="MIN_VMEM as expected")
@@ -28,7 +41,7 @@ class TestPbsClusterdata(TestCase):
 
         self.assertEqual(DEFAULT_SERVER, 'default', msg="DEFAULT_SERVER as expected")
         self.assertEqual(sorted(CLUSTERDATA.keys()),
-                         SORTED_CLUSTERS + ['zzzmytest'],
+                         SORTED_CLUSTERS + ['zzzmytest', 'zzzmytestavail'],
                          msg='sorted clusters from CLUSTERDATA')
 
     def test_getdata(self):
@@ -51,5 +64,7 @@ class TestPbsClusterdata(TestCase):
 
     def test_mpp(self):
         """Test get_cluster_vpp"""
-        for cl, mpp in [('delcatty', (4226900480, 4897988864)), ('zzzmytest', (2116052906, 2339749077))]:
+        for cl, mpp in [('delcatty', (4049213952, 4720302336)),
+                        ('zzzmytest', (2116052906, 2339749077)),
+                        ('zzzmytestavail', (1902719573, 2126415744))]:
             self.assertEqual(get_cluster_mpp(cl), mpp, msg="expected mpp %s for %s" % (mpp, cl,))

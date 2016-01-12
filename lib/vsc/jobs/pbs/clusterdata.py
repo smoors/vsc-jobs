@@ -44,68 +44,41 @@ DEFAULT_SERVER = "default"
 MASTER_REGEXP = re.compile(r'master[^.]*\.([^.]+)\.(?:[^.]+\.vsc|os)$')
 
 # these amounts are in kilobytes as reported by pbsnodes
+# availmem has to be taken from an clean idle node
+# (i.e. no jobs in pbsnodes and right after reboot)
 CLUSTERDATA = {
     'delcatty': {
         'PHYSMEM': 66045320 << 10,  # ~62.9GB
         'TOTMEM': 87016832 << 10,  # ~82.9GB
+        'AVAILMEM': 84240480 << 10, # (1GB pagepool)
         'NP': 16,
-        'NP_LCD': 4,
-        },
-    'gengar': {
-        'PHYSMEM': 16439292 << 10,  # 15.6GB
-        'TOTMEM': 37410804 << 10,  # 35.6GB
-        'NP': 8,
-        'NP_LCD': 2,
-        },
-    'gastly': {
-        'PHYSMEM': 12273152 << 10,  # 11.7GB
-        'TOTMEM': 33244664 << 10,  # 31.7GB
-        'NP': 8,
-        'NP_LCD': 2,
-        },
-    'haunter': {
-        'PHYSMEM': 12273152 << 10,  # 11.7GB
-        'TOTMEM': 33244664 << 10,  # 31.7
-        'NP': 8,
-        'NP_LCD': 2,
-        },
-    'gulpin': {
-        'PHYSMEM': 66093364 << 10,  # 63.0GB
-        'TOTMEM': 87064892 << 10,  # 83.0GB
-        'NP': 32,
         'NP_LCD': 4,
         },
     'raichu': {
         'PHYSMEM': 32973320 << 10,  # 31.4GB
         'TOTMEM': 53944832 << 10,  # 51.4GB
+        'AVAILMEM': 53256304 << 10, # no pagepool
         'NP': 16,
         'NP_LCD': 4,
         },
     'muk': {
         'PHYSMEM': 66068964 << 10,  # 63.0GB
         'TOTMEM': 99623388 << 10,  # 95.0GB
+        'AVAILMEM': 84683080 << 10, # (1GB pagepool)
         'NP': 16,
         'NP_LCD': 4,
         },
-    'dugtrio': {
-        # vSMP values
-        # 'TOTMEM': 1395439 << 20,  # total amount of ram in dugtrio cluster
-        # 'DEFMAXNP': 48,  # default maximum np in case of ppn=full
-        # regular nodes
-        'PHYSMEM': 99189980 << 10,  # 94.0GB
-        'TOTMEM': 120161496 << 10,  # 114.0GB
-        'NP': 12,
-        'NP_LCD': 3,
-        },
     'phanpy': {
-        'PHYSMEM': 483 << 30,  # 16GB reserved for pagepool + 4GB for other services
-        'TOTMEM':  483 << 30,  # no swap on phanpy
+        'PHYSMEM': 528271212 << 10,  # 503.7 GB
+        'TOTMEM':  549242728 << 10,  # 523.7 GB
+        'AVAILMEM': 528456608 << 10, # 504.0 GB (16GB pagepool)
         'NP': 24,
         'NP_LCD': 3,
     },
     'golett': {
         'PHYSMEM': 65850124 << 10,
         'TOTMEM':  86821640 << 10,
+        'AVAILMEM': 84123328 << 10, # 80.2GB (1GB pagepool)
         'NP': 24,
         'NP_LCD': 3,
     },
@@ -144,12 +117,22 @@ def get_cluster_mpp(cluster):
     """
     Return mpp (mem per processing unit):
         tuple with ppp (physmem) and vpp (vmem)
+
+    Values are corrected for systemoverhead using availmem (if defined for cluster)
     """
 
     c_d = get_clusterdata(cluster)
     maxppn = get_cluster_maxppn(cluster)
 
-    ppp = int(c_d['PHYSMEM'] / maxppn)
-    vpp = int((c_d['PHYSMEM'] + (c_d['TOTMEM'] - c_d['PHYSMEM']) / 2) / maxppn)
+    if 'AVAILMEM' in c_d:
+        overhead = c_d['TOTMEM'] - c_d['AVAILMEM']
+    else:
+        overhead = 0
+
+    physmem = c_d['PHYSMEM'] - overhead
+    totmem = c_d['TOTMEM'] - overhead
+
+    ppp = int(physmem / maxppn)
+    vpp = int((physmem + (totmem - physmem) / 2) / maxppn)
 
     return (ppp, vpp)
