@@ -41,6 +41,7 @@ Several formating options are provided:
 @author Stijn De Weirdt
 @author Wouter Depypere
 @author Andy Georges
+@author Ward Poelmans
 """
 
 import copy
@@ -285,7 +286,7 @@ def main():
     """Yeah, so, erm. The main function and such."""
 
     options = {
-        "summary": ("Give the summary", None, "store_true", False, 's'),
+        "summary": ("Give the summary", None, "store_true", True, 's'),
         "detail": ("Detailed information", None, "store_true", False,),
         "virtualorganisation": ("Give VO details if available", None, "store_true", False, 'v'),
         "running": ("Display running job information", None, "store_true", False, 'r'),
