@@ -34,6 +34,7 @@ import sys
 
 from vsc.utils.generaloption import simple_option
 from vsc.jobs.pbs.jobs import get_userjob_stats, get_jobs_dict
+from vsc.utils import fancylogger
 from vsc.utils.nagios import NagiosResult, warning_exit, ok_exit, critical_exit, unknown_exit
 
 SHOW_LIST = ['nodes']
@@ -165,6 +166,11 @@ if __name__ == '__main__':
            }
 
     go = simple_option(options)
+
+    if go.options.nagios and not go.options.debug:
+        fancylogger.logToDevLog(enable=True)
+        fancylogger.logToScreen(enable=False)
+        fancylogger.setLogLevelInfo()
 
     if go.options.show:
         show_individual()
