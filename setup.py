@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 # #
-# Copyright 2009-2013 Ghent University
+# Copyright 2009-2015 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -18,58 +18,24 @@ vsc-jobs base distribution setup.py
 
 @author: Andy Georges (Ghent University)
 """
-try:
-    import vsc.install.shared_setup as shared_setup
-    from vsc.install.shared_setup import ag, sdw
-except ImportError:
-    print "vsc.install could not be found, make sure a recent vsc-base is installed"
-    print "you might want to try 'easy_install [--user] https://github.com/hpcugent/vsc-base/archive/master.tar.gz'"
 
+import vsc.install.shared_setup as shared_setup
+from vsc.install.shared_setup import ag, sdw
 
-def remove_bdist_rpm_source_file():
-    """List of files to remove from the (source) RPM."""
-    return ['lib/vsc/__init__.py']
-
-
-shared_setup.remove_extra_bdist_rpm_files = remove_bdist_rpm_source_file
-shared_setup.SHARED_TARGET.update({
-    'url': 'https://github.ugent.be/hpcugent/vsc-jobs',
-    'download_url': 'https://github.ugent.be/hpcugent/vsc-jobs'
-})
+VERSION = '0.11.0'
 
 PACKAGE = {
-    'name': 'vsc-jobs',
-    'version': '0.9',
+    'version': VERSION,
     'author': [sdw, ag],
     'maintainer': [sdw, ag],
-    'packages': ['vsc', 'vsc.jobs', 'vsc.jobs.moab', 'vsc.jobs.pbs'],
-    'namespace_packages': ['vsc'],
-    'scripts': ['bin/dcheckjob.py',
-                'bin/dshowq.py',
-                'bin/mycheckjob.py',
-                'bin/myshowq.py',
-                'bin/pbs_check_inactive_user_jobs.py',
-                'bin/pbsmon.py',
-                'bin/qstat_wrapper.py',
-                'bin/release_jobholds.py',
-                'bin/show_jobs.py',
-                'bin/show_mem.py',
-                'bin/show_nodes.py',
-                'bin/show_queues.py',
-                'bin/show_stats.py',
-                'bin/submitfilter.py'
-                ],
     'install_requires': [
         'vsc-administration >= 0.20.1',
         'vsc-accountpage-clients >= 0.1.2',
-        'vsc-base >= 1.9.0',
+        'vsc-base >= 2.4.2',
         'vsc-utils >= 1.4.6',
-        'pbs_python >= 4.3',
+        'pbs_python >= 4.6', # don't use installs from pypi
         'lxml',
     ],
-    'release': 1,
-    'provides': ['python-vsc-jobs = 0.4'],
-    'install_obsoletes': ['python-master-scripts'],
 }
 
 

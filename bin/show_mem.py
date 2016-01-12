@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# #
-# Copyright 2013-2013 Ghent University
+#
+# Copyright 2013-2016 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -9,7 +9,7 @@
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
-# http://github.com/hpcugent/vsc-jobs
+# https://github.com/hpcugent/vsc-jobs
 #
 # vsc-jobs is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Library General Public License as
@@ -23,7 +23,7 @@
 #
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-jobs. If not, see <http://www.gnu.org/licenses/>.
-# #
+#
 """
 This script reports jobs that are using more memory per core then the node average
 
@@ -36,74 +36,81 @@ from vsc.jobs.pbs.nodes import get_nodes_dict
 
 _log = fancylogger.getLogger('show_mem')
 
-ns = {}
-for node, details in get_nodes_dict().items():
-    derived = details['derived']
+def main():
+    """Main method"""
 
-    if not 'np' in derived:
-        _log.warning('np not in derived from node %s' % node)
-        continue
-    np = derived['np']
+    ns = {}
+    for node, details in get_nodes_dict().items():
+        derived = details['derived']
 
-    if not 'physmem' in derived:
-        _log.warning('physmem not in derived from node %s' % node)
-        continue
-    mem = derived['physmem']
+        if not 'np' in derived:
+            _log.warning('np not in derived from node %s' % node)
+            continue
+        np = derived['np']
 
-    ns[node] = {
-                'np': np,
-                'mem': mem,
-                'avg': int(mem / np),
-                }
+        if not 'physmem' in derived:
+            _log.warning('physmem not in derived from node %s' % node)
+            continue
+        mem = derived['physmem']
 
-toomuch = {}
+        ns[node] = {
+                    'np': np,
+                    'mem': mem,
+                    'avg': int(mem / np),
+                    }
 
-MB = 1024 ** 2
+    toomuch = {}
 
-for name, details in get_jobs_dict().items():
-    derived = details['derived']
-    if not derived['state'] in ('R',):
-        continue
+    MB = 1024 ** 2
 
-    if not 'user' in derived:
-        _log.warning("no user in derived job name %s" % name)
-        continue
-    user = derived['user']
+    for name, details in get_jobs_dict().items():
+        derived = details['derived']
+        if not derived['state'] in ('R',):
+            continue
 
-    if not 'used_mem' in derived:
-        _log.warning("no used_mem in derived job name %s" % name)
-        continue
-    used_mem = derived['used_mem']
+        if not 'user' in derived:
+            _log.warning("no user in derived job name %s" % name)
+            continue
+        user = derived['user']
 
-    if not 'exec_hosts' in derived:
-        _log.warning("no exec_hosts in derived job name %s" % name)
-        continue
-    exec_hosts = derived['exec_hosts']
+        if not 'used_mem' in derived:
+            _log.warning("no used_mem in derived job name %s" % name)
+            continue
+        used_mem = derived['used_mem']
 
-    cores = sum(exec_hosts.values())
+        if not 'exec_hosts' in derived:
+            _log.warning("no exec_hosts in derived job name %s" % name)
+            continue
+        exec_hosts = derived['exec_hosts']
 
-    used_avg_mem = int(used_mem / cores)
+        cores = sum(exec_hosts.values())
 
-    for host in exec_hosts.keys():
-        # more then avg on node?
-        if used_avg_mem > ns[host]['avg']:
-            if not user in toomuch:
-                toomuch[user] = {}
-            if not host in toomuch[user]:
-                toomuch[user][host] = []
+        used_avg_mem = int(used_mem / cores)
 
-            toomuch[user][host].append([name, used_avg_mem / MB, ns[host]['avg'] / MB])
+        for host in exec_hosts.keys():
+            # more then avg on node?
+            if used_avg_mem > ns[host]['avg']:
+                if not user in toomuch:
+                    toomuch[user] = {}
+                if not host in toomuch[user]:
+                    toomuch[user][host] = []
 
-users = toomuch.keys()
-users.sort()
+                toomuch[user][host].append([name, used_avg_mem / MB, ns[host]['avg'] / MB])
 
-txt = []
-for user in users:
-    txt.append("%s:" % user)
-    for host, jobs in toomuch[user].items():
-        txt.append("\t%s:\t%s\n" % (host, ' '.join([str(x) for x in jobs])))
+    users = toomuch.keys()
+    users.sort()
 
-if len(txt) > 0:
-    print "\n".join(txt)
-else:
-    print "All ok"
+    txt = []
+    for user in users:
+        txt.append("%s:" % user)
+        for host, jobs in toomuch[user].items():
+            txt.append("\t%s:\t%s\n" % (host, ' '.join([str(x) for x in jobs])))
+
+    if len(txt) > 0:
+        print "\n".join(txt)
+    else:
+        print "All ok"
+
+
+if __name__ == '__main__':
+    main()
