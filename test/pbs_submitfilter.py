@@ -12,8 +12,7 @@ from vsc.jobs.pbs.submitfilter import parse_resources, parse_resources_nodes, Su
                                 _parse_mem_units, parse_mem, PBS_DIRECTIVE_PREFIX_DEFAULT, \
                                 cluster_from_options
 
-from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER, MASTER_REGEXP
-
+from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER, MASTER_REGEXP, CLUSTERDATA
 
 RESOURCE_NODES = [
     {
@@ -157,7 +156,20 @@ class TestSubmitfilter(TestCase):
         for env in ['PBS_DEFAULT', 'PBS_DPREFIX', 'VSC_NODE_PARTITION']:
             if env in os.environ:
                 del os.environ[env]
+
+        # Add gengar cluster for testing purposes
+        CLUSTERDATA['gengar'] = {
+            'PHYSMEM': 16439292 << 10,
+            'TOTMEM': 37410804 << 10,
+            'NP': 8,
+            'NP_LCD': 2,
+        }
+
         super(TestSubmitfilter, self).setUp()
+
+    def tearDown(self):
+        CLUSTERDATA.pop('gengar')
+        super(TestSubmitfilter, self).tearDown()
 
     def test_nodesfilter(self):
         """Test parse_resources_nodes"""
@@ -269,8 +281,9 @@ class TestSubmitfilter(TestCase):
         """Test parse_mem"""
         # test with delcatty cluster
         cluster = 'delcatty'
-        allvmem = 78367821824
-        allpmem = 67630407680
+        overhead = 2842984448
+        allvmem = 78367821824 - overhead
+        allpmem = 67630407680 - overhead
         data = [
             ('pmem=100k', {'pmem': '100k', '_pmem':100*2**10}, 'pmem=100k'),
             ('vmem=half', {'vmem': '%s' % (allvmem/2), '_vmem': allvmem/2}, 'vmem=%s' % (allvmem/2)),
@@ -383,7 +396,8 @@ class TestSubmitfilter(TestCase):
         h.parse_header()
 
         os.environ['PBS_DEFAULT'] = "master15.delcatty.gent.vsc"
-        allpmem = 67630407680
+        overhead = 2842984448
+        allpmem = 67630407680 - overhead
 
         state, newopts = h.gather_state(MASTER_REGEXP)
 

@@ -75,7 +75,7 @@ class TestSubmitfilter(TestCase):
         modresourcesidx = 4
 
         self.assertEqual(header.pop(modresourcesidx),
-                         '#PBS -o output_testrun.txt -l nodes=5:ppn=16,pmem=33815203840',
+                         '#PBS -o output_testrun.txt -l nodes=5:ppn=16,pmem=32393711616',
                          msg='replace the resource header as expected')
 
         sf.header.pop(modresourcesidx)
@@ -104,7 +104,7 @@ class TestSubmitfilter(TestCase):
             '# No mail specified - added by submitfilter',
             '#PBS -m n',
             '# No vmem limit specified - added by submitfilter (server found: delcatty)',
-            '#PBS -l vmem=4897988864',
+            '#PBS -l vmem=4720302336',
             '# Adding PARTITION as specified in VSC_NODE_PARTITION',
             '#PBS -W x=PARTITION:%s' % partname,
         ], msg='added missing defaults and pratiton information to header')
@@ -123,8 +123,8 @@ class TestSubmitfilter(TestCase):
         self.assertEqual(header, [
             '#!/bin/bash',
             '#PBS -l nodes=3:ppn=8',
-            '#PBS -l vmem=78367821824',
-            '#PBS -l pmem=33815203840',
+            '#PBS -l vmem=75524837376',
+            '#PBS -l pmem=32393711616',
             '#PBS -m n',
         ], msg='modified header with resources replaced')
 
