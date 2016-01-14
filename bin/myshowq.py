@@ -49,7 +49,7 @@ import os
 import sys
 import time
 
-from pwd import getpwuid
+from pwd import getpwuid, getpwnam
 from vsc.config.base import VscStorage
 from vsc.utils import fancylogger
 from vsc.utils.cache import FileCache
@@ -107,14 +107,14 @@ def read_cache(owner, showvo, running, idle, blocked, path):
     return (res, user_map)
 
 
-def makemap(users,owner):
+def makemap(users, owner):
     """
     Check for user map
     - map is a python file with a dictionary called map
     """
-    newusers=users
-    home=pwd.getpwnam(owner)[5]
-    dest="%s/.showq.pickle.map"%home
+    newusers = users
+    home = getpwnam(owner)[5]
+    dest = "%s/.showq.pickle.map"%home
 
     if os.path.isfile(dest):
         try:
@@ -122,9 +122,9 @@ def makemap(users,owner):
         except Exception, err:
             print "Failed to load map file %s: %s"%(dest,err)
         if locals().has_key("map"):
-            mymap=locals()['map']
+            mymap = locals()['map']
             try:
-                newusers=[mymap.get(us,us) for us in users]
+                newusers = [mymap.get(us,us) for us in users]
             except Exception, err:
                 print "Failed to make mapping: %s"%err
         else:

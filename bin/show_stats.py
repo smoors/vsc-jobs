@@ -64,6 +64,7 @@ def main():
         else:
             moabxml = None
 
+        retry = 0
         for retry in xrange(0, opts.options.max_retries):
             moab_stats = showstats(xml=moabxml)
             if moab_stats:

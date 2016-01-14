@@ -157,22 +157,6 @@ def process_hold(clusters, dry_run=False):
 
     return release_jobids, stats
 
-def get_queue_information(clusters):
-    """Get the queue information from the cluster(s). Remove unsupported jobtypes"""
-
-    # santize by removing all unsupported jobtypes
-    for user, clusterdata in queue_information.items():
-        for cluster, data in clusterdata.items():
-            for jobtype in data.keys():
-                if not jobtype in RELEASEJOB_SUPPORTED_HOLDTYPES:
-                    data.pop(jobtype)
-            if not data:
-                clusterdata.pop(cluster)
-        if not clusterdata:
-            queue_information.pop(user)
-
-    return queue_information
-
 def main():
     """Main function"""
     options = {

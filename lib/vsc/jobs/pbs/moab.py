@@ -31,23 +31,22 @@ A moab module to be used
 # TODO proper moab namespace and tools
 
 from lxml import etree
-from vsc.utils.run import RunTimeout
+from vsc.utils.run import RunTimeout, RunAsyncLoop
 import vsc.jobs.pbs.nodes as pbs_nodes
 from vsc.jobs.pbs.tools import str2byte
 from vsc.utils import fancylogger
-
 
 _log = fancylogger.getLogger('pbs.moab')
 
 # map moab node states to pbs node states
 # lowercase keys!
 MOAB_PBS_NODEMAP = {
-                    "busy": [pbs_nodes.ND_job_exclusive],
-                    "drained": [pbs_nodes.ND_offline],  # ?
-                    "down": [pbs_nodes.ND_down],
-                    "idle": [pbs_nodes.ND_free, pbs_nodes.ND_idle],
-                    "running": [pbs_nodes.ND_free_and_job, pbs_nodes.ND_free],
-                    }
+    "busy": [pbs_nodes.ND_job_exclusive],
+    "drained": [pbs_nodes.ND_offline],  # ?
+    "down": [pbs_nodes.ND_down],
+    "idle": [pbs_nodes.ND_free, pbs_nodes.ND_idle],
+    "running": [pbs_nodes.ND_free_and_job, pbs_nodes.ND_free],
+}
 
 
 def get_nodes_dict(something=None, xml=None):
