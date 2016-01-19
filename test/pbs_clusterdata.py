@@ -6,7 +6,7 @@ import sys
 from vsc.install.testing import TestCase
 
 from vsc.jobs.pbs.clusterdata import get_clusterdata, \
-    get_cluster_maxppn, get_cluster_mpp, \
+    get_cluster_maxppn, get_cluster_mpp, get_cluster_overhead, \
     MIN_VMEM, DEFAULT_SERVER_CLUSTER, DEFAULT_SERVER, CLUSTERDATA
 
 SORTED_CLUSTERS = ['delcatty', 'golett', 'muk', 'phanpy', 'raichu', 'shuppet']
@@ -61,6 +61,17 @@ class TestPbsClusterdata(TestCase):
             self.assertEqual(get_cluster_maxppn(cluster),
                              cd['NP'] if 'NP' in cd else cd['DEFMAXNP'],
                              msg="Found expected maxppn for cluster %s" % cluster)
+
+    def test_overhead(self):
+        """Test get_cluster_overhead"""
+        self.assertFalse('AVAILMEM' in CLUSTERDATA['zzzmytest'], msg='no AVAILMEM in cluster zzzmytest')
+        self.assertEqual(get_cluster_overhead('zzzmytest'), 0, msg="overhead is 0 when no AVAILMEM is defined")
+
+        self.assertTrue('AVAILMEM' in CLUSTERDATA['zzzmytestavail'], msg='AVAILMEM in cluster zzzmytestavail')
+        self.assertEqual(get_cluster_overhead('zzzmytestavail'),
+                         CLUSTERDATA['zzzmytestavail']['TOTMEM'] - CLUSTERDATA['zzzmytestavail']['AVAILMEM'],
+                         msg="overhead is difference between totmem and initial availmem")
+
 
     def test_mpp(self):
         """Test get_cluster_vpp"""

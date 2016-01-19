@@ -146,7 +146,7 @@ class TestSubmitfilter(TestCase):
         self.assertEqual(header, sf.header, msg='unmodified header')
         self.assertEqual(get_warnings(), [
             'The chosen ppn 4 is not considered ideal: should use either lower than or multiple of 3',
-            'Warning, requested 1099511627776b vmem per node, this is more than the available vmem (88905359360b), this job will never start.',
+            'Warning, requested 1099511627776b vmem per node, this is more than the available vmem (86142287872b), this job will never start.',
         ], msg='warnings for ideal ppn and vmmem too high')
 
 

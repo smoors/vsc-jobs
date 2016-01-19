@@ -113,6 +113,20 @@ def get_cluster_maxppn(cluster):
     return c_d.get('NP', c_d.get('DEFMAXNP', 1))
 
 
+def get_cluster_overhead(cluster):
+    """
+    Return amount of unusable memory in bytes.
+    This is the difference between totmem and initial availmem.
+    """
+    c_d = get_clusterdata(cluster)
+    if 'AVAILMEM' in c_d:
+        overhead = c_d['TOTMEM'] - c_d['AVAILMEM']
+    else:
+        overhead = 0
+
+    return overhead
+
+
 def get_cluster_mpp(cluster):
     """
     Return mpp (mem per processing unit):
@@ -124,10 +138,7 @@ def get_cluster_mpp(cluster):
     c_d = get_clusterdata(cluster)
     maxppn = get_cluster_maxppn(cluster)
 
-    if 'AVAILMEM' in c_d:
-        overhead = c_d['TOTMEM'] - c_d['AVAILMEM']
-    else:
-        overhead = 0
+    overhead = get_cluster_overhead(cluster)
 
     physmem = c_d['PHYSMEM'] - overhead
     totmem = c_d['TOTMEM'] - overhead
