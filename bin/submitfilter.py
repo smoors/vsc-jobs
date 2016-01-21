@@ -37,7 +37,7 @@ import sys
 import re
 import os
 
-from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, MASTER_REGEXP
+from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead, MASTER_REGEXP
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn
 
 
@@ -106,9 +106,11 @@ def make_new_header(sf):
              (ppn, np_lcd))
 
     #    vmem too high: job will not start
-    if state['l'].get('_vmem') > cl_data['TOTMEM']:
+    overhead = get_cluster_overhead(state['_cluster'])
+    availmem = cl_data['TOTMEM'] - overhead
+    if state['l'].get('_vmem') > availmem:
         warn("Warning, requested %sb vmem per node, this is more than the available vmem (%sb), this"
-             " job will never start." % (state['l']['_vmem'], cl_data['TOTMEM']))
+             " job will never start." % (state['l']['_vmem'], availmem))
 
     #    TODO: mem too low on big-memory systems ?
 
@@ -120,7 +122,7 @@ def main(arguments=None):
 
     if arguments is None:
         arguments = sys.argv
-    
+
     sf = SubmitFilter(arguments, sys.stdin.readline)
     sf.parse_header()
 
@@ -134,7 +136,7 @@ def main(arguments=None):
     sys.stdout.write("\n".join(header+[sf.prebody]))
     for line in sf.stdin:
         sys.stdout.write(line)
-    
+
     # print all generated warnings
     # flush it so it doesn't get mixed with stderr
     sys.stdout.flush()

@@ -82,7 +82,7 @@ def show_summary():
 
     try:
         ustats, faults, categories = get_userjob_stats()
-        if faults and not go.options.nagios:
+        if faults:
             go.log.warning("Faults %s" % ([x[0] for x in faults]))
             go.log.debug("Faults %s" % (faults))
         cat_map = dict([(x[0], idx) for idx, x in enumerate(categories)])
