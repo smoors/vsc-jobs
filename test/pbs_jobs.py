@@ -31,12 +31,13 @@ class TestJobs(TestCase):
     def test_get_jobs_dict(self):
         """Test get_jobs_dict"""
 
-        # output from python -c 'from vsc.jobs.pbs.jobs import get_jobs;print get_jobs()'
+        # output from
+        #     python -c 'import pprint;from vsc.jobs.pbs.jobs import get_jobs;a={};eval("a.update(%s)" % get_jobs());pprint.pprint(a)'
         # The jobdata however should be PBS Query instances, and get_jobs_dict uses get_nodes() method call
 
         testdata = os.path.join(os.path.dirname(__file__), 'testpbs', 'pbs_get_jobs_data_master21_t51')
         jobs = {}
-        eval("jobs.update(%s)" % open(testdata).read())
+        eval("jobs.update(%s)" % open(testdata).read().replace("\n",''))
 
         with patch('vsc.jobs.pbs.jobs.get_jobs', return_value=wrap_jobdata(jobs)):
             res = get_jobs_dict()
