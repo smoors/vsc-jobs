@@ -88,6 +88,13 @@ CLUSTERDATA = {
         'NP': 2,
         'NP_LCD': 2,
     },
+    'swalot': {
+        'PHYSMEM': 131791292 << 10,
+        'TOTMEM': 152762808 << 10,
+        'AVAILMEM': 150549544 << 10, # (1GB pagepool)
+        'NP': 20,
+        'NP_LCD': 5,
+    },
 }
 
 

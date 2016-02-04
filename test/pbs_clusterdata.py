@@ -9,7 +9,7 @@ from vsc.jobs.pbs.clusterdata import get_clusterdata, \
     get_cluster_maxppn, get_cluster_mpp, get_cluster_overhead, \
     MIN_VMEM, DEFAULT_SERVER_CLUSTER, DEFAULT_SERVER, CLUSTERDATA
 
-SORTED_CLUSTERS = ['delcatty', 'golett', 'muk', 'phanpy', 'raichu', 'shuppet']
+SORTED_CLUSTERS = ['delcatty', 'golett', 'muk', 'phanpy', 'raichu', 'shuppet', 'swalot']
 
 class TestPbsClusterdata(TestCase):
     def setUp(self):

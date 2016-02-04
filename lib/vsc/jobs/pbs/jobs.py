@@ -54,6 +54,7 @@ def get_jobs_dict():
     reg_user = re.compile(r"(?P<user>\w+)@\S+")
 
     nodes_cores = re.compile(r"(?P<nodes>\d+)(:ppn=(?P<cores>\d+))?")
+    namednodes_cores = re.compile(r"(?P<nodes>node\d+[^:+]*)(:ppn=(?P<cores>\d+))?")
     nodes_nocores = re.compile(r"(?P<nodes>node\d+).*?")
 
     for jobdata in jobs.values():
@@ -74,13 +75,19 @@ def get_jobs_dict():
                     derived['totalwalltimesec'] = totalwallsec
 
             # nodes / cores
+            need_nodes = None
             if 'neednodes' in resource_list:
-                m = nodes_cores.match(resource_list['neednodes'][0])
-                if not m:
-                    if nodes_nocores.match(resource_list['neednodes'][0]):
-                        m = nodes_cores.match("1")
+                need_nodes = resource_list['neednodes'][0]
             elif 'nodes' in resource_list:
-                m = nodes_cores.match(resource_list['nodes'][0])
+                need_nodes = resource_list['nodes'][0]
+            if need_nodes is not None:
+                m = nodes_cores.match(need_nodes)
+                if not m:
+                    namednode_m = namednodes_cores.match(need_nodes)
+                    if namednode_m:
+                        m = nodes_cores.match("1:ppn=%s" % (namednode_m.groups()[2] or "1"))
+                    elif nodes_nocores.match(need_nodes):
+                        m = nodes_cores.match("1")
             if m:
                 nodes = int(m.group('nodes'))
                 cores = 1
@@ -178,7 +185,7 @@ def get_userjob_stats():
         if 'exec_hosts' in derived:
             used_cores = sum(derived['exec_hosts'].values())
             if not corenodes == used_cores:
-                faults.append(('Mismatch requested %s /running %s cores in job %s. Marked as other.' % 
+                faults.append(('Mismatch requested %s /running %s cores in job %s. Marked as other.' %
                                (corenodes, used_cores, name), jobdata))
                 ustat[-1].append(name)
                 continue
