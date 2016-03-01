@@ -45,6 +45,7 @@ import time
 
 from PBSQuery import PBSQuery
 
+from vsc.config.base import VSC_CONF_DEFAULT_FILENAME
 from vsc.ldap.configuration import VscConfiguration
 from vsc.ldap.entities import VscLdapUser
 from vsc.ldap.filters import LdapFilter
@@ -205,7 +206,7 @@ def main(args):
     opts = ExtendedSimpleOption(options)
 
     try:
-        vsc_config = VscConfiguration()
+        vsc_config = VscConfiguration(VSC_CONF_DEFAULT_FILENAME)
         LdapQuery(vsc_config)
 
         grace_users = get_user_with_status('grace')
