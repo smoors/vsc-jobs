@@ -32,6 +32,9 @@ PACKAGE = {
         'vsc-administration >= 0.20.1',
         'vsc-accountpage-clients >= 0.1.2',
         'vsc-base >= 2.4.2',
+        'vsc-config >= 1.26',
+        'vsc-ldap >= 1.3.4',
+        'vsc-ldap-extension >= 1.10.1',
         'vsc-utils >= 1.4.6',
         'pbs_python >= 4.6', # don't use installs from pypi
         'lxml',
