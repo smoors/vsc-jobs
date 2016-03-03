@@ -22,7 +22,7 @@ vsc-jobs base distribution setup.py
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, sdw
 
-VERSION = '0.13.0'
+VERSION = '0.13.1'
 
 PACKAGE = {
     'version': VERSION,
@@ -34,7 +34,7 @@ PACKAGE = {
         'vsc-base >= 2.4.2',
         'vsc-config >= 1.26',
         'vsc-ldap >= 1.3.4',
-        'vsc-ldap-extension >= 1.10.1',
+        'vsc-ldap-extension >= 1.10',
         'vsc-utils >= 1.4.6',
         'pbs_python >= 4.6', # don't use installs from pypi
         'lxml',
