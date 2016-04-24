@@ -126,8 +126,8 @@ def main(arguments=None):
     # This error could otherwise result in empty PBS_O_WORKDIR
     try:
         os.getcwd()
-    except IOError:
-        sys.stderr.write("ERROR: Unable to determine current workdir (PWD deleted?).")
+    except OSError as e:
+        sys.stderr.write("ERROR: Unable to determine current workdir: %s (PWD deleted?)." % e)
         sys.stderr.flush()
         sys.exit(1)
 
