@@ -123,6 +123,14 @@ def main(arguments=None):
     if arguments is None:
         arguments = sys.argv
 
+    # This error could otherwise result in empty PBS_O_WORKDIR
+    try:
+        os.getcwd()
+    except IOError:
+        sys.stderr.write("ERROR: Unable to determine current workdir (PWD deleted?).")
+        sys.stderr.flush()
+        sys.exit(1)
+
     sf = SubmitFilter(arguments, sys.stdin.readline)
     sf.parse_header()
 
