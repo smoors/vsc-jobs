@@ -6,7 +6,7 @@
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
 # the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
-# the Hercules foundation (http://www.herculesstichting.be/in_English)
+# the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
 # https://github.com/hpcugent/vsc-jobs
@@ -122,6 +122,14 @@ def main(arguments=None):
 
     if arguments is None:
         arguments = sys.argv
+
+    # This error could otherwise result in empty PBS_O_WORKDIR
+    try:
+        os.getcwd()
+    except OSError as e:
+        sys.stderr.write("ERROR: Unable to determine current workdir: %s (PWD deleted?)." % e)
+        sys.stderr.flush()
+        sys.exit(1)
 
     sf = SubmitFilter(arguments, sys.stdin.readline)
     sf.parse_header()
