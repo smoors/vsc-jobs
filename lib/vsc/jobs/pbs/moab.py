@@ -46,6 +46,7 @@ MOAB_PBS_NODEMAP = {
     "down": [pbs_nodes.ND_down],
     "idle": [pbs_nodes.ND_free, pbs_nodes.ND_idle],
     "running": [pbs_nodes.ND_free_and_job, pbs_nodes.ND_free],
+    "draining": [pbs_nodes.ND_free_and_job, pbs_nodes.ND_free, pbs_nodes.ND_offline],
 }
 
 
@@ -76,21 +77,32 @@ def get_nodes_dict(something=None, xml=None):
         # RCDISK="92381" RCMEM="16053" RCPROC="8" RCSWAP="36533" RESCOUNT="1"
         # RMACCESSLIST="gengar" RSVLIST="3956525" SPEED="1.000000" STATACTIVETIME="24357970"
         # STATMODIFYTIME="1363076905" STATTOTALTIME="25499884" STATUPTIME="24971920">
-        host = node.get("NODEID")
-        nodes[host] = {}
-        nodes[host]['xml'] = node.items()
-        states = MOAB_PBS_NODEMAP[node.get("NODESTATE").lower()]
-        derived = {
-                   'states': states,
-                   'state': states[0],
-                   'size': str2byte(node.get("RCDISK") + "mb"),
-                   'physmem': str2byte(node.get("RCMEM") + "mb"),
-                   'np': int(node.get("RCPROC")),
-                   }
+        try:
+            host = node.get("NODEID")
+            nodes[host] = {}
+            nodes[host]['xml'] = node.items()
+            states = MOAB_PBS_NODEMAP[node.get("NODESTATE").lower()]
+            derived = {
+                'states': states,
+                'state': states[0],
+                'size': str2byte(node.get("RCDISK") + "mb"),
+                'physmem': str2byte(node.get("RCMEM") + "mb"),
+                'np': int(node.get("RCPROC")),
+                }
+        except (TypeError, AttributeError) as e:
+            del nodes[host]
+            node_txt = etree.tostring(node, pretty_print=True)
+            if host in ('localhost', ):
+                _log.debug("Skipping %s (%s)" % (host, node_txt))
+                continue
+            else:
+                raise type(e)("%s for node %s" % (e, node_txt))
+
         # add state mapping to derived
         pbs_nodes.make_state_map(derived)
 
         nodes[host]['derived'] = derived
+
 
     return nodes
 
@@ -175,4 +187,3 @@ def showstats(xml=None):
 
     res['summary'] = summary
     return res
-
