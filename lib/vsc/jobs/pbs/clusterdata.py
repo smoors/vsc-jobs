@@ -95,6 +95,12 @@ CLUSTERDATA = {
         'NP': 20,
         'NP_LCD': 5,
     },
+    'banette': {
+        'PHYSMEM': 4056736 << 10,
+        'TOTMEM':  12445340 << 10,
+        'NP': 2,
+        'NP_LCD': 2,
+    },
 }
 
 
