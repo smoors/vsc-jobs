@@ -34,12 +34,14 @@ import sys
 import pprint
 import submitfilter
 
-from vsc.install.shared_setup import REPO_BASE_DIR
+#from vsc.install.shared_setup import REPO_BASE_DIR
+from vsc.install.shared_setup import vsc_setup
 from vsc.install.testing import TestCase
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, reset_warnings
 from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER
 from vsc.utils.run import run_simple
 
+REPO_BASE_DIR = vsc_setup().REPO_BASE_DIR
 
 SCRIPTS = ["""#!/bin/sh
 #
@@ -48,7 +50,7 @@ SCRIPTS = ["""#!/bin/sh
 #PBS -o output_testrun.txt -l nodes=5:ppn=all,pmem=half
 #PBS -e error_testrun.txt
 #PBS -l walltime=11:25:00
-#PBS -l vmem=500mb
+#PBS -l pvmem=500mb
 #PBS -m bea
 #PBS -q short
 #
@@ -73,8 +75,8 @@ whatever
 #PBS -l vmem=1tb
 #PBS -m bea
 whatever
-"""
-]
+"""]
+
 
 class TestSubmitfilter(TestCase):
 
@@ -89,7 +91,7 @@ class TestSubmitfilter(TestCase):
         """Basic test for make_new_header"""
         sf = SubmitFilter(
             ['-q', 'verylong'],
-            [ x + "\n" for x in SCRIPTS[0].split("\n")]
+            [x + "\n" for x in SCRIPTS[0].split("\n")]
         )
         sf.parse_header()
 
@@ -110,7 +112,7 @@ class TestSubmitfilter(TestCase):
         """
         Test make_new_header
           add missing mail / unless present
-          add vmem unless defined
+          add pvmem unless defined
           VSC_NODE_PARTITION
         """
 
@@ -128,8 +130,8 @@ class TestSubmitfilter(TestCase):
             '#!/bin/bash',
             '# No mail specified - added by submitfilter',
             '#PBS -m n',
-            '# No vmem limit specified - added by submitfilter (server found: delcatty)',
-            '#PBS -l vmem=4720302336',
+            '# No pmem or pvmem limit specified - added by submitfilter (server found: delcatty)',
+            '#PBS -l pvmem=4720302336',
             '# Adding PARTITION as specified in VSC_NODE_PARTITION',
             '#PBS -W x=PARTITION:%s' % partname,
         ], msg='added missing defaults and pratiton information to header')
@@ -168,7 +170,10 @@ class TestSubmitfilter(TestCase):
         sf.parse_header()
 
         header = submitfilter.make_new_header(sf)
-        self.assertEqual(header, sf.header, msg='unmodified header')
+        self.assertEqual(header, sf.header + [
+            "# No pmem or pvmem limit specified - added by submitfilter (server found: golett)",
+            "#PBS -l pvmem=3141869653"
+        ], msg='unmodified header')
         self.assertEqual(get_warnings(), [
             'The chosen ppn 4 is not considered ideal: should use either lower than or multiple of 3',
             'Warning, requested 1099511627776b vmem per node, this is more than the available vmem (86142287872b), this job will never start.',
@@ -208,5 +213,5 @@ class TestSubmitfilter(TestCase):
 
             if os.path.exists(err):
                 res += open(err).read()
-            
+
             self.assertEqual(output, res, msg="expected output for script %s and cmdline %s" % (name, cmd))

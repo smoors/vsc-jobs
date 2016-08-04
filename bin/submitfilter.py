@@ -43,15 +43,11 @@ from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn
 
 def make_new_header(sf):
     """
-    Generate a new header by rewriting selected options and add missing ones.
+    Generate a new header by rewriting selected options and adding missing ones.
 
     Takes a submitfilter instance as only argument,
     returns the header as a list of strings (one line per element)
     """
-
-    # very VSC specific (or only ugent?)
-    master_reg = re.compile(r'master[^.]*\.([^.]+)\.(?:[^.]+\.vsc|os)$')
-
     state, newopts = sf.gather_state(MASTER_REGEXP)
 
     ppn = state['l'].get('_ppn', 1)
@@ -71,20 +67,19 @@ def make_new_header(sf):
     if 'm' not in state:
         header.extend([
             "# No mail specified - added by submitfilter",
-            make("-m","n"),
+            make("-m", "n"),
         ])
 
-    #    vmem: add default when not specified
-    if not 'vmem' in state['l']:
+    # pvmem: add default when not specified
+    if 'pvmem' not in state['l'] and 'pmem' not in state['l']:
         (ppp, vpp) = get_cluster_mpp(state['_cluster'])
-        vmem = vpp * ppn
         state['l'].update({
-            'vmem': "%s" % vmem,
-            '_vmem': vmem,
+            'pvmem': "%s" % vpp,
+            '_pvmem': vpp,
         })
         header.extend([
-            "# No vmem limit specified - added by submitfilter (server found: %s)" % state['_cluster'],
-            make("-l", "vmem=%s" % vmem),
+            "# No pmem or pvmem limit specified - added by submitfilter (server found: %s)" % state['_cluster'],
+            make("-l", "pvmem=%s" % vpp),
         ])
 
     #    check whether VSC_NODE_PARTITION environment variable is set

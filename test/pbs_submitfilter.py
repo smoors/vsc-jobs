@@ -255,7 +255,7 @@ class TestSubmitfilter(TestCase):
         h2 = SubmitFilter(['-C', '#SOMETHINGELSE'], [])
         self.assertEqual(h2.dprefix, '#SOMETHINGELSE', msg='cmdline dprefix wins')
 
-        # very different dprefix 
+        # very different dprefix
         self.assertEqual(h2.parseline('#PBS -x y=z -a b'), [], 'new dprefix, this is now just a comment')
         self.assertEqual(h2.parseline('#SOMETHINGELSE -x y=z -a b'), [('x', 'y=z'), ('a','b')], 'new dprefix, this is now just a comment')
         self.assertEqual(h2.make_header('-a','b'), '#SOMETHINGELSE -a b', 'Generate correct header with modified dprefix')
@@ -310,13 +310,13 @@ class TestSubmitfilter(TestCase):
         allvmem = 78367821824 - overhead
         allpmem = 67630407680 - overhead
         data = [
-            ('pmem=100k', {'pmem': '100k', '_pmem':100*2**10}, 'pmem=100k'),
-            ('vmem=half', {'vmem': '%s' % (allvmem/2), '_vmem': allvmem/2}, 'vmem=%s' % (allvmem/2)),
-            ('pmem=full', {'pmem': '%s' % allpmem, '_pmem': allpmem}, 'pmem=%s' % allpmem),
-            ('vmem=all', {'vmem': '%s' % allvmem, '_vmem': allvmem}, 'vmem=%s' % allvmem),
+            ('pmem=100k', {'pmem': '100k', '_pmem': 100*2**10}, 'pmem=100k'),
+            ('vmem=half', {'pvmem': '%s' % int(allvmem/16), '_pvmem': int(allvmem/16)}, 'pvmem=%s' % int(allvmem/16)),
+            ('pmem=full', {'pmem': '%s' % int(allpmem/16), '_pmem': int(allpmem/16)}, 'pmem=%s' % int(allpmem/16)),
+            ('vmem=all', {'pvmem': '%s' % int(allvmem/16), '_pvmem': int(allvmem/16)}, 'vmem=%s' % int(allvmem/16)),
         ]
         for txt, rsc, newtxt in data:
-            k,v = txt.split('=')
+            k, v = txt.split('=')
             resources = {}
             mtxt = parse_mem(k, v, cluster, resources)
             self.assertEqual(mtxt, newtxt,
@@ -327,7 +327,7 @@ class TestSubmitfilter(TestCase):
     def test_parse(self):
         h = SubmitFilter(
             ['-q', 'verylong'],
-            [ x + "\n" for x in SCRIPTS[0].split("\n")]
+            [x + "\n" for x in SCRIPTS[0].split("\n")]
         )
 
         # stdin is an iterator
@@ -354,7 +354,7 @@ class TestSubmitfilter(TestCase):
                          "##logs to stderr by default, redirect this to stdout\n",
                          msg="stdin at expected position")
 
-        self.assertEqual(h.allopts, 
+        self.assertEqual(h.allopts,
                          [('N', 'testrun'),
                           ('o', 'output_testrun.txt'),
                           ('l', 'nodes=5:ppn=all,pmem=half'),
@@ -379,7 +379,7 @@ class TestSubmitfilter(TestCase):
             ('m', 'more'),
             ('q', 'short@master.whatever.os'),
             ('N', None)
-        ], MASTER_REGEXP), 'whatever', 
+        ], MASTER_REGEXP), 'whatever',
                          msg="found expected cluster based on last queue option")
 
         os.environ['PBS_DEFAULT'] = "master10.mycluster.gent.vsc"
@@ -389,7 +389,7 @@ class TestSubmitfilter(TestCase):
             ('m', 'more'),
             ('q', 'short'),
             ('N', None)
-        ], MASTER_REGEXP), 'mycluster', 
+        ], MASTER_REGEXP), 'mycluster',
                          msg="found expected cluster based on PBS_DEFAULT environment variable %s" % os.environ['PBS_DEFAULT'])
 
 
@@ -402,7 +402,7 @@ class TestSubmitfilter(TestCase):
             ('m', 'more'),
             ('q', 'short'),
             ('N', None)
-        ], MASTER_REGEXP), DEFAULT_SERVER_CLUSTER, 
+        ], MASTER_REGEXP), DEFAULT_SERVER_CLUSTER,
                          msg="no cluster found, fallback to DEFAULT_SERVER_CLUSTER %s" % DEFAULT_SERVER_CLUSTER)
 
         self.assertEqual(get_warnings(), [
