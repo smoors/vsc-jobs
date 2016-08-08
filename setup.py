@@ -36,7 +36,7 @@ PACKAGE = {
         'vsc-ldap >= 1.3.4',
         'vsc-ldap-extension >= 1.10',
         'vsc-utils >= 1.4.6',
-        'pbs_python >= 4.6', # don't use installs from pypi
+#        'pbs_python >= 4.6', # don't use installs from pypi
         'lxml',
     ],
 }

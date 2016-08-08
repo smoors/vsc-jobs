@@ -31,7 +31,6 @@ import glob
 import os
 import sys
 
-import pprint
 import submitfilter
 
 #from vsc.install.shared_setup import REPO_BASE_DIR

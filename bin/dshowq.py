@@ -47,10 +47,9 @@ from vsc.jobs.moab.showq import SshShowq
 from vsc.utils import fancylogger
 from vsc.utils.fs_store import store_on_gpfs
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
-from vsc.utils.rest import RestClient
 from vsc.utils.script_tools import ExtendedSimpleOption
 
-#Constants
+# Constants
 NAGIOS_CHECK_INTERVAL_THRESHOLD = 15 * 60  # 15 minutes
 
 DEFAULT_VO = 'gvo00012'
@@ -146,7 +145,7 @@ class MasterSshShowq(SshShowq):
         self.target_master = target_master
         self.target_user = target_user
 
-    def _command(self, path, master):
+    def _command(self, path):
         """
         Got through master15 instead of the master you wish to interrogate
         """
@@ -198,7 +197,7 @@ def main():
 
         logger.debug("Getting showq information ...")
 
-        (queue_information, reported_hosts, failed_hosts) = showq.get_moab_command_information()
+        (queue_information, _, _) = showq.get_moab_command_information()
         timeinfo = time.time()
 
         active_users = queue_information.keys()

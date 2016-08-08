@@ -56,9 +56,9 @@ class CheckjobInfo(RUDict):
 
     def add(self, user, host):
 
-        if not user in self:
+        if user not in self:
             self[user] = RUDict()
-        if not host in self[user]:
+        if host not in self[user]:
             self[user][host] = []
 
     def _display(self, job):

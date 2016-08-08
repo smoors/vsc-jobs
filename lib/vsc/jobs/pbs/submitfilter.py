@@ -48,15 +48,18 @@ MEM_VALUE_UNITS = ('', 'k', 'm', 'g', 't')
 
 _warnings = []
 
+
 def reset_warnings():
     """Reset the list of warnings"""
     global _warnings
     _warnings = []
 
+
 def get_warnings():
     """Return the list of warnings"""
     global _warnings
     return _warnings
+
 
 def warn(*txt):
     """Collect warning, not actually print anything"""
@@ -292,23 +295,26 @@ def parse_mem(name, txt, cluster, resources):
     """
     req_in_bytes = _parse_mem_units(txt)
 
-    # so something like half or all. we will no longer support this as it really makes no sense in any general
-    # resource request like -l nodes=n1:ppn=2+n2:ppn=4 -l [pv]mem=half
-    # half of what? all node memory? the per-core memory? idem for all
     if req_in_bytes is None:
+        (ppp, vpp) = get_cluster_mpp(cluster)
+        maxppn = get_cluster_maxppn(cluster)
 
-        if txt in ('half', 'full', 'all'):
-            warn("This option is no longer supported.")
-            warn("Please use the pvmem=<int>[bmg] resource request option to specify the desired amount of memory per requested core")
-            sys.stderr.write("\n".join(get_warnings()))
-            sys.stderr.flush()
-            sys.exit(-1)
-        else:
-            warn("Unable to parse the memory request. Setting default pvmem.")
+        convert = {
+            'pmem': maxppn * ppp,
+            'vmem': maxppn * vpp,
+        }
 
-        sys.stderr.write("\n".join(get_warnings()))
-        sys.stderr.flush()
-        sys.exit(-1)
+        # multiplier 1 == identity op
+        multi = lambda x: x
+        if name not in ('pmem', 'vmem'):
+            # TODO: and do what? use pmem?
+            warn('Unsupported memory specification %s with value %s' % (name, txt))
+        elif txt == 'half':
+            multi = lambda x: int(x/2)
+
+        # default to pmem
+        req_in_bytes = multi(convert.get(name, convert['pmem']))
+        txt = "%s" % req_in_bytes
 
     resources.update({
         name: txt,  # original notation if possible
@@ -346,12 +352,12 @@ def parse_resources_nodes(txt, cluster, resources):
     for node_spec in txt.split('+'):
         props = node_spec.split(':')
 
-        ppns = [(x.split('=')[1], idx) for idx,x in enumerate(props) if x.startswith('ppn=')] or [(1, None)]
+        ppns = [(x.split('=')[1], idx) for idx, x in enumerate(props) if x.startswith('ppn=')] or [(1, None)]
 
         ppn = ppns[0][0]
         try:
             ppn = int(ppn)
-        except:
+        except ValueError:
             if ppn in ('all', 'full',):
                 ppn = maxppn
             elif ppn == 'half':
@@ -370,7 +376,7 @@ def parse_resources_nodes(txt, cluster, resources):
 
         try:
             nodes = int(props[0])
-        except:
+        except (ValueError, IndexError):
             # some description
             nodes = 1
 

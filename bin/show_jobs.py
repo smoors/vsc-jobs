@@ -35,7 +35,7 @@ import sys
 from vsc.utils.generaloption import simple_option
 from vsc.jobs.pbs.jobs import get_userjob_stats, get_jobs_dict
 from vsc.utils import fancylogger
-from vsc.utils.nagios import NagiosResult, warning_exit, ok_exit, critical_exit, unknown_exit
+from vsc.utils.nagios import NagiosResult, ok_exit, critical_exit
 
 SHOW_LIST = ['nodes']
 
@@ -51,7 +51,7 @@ def show_individual():
         for jobdescr in go.options.jobs:
             reg = re.compile(r'' + jobdescr)
             for jobid in all_jobs.keys():
-                if reg.search(jobid) and not jobid in jobid_ok:
+                if reg.search(jobid) and jobid not in jobid_ok:
                     jobid_ok.append(jobid)
 
     # filter out jobs

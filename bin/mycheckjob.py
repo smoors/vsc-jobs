@@ -33,7 +33,6 @@ risks of letting users see job information of jobs that are not theirs.
 
 @author: Andy Georges (Ghent University)
 """
-import cPickle
 import os
 import time
 
@@ -42,7 +41,6 @@ from vsc.config.base import VscStorage
 from vsc.utils import fancylogger
 from vsc.utils.cache import FileCache
 from vsc.utils.generaloption import simple_option
-from vsc.utils.cache import FileCache
 
 MAXIMAL_AGE = 60 * 30  # 30 minutes
 
@@ -57,7 +55,7 @@ def read_cache(path):
     """
     try:
         cache = FileCache(path)
-    except:
+    except Exception:
         print "Failed to load checkjob information from %s" % (path,)
 
     res = cache.load('checkjob')
@@ -88,4 +86,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

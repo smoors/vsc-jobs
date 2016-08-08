@@ -28,7 +28,6 @@ The main pbs module
 
 @author: Stijn De Weirdt (Ghent University)
 """
-import re
 from vsc.jobs.pbs.interface import get_query
 from vsc.utils import fancylogger
 
@@ -45,10 +44,10 @@ def get_queues():
 def get_queues_dict():
     """Get dict with queues, separated on 'disabled', 'route', 'enabled'"""
     queues_dict = {
-                   'enabled': [],
-                   'route': [],
-                   'disabled': [],
-                   }
+        'enabled': [],
+        'route': [],
+        'disabled': [],
+    }
 
     for name, queue in get_queues().items():
         if not queue.get('enabled', None):
@@ -59,5 +58,3 @@ def get_queues_dict():
             queues_dict['enabled'].append((name, queue))
 
     return queues_dict
-
-

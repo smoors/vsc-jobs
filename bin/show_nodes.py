@@ -38,8 +38,7 @@ from vsc.jobs.pbs.nodes import ND_free, ND_free_and_job, ND_job_exclusive
 from vsc.jobs.pbs.nodes import ND_state_unknown, ND_bad, ND_error, ND_idle, ND_down_on_error
 from vsc.jobs.pbs.moab import get_nodes_dict as moab_get_nodes_dict
 from vsc.utils.generaloption import simple_option
-from vsc.utils.missing import any
-from vsc.utils.nagios import NagiosResult, warning_exit, ok_exit, critical_exit, unknown_exit
+from vsc.utils.nagios import NagiosResult, warning_exit, ok_exit, critical_exit
 
 _log = fancylogger.getLogger('show_nodes')
 
@@ -48,29 +47,29 @@ def main():
     """Main"""
 
     options = {
-        'nagios':('Report in nagios format', None, 'store_true', False, 'n'),
-        'regex':('Filter on regexp, data for first match', None, 'regex', None, 'r'),
-        'allregex':('Combined with --regex/-r, return all data', None, 'store_true', False, 'A'),
-        'anystate':('Matches any state (eg down_on_error node will also list as error)',
-                    None, 'store_true', False, 'a') ,
-        'down':('Down nodes', None, 'store_true', False, 'D'),
-        'downonerror':('Down on error nodes', None, 'store_true', False, 'E'),
-        'offline':('Offline nodes', None, 'store_true', False, 'o'),
-        'partial':('Partial nodes (one or more running job(s), jobslot(s) available)', None, 'store_true', False, 'p'),
-        'job-exclusive':('Job-exclusive nodes (no jobslots available)', None, 'store_true', False, 'x'),
-        'free':('Free nodes (0 or more running jobs, jobslot(s) available)', None, 'store_true', False, 'f'),
-        'unknown':('State unknown nodes', None, 'store_true', False, 'u'),
-        'bad':('Bad nodes (broken jobregex)', None, 'store_true', False, 'b'),
-        'error':('Error nodes', None, 'store_true', False, 'e'),
-        'idle':('Idle nodes (No running jobs, jobslot(s) available)', None, 'store_true', False, 'i'),
-        'singlenodeinfo':(('Single (most-frequent) node information in key=value format'
-                           '(no combination with other options)'), None, 'store_true', False, 'I'),
-        'reportnodeinfo':('Report node information (no combination with other options)',
-                          None, 'store_true', False, 'R'),
-        'moab':('Use moab information (mdiag -n)', None, 'store_true', False, 'm'),
-        'moabxml':('Use xml moab data from file (for testing)', None, 'store', None),
-        'shorthost':('Return (short) hostname', None, 'store_true', False, 's'),
-        'invert':('Return inverted selection', None, 'store_true', False, 'v'),
+        'nagios': ('Report in nagios format', None, 'store_true', False, 'n'),
+        'regex': ('Filter on regexp, data for first match', None, 'regex', None, 'r'),
+        'allregex': ('Combined with --regex/-r, return all data', None, 'store_true', False, 'A'),
+        'anystate': ('Matches any state (eg down_on_error node will also list as error)',
+                     None, 'store_true', False, 'a'),
+        'down': ('Down nodes', None, 'store_true', False, 'D'),
+        'downonerror': ('Down on error nodes', None, 'store_true', False, 'E'),
+        'offline': ('Offline nodes', None, 'store_true', False, 'o'),
+        'partial': ('Partial nodes (one or more running job(s), jobslot(s) available)', None, 'store_true', False, 'p'),
+        'job-exclusive': ('Job-exclusive nodes (no jobslots available)', None, 'store_true', False, 'x'),
+        'free': ('Free nodes (0 or more running jobs, jobslot(s) available)', None, 'store_true', False, 'f'),
+        'unknown': ('State unknown nodes', None, 'store_true', False, 'u'),
+        'bad': ('Bad nodes (broken jobregex)', None, 'store_true', False, 'b'),
+        'error': ('Error nodes', None, 'store_true', False, 'e'),
+        'idle': ('Idle nodes (No running jobs, jobslot(s) available)', None, 'store_true', False, 'i'),
+        'singlenodeinfo': (('Single (most-frequent) node information in key=value format'
+                            '(no combination with other options)'), None, 'store_true', False, 'I'),
+        'reportnodeinfo': ('Report node information (no combination with other options)',
+                           None, 'store_true', False, 'R'),
+        'moab': ('Use moab information (mdiag -n)', None, 'store_true', False, 'm'),
+        'moabxml': ('Use xml moab data from file (for testing)', None, 'store', None),
+        'shorthost': ('Return (short) hostname', None, 'store_true', False, 's'),
+        'invert': ('Return inverted selection', None, 'store_true', False, 'v'),
         }
 
     go = simple_option(options)
@@ -131,7 +130,7 @@ def main():
             msg = []
             for info, nodes in ordered:
                 txt = "%d nodes with %d cores, %s MB physmem, %s GB swap and %s GB local disk" % (
-                        len(nodes), info[0], info[1] * 1024, info[2], info[3])
+                    len(nodes), info[0], info[1] * 1024, info[2], info[3])
                 msg.append(txt)
                 # print and _log are dumped to stdout at different moment, repeat the txt in the debug log
                 _log.debug("Found %s with matching nodes: %s" % (txt, nodes))
@@ -144,7 +143,7 @@ def main():
         if go.options.moabxml:
             try:
                 moabxml = open(go.options.moabxml).read()
-            except:
+            except (OSError, IOError):
                 _log.error('Failed to read moab xml from %s' % go.options.moabxml)
         else:
             moabxml = None
@@ -154,14 +153,11 @@ def main():
     else:
         nodes = get_nodes()
 
-
-    # WARNING first, since that is the one that gives dependency on others
-    nagiosstatesorder = [NDNAG_WARNING, NDNAG_CRITICAL, NDNAG_OK]
     nagiosexit = {
-                  NDNAG_CRITICAL: critical_exit,
-                  NDNAG_WARNING: warning_exit,
-                  NDNAG_OK: ok_exit,
-                  }
+        NDNAG_WARNING: warning_exit,
+        NDNAG_CRITICAL: critical_exit,
+        NDNAG_OK: ok_exit,
+    }
 
     nagios_res = {}
     detailed_res = {}
@@ -176,7 +172,7 @@ def main():
             continue
 
         nagios_state = full_state['derived']['nagiosstate']
-        if not nagios_state in nagios_res:
+        if nagios_state not in nagios_res:
             nagios_res[nagios_state] = []
 
         state = full_state['derived']['state']
@@ -184,7 +180,7 @@ def main():
 
         if state == ND_free and ND_idle in states:
             state = ND_idle  # special case for idle
-        if not state in detailed_res:
+        if state not in detailed_res:
             detailed_res[state] = []
 
         if go.options.anystate:
@@ -202,7 +198,7 @@ def main():
                 break
 
     if go.options.invert:
-        nodes_found = [x for x in all_nodes if not x in nodes_found]
+        nodes_found = [x for x in all_nodes if x not in nodes_found]
 
     if go.options.regex and not go.options.allregex:
         # there should only be one node
@@ -242,4 +238,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

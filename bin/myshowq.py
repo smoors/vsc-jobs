@@ -66,15 +66,10 @@ def read_cache(owner, showvo, running, idle, blocked, path):
     """
     Unpickle the file and fill in the resulting datastructure.
     """
-
-    try:
-        cache = FileCache(path)
-    except:
-        print "Failed to load showq information from %s" % (path,)
-
+    cache = FileCache(path)
     res = cache.load('showq')[1][0]
     user_map = cache.load('showq')[1][1]
-    ## check for timeinfo
+    # check for timeinfo
     if res['timeinfo'] < (time.time() - MAXIMAL_AGE):
         print "The data in the showq cache may be outdated. Please contact your admin to look into this."
     #    return (None, None)
@@ -87,7 +82,7 @@ def read_cache(owner, showvo, running, idle, blocked, path):
     if not showvo:
         for user in res.keys():
             if not user == owner:
-                #del res[user]
+                # del res[user]
                 pass
 
     for user in res.keys():
@@ -101,7 +96,7 @@ def read_cache(owner, showvo, running, idle, blocked, path):
                 if 'Idle' in states:
                     del res[user][host]['Idle']
             if not blocked:
-                for state in [x for x in states if not x in ('Running','Idle')]:
+                for state in [x for x in states if x not in ('Running', 'Idle')]:
                     del res[user][host][state]
 
     return (res, user_map)
@@ -114,26 +109,26 @@ def makemap(users, owner):
     """
     newusers = users
     home = getpwnam(owner)[5]
-    dest = "%s/.showq.pickle.map"%home
+    dest = "%s/.showq.pickle.map" % home
 
     if os.path.isfile(dest):
         try:
             execfile(dest)
         except Exception, err:
-            print "Failed to load map file %s: %s"%(dest,err)
-        if locals().has_key("map"):
+            print "Failed to load map file %s: %s" % (dest, err)
+        if "map" in locals():
             mymap = locals()['map']
             try:
-                newusers = [mymap.get(us,us) for us in users]
+                newusers = [mymap.get(us, us) for us in users]
             except Exception, err:
-                print "Failed to make mapping: %s"%err
+                print "Failed to make mapping: %s" % err
         else:
             print "Map loaded, but no map dictionary found."
 
     return newusers
 
 
-def showdetail(hosts, res, user_map, owner, showvo):
+def showdetail():
     """
     Show detailed info
 
@@ -170,21 +165,21 @@ def showsummary(hosts, res, user_map, owner, showvo):
 
     summ = copy.deepcopy(job_data)
     summUserHosts = {}
-    summaryUsers = {} # summary per user
-    summaryHosts = {} # summary per host
+    summaryUsers = {}  # summary per user
+    summaryHosts = {}  # summary per host
 
     for us in res.keys():
 
         summary_user = copy.deepcopy(job_data)
 
-        if not summUserHosts.has_key(us):
+        if us not in summUserHosts:
             summUserHosts[us] = {}
 
         for host in res[us].keys():
-            if not summaryHosts.has_key(host):
+            if host not in summaryHosts:
                 summaryHosts[host] = copy.deepcopy(job_data)
 
-            if not summUserHosts[us].has_key(host):
+            if host not in summUserHosts[us]:
                 summary = copy.deepcopy(job_data)
 
             for state in res[us][host].keys():
@@ -193,10 +188,10 @@ def showsummary(hosts, res, user_map, owner, showvo):
                         summary['jobs running'] += 1
                         summary['cpus running'] += int(j['ReqProcs'])
                     else:
-                        ## all idle, also Blocked jobs
+                        # all idle, also Blocked jobs
                         summary['jobs idle'] += 1
                         summary['cpus idle'] += int(j['ReqProcs'])
-                        if not state in ('Running', 'Idle'):
+                        if state not in ('Running', 'Idle'):
                             summary['jobs blocked'] += 1
                             summary['cpus blocked'] += int(j['ReqProcs'])
             summary['jobs total'] = summary['jobs running']+summary['jobs idle']
@@ -218,66 +213,65 @@ def showsummary(hosts, res, user_map, owner, showvo):
     users.sort()
     if owner in users:
         users.remove(owner)
-        users.insert(0,owner)
+        users.insert(0, owner)
 
     usernames = []
     for user in users:
         usernames.append(user_map[user])
-    #usernames=makemap(users,owner)
+    # usernames=makemap(users,owner)
 
-    totalStr="TOTAL"
-    overallStr="OVERALL"
+    totalStr = "TOTAL"
+    overallStr = "OVERALL"
 
-    ## maximum namelength + extra whitespace
-    maxlen=max([len(x) for x in usernames])+2
-    ## maximum hostname length + extra characters
-    maxlenhost=max([len(x) for x in (hosts+[totalStr,overallStr])])+3
-    ## maximum display size for integers (job/procs) with extra whitespace
-    maxint=9+2
-    tmp='%'+str(maxint)+'s'
-    templ=tmp*4
-    rit=templ%('Run','Idle','(Blocked)','Total')
-    lrit=(len(rit)-4+1)/2
+    # maximum hostname length + extra characters
+    maxlenhost = max([len(x) for x in (hosts+[totalStr, overallStr])]) + 3
+    # maximum display size for integers (job/procs) with extra whitespace
+    maxint = 9 + 2
+    tmp = '%' + str(maxint) + 's'
+    templ = tmp * 4
+    rit = templ % ('Run', 'Idle', '(Blocked)', 'Total')
+    lrit = (len(rit) - 4 + 1) / 2
 
     # dirty :)
-    tmp='%%%s'+str(maxint)+'i'
-    templ=(tmp * 8) % ('(jobs running)',
-                       '(jobs idle)',
-                       '(jobs blocked)',
-                       '(jobs total)',
-                       '(cpus running)',
-                       '(cpus idle)',
-                       '(cpus blocked)',
-                       '(cpus total)')
+    tmp = '%%%s' + str(maxint) + 'i'
+    templ = (tmp * 8) % (
+        '(jobs running)',
+        '(jobs idle)',
+        '(jobs blocked)',
+        '(jobs total)',
+        '(cpus running)',
+        '(cpus idle)',
+        '(cpus blocked)',
+        '(cpus total)')
 
-    padding=''
+    padding = ''
     if showvo:
-        padding='\t'
+        padding = '\t'
 
-    header="%s%s%s\n"%(padding,' '*maxlenhost,'%sJobs%sCPUs%s'%(' '*lrit,' '*2*lrit,' '*lrit))
-    headerlen=len(header)+5-1 # +8 for tab
-    header+="%s%s%s\n"%(padding,' '*maxlenhost,rit*2)
-    header+="%s%s\n"%(padding,'-'*headerlen)
+    header = "%s%s%s\n" % (padding, ' ' * maxlenhost, '%sJobs%sCPUs%s' % (' ' * lrit, ' ' * 2 * lrit, ' ' * lrit))
+    headerlen = len(header) + 5 - 1  # +8 for tab
+    header += "%s%s%s\n" % (padding, ' ' * maxlenhost, rit * 2)
+    header += "%s%s\n" % (padding, '-' * headerlen)
 
-    txt=''
-    for us,usn in zip(users,usernames):
+    txt = ''
+    for us, usn in zip(users, usernames):
         if showvo:
-            txt+="%s (%s)\n"%(us,usn)
+            txt += "%s (%s)\n" % (us, usn)
         for host in hosts:
             if host in summUserHosts[us].keys():
-                txt+="%s%s%s\n"%(padding,host+' '*(maxlenhost-len(host)),templ%summUserHosts[us][host])
-        txt+="%s%s\n"%(padding,'~'*(maxlenhost+len(templ%summ)))
-        txt+="%s%s%s\n\n"%(padding,totalStr+' '*(maxlenhost-len(totalStr)),templ%summaryUsers[us])
+                txt += "%s%s%s\n" % (padding, host + ' ' * (maxlenhost - len(host)), templ % summUserHosts[us][host])
+        txt += "%s%s\n" % (padding, '~' * (maxlenhost + len(templ % summ)))
+        txt += "%s%s%s\n\n" % (padding, totalStr + ' ' * (maxlenhost - len(totalStr)), templ % summaryUsers[us])
 
-    footer=''
+    footer = ''
     if len(users) > 1:
-        footer="%s\n"%('-'*headerlen)
-        footer+="SUMMARY\n"
+        footer = "%s\n" % ('-' * headerlen)
+        footer += "SUMMARY\n"
         for host in hosts:
             if host in summaryHosts.keys():
-                footer+="%s%s%s\n"%(padding,host+' '*(maxlenhost-len(host)),templ%tuple(summaryHosts[host]))
-        footer+="%s%s\n"%(padding,'~'*(maxlenhost+len(templ%summ)))
-        footer+="%s%s%s\n"%(padding,overallStr+' '*(maxlenhost-len(overallStr)),templ%summ)
+                footer += "%s%s%s\n" % (padding, host + ' ' * (maxlenhost - len(host)), templ % tuple(summaryHosts[host]))
+        footer += "%s%s\n" % (padding, '~' * (maxlenhost + len(templ % summ)))
+        footer += "%s%s%s\n" % (padding, overallStr + ' ' * (maxlenhost - len(overallStr)), templ % summ)
 
     print header+txt+footer
 
@@ -305,7 +299,6 @@ def main():
 
     storage = VscStorage()
     user_name = getpwuid(os.getuid())[0]
-    now = time.time()
 
     mount_point = storage[opts.options.location_environment].login_mount_point
     path_template = storage.path_templates[opts.options.location_environment]['user']
@@ -325,7 +318,7 @@ def main():
     if opts.options.summary:
         showsummary(opts.options.hosts, res, user_map, user_name, opts.options.virtualorganisation)
     if opts.options.detail:
-        showdetail(opts.options.hosts, res, user_map, user_name, opts.options.virtualorganisation)
+        showdetail()
 
 
 if __name__ == '__main__':

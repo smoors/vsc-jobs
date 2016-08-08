@@ -38,7 +38,7 @@ try:
     pbs = pbs  # allow to remote access
 
     from PBSQuery import PBSQuery
-except:
+except ImportError:
     _log.error('Failed to import pbs_python modules')
     HAVE_PBS_PYTHON = False
 
@@ -46,4 +46,3 @@ except:
 def get_query():
     """Return query instance"""
     return PBSQuery()
-

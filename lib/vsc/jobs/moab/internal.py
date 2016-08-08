@@ -134,12 +134,12 @@ class MoabCommand(object):
         for attribute in attributes:
             try:
                 d[attribute] = xml.attrib[attribute]
-            except KeyError, err:
+            except KeyError:
                 self.logger.error("Failed to find attribute name %s in %s" % (attribute, xml.attrib))
 
         return d
 
-    def _command(self, path, master):
+    def _command(self, path):
         """If needed, transform the command prior to execution"""
         return [path]
 
@@ -163,7 +163,7 @@ class MoabCommand(object):
                 self.logger.debug("Loading cached data")
                 try:
                     output = self._load_pickle_cluster_file(cluster)
-                except IOError, _:
+                except IOError:
                     self.logger.exception("Cannot load cached data")
                     return None
             else:
@@ -176,7 +176,7 @@ class MoabCommand(object):
         if not output:
             return None
 
-        parsed = self.parser(cluster, output)
+        parsed = self.parser()
         if parsed is None:
             self.logger.debug("Returning raw output")
             return output
@@ -184,7 +184,7 @@ class MoabCommand(object):
             self.logger.debug("Returning parsed output for cluster %s" % (cluster))
             return parsed
 
-    def parser(self, host, txt):
+    def parser(self):
         """Parse the returned XML into the desired data structure for further processing.
             When None is returned, it assumes nothing is parsed, and raw unparsed output is used.
         """
@@ -207,7 +207,7 @@ class MoabCommand(object):
 
             master = info['master']
             path = info['path']
-            command = self._command(path, master)
+            command = self._command(path)
 
             host_job_information = self._run_moab_command(command, host, ["--host=%s" % (master), "--xml"])
 
@@ -222,7 +222,7 @@ class MoabCommand(object):
 
 
 class SshMoabCommand(MoabCommand):
-    """Similar to MaobCommand, but use ssh to contact the Moab master."""
+    """Similar to MoabCommand, but use ssh to contact the Moab master."""
 
     def _command(self, path, master):
         """Wrap the command in an ssh shell."""

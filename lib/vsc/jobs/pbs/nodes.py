@@ -31,7 +31,6 @@ The main pbs module
 import re
 from math import ceil
 from vsc.utils import fancylogger
-from vsc.utils.missing import all
 from vsc.jobs.pbs.interface import get_query, pbs
 from vsc.jobs.pbs.tools import str2byte
 
@@ -57,22 +56,22 @@ ND_timeshared = pbs.ND_timeshared
 ND_cluster = pbs.ND_cluster
 
 TRANSLATE_STATE = {
-                   ND_free: '_',
-                   ND_down: 'X',
-                   ND_offline: '.',
-                   ND_reserve: 'R',
-                   ND_job_exclusive: 'J',
-                   ND_job_sharing: 'S',
-                   ND_busy: '*',
-                   ND_state_unknown: '?',
-                   ND_timeshared: 'T',
-                   ND_cluster: 'C',
-                   ND_free_and_job: 'j',
-                   ND_error: 'e',
-                   ND_down_on_error: 'x',
-                   ND_bad: 'b',
-                   ND_idle: 'i',  # same as free?
-                   }
+    ND_free: '_',
+    ND_down: 'X',
+    ND_offline: '.',
+    ND_reserve: 'R',
+    ND_job_exclusive: 'J',
+    ND_job_sharing: 'S',
+    ND_busy: '*',
+    ND_state_unknown: '?',
+    ND_timeshared: 'T',
+    ND_cluster: 'C',
+    ND_free_and_job: 'j',
+    ND_error: 'e',
+    ND_down_on_error: 'x',
+    ND_bad: 'b',
+    ND_idle: 'i',  # same as free?
+}
 
 NDST_OK = 'ok'
 NDST_NOTOK = 'notok'
@@ -80,18 +79,18 @@ NDST_OTHER = 'other'
 
 # other is all not ok or notok
 ND_STATE_OK = [
-               ND_job_exclusive,
-               ND_free_and_job,
-               ND_free,
-               ]
+    ND_job_exclusive,
+    ND_free_and_job,
+    ND_free,
+]
 
 ND_STATE_NOTOK = [
-                  ND_offline,
-                  ND_down,
-                  ND_down_on_error,
-                  ]
+    ND_offline,
+    ND_down,
+    ND_down_on_error,
+]
 
-ND_STATE_OTHER = [x for x in TRANSLATE_STATE.keys() if not x in ND_STATE_OK + ND_STATE_NOTOK]
+ND_STATE_OTHER = [x for x in TRANSLATE_STATE.keys() if x not in ND_STATE_OK + ND_STATE_NOTOK]
 
 # node states for nagios WARNING is all not critical or ok
 NDNAG_CRITICAL = 'CRITICAL'
@@ -99,20 +98,20 @@ NDNAG_WARNING = 'WARNING'
 NDNAG_OK = 'OK'
 
 ND_NAGIOS_CRITICAL = [
-                      ND_down,
-                      ND_down_on_error,
-                      ND_error,
-                      ND_bad,
-                      ]
+    ND_down,
+    ND_down_on_error,
+    ND_error,
+    ND_bad,
+]
 
 ND_NAGIOS_OK = [
-                ND_job_exclusive,
-                ND_free_and_job,
-                ND_free,
-                ND_idle,
-                ]
+    ND_job_exclusive,
+    ND_free_and_job,
+    ND_free,
+    ND_idle,
+]
 
-ND_NAGIOS_WARNING = [x for x in TRANSLATE_STATE.keys() if not x in ND_NAGIOS_CRITICAL + ND_NAGIOS_OK]
+ND_NAGIOS_WARNING = [x for x in TRANSLATE_STATE.keys() if x not in ND_NAGIOS_CRITICAL + ND_NAGIOS_OK]
 
 
 JOBID_REG = re.compile(r"\w+/\w+(\.|\w|\[|\])+")
@@ -167,7 +166,7 @@ def get_nodes_dict():
         if ND_free in states and ATTR_JOBS in full_state:
             _log.debug('Added free_and_job node %s' % (name))
             states.insert(0, ND_free_and_job)
-        if ND_free in states and not ATTR_JOBS in full_state:
+        if ND_free in states and ATTR_JOBS not in full_state:
             _log.debug('Append idle node %s' % (name))
             states.append(ND_idle)  # append it, not insert
 
@@ -182,7 +181,7 @@ def get_nodes_dict():
         derived = {}
         if ATTR_JOBS in full_state:
             jobs = full_state.get_jobs()
-            if not all([JOBID_REG.search(x.strip()) for x in jobs]):
+            if not all(JOBID_REG.search(x.strip()) for x in jobs):
                 _log.debug('Added bad node %s for jobs %s' % (name, jobs))
                 states.insert(0, ND_bad)
             derived[ATTR_JOBS] = jobs
@@ -195,7 +194,7 @@ def get_nodes_dict():
         if ATTR_STATUS in full_state:
             status = full_state[ATTR_STATUS]
             for prop in ['physmem', 'totmem', 'size']:
-                if not prop in status:
+                if prop not in status:
                     continue
                 val = status.get(prop)[0]
                 if prop in ('size',):
@@ -247,7 +246,7 @@ def collect_nodeinfo():
                 swap = tmem - pmem
                 dsize = ceil(10 * size / (5 * GB)) / 2
                 typ = (cores, pmem, swap, dsize)
-                if not typ in types:
+                if typ not in types:
                     types[typ] = []
                 types[typ].append(node)
 
