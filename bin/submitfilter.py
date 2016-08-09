@@ -76,7 +76,7 @@ def make_new_header(sf):
 
     current_user = pwd.getpwuid(os.getuid()).pw_name
 
-    # pvmem: add default when not specified
+    # vmem: add default when not specified
     if 'vmem' not in state['l'] and 'pmem' not in state['l']:
         (_, vpp) = get_cluster_mpp(state['_cluster'])
         vmem = vpp * ppn
