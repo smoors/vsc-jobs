@@ -289,7 +289,7 @@ def parse_mem(name, txt, cluster, resources):
 
     returns (possibly modified) resource text
 
-    No longer supported modifications:
+    Supported modifications:
         (v|p)mem=all/full ; (v|p)mem=half
     """
     req_in_bytes = _parse_mem_units(txt)
