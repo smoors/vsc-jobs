@@ -88,16 +88,15 @@ def make_new_header(sf):
             "# No pmem or vmem limit specified - added by submitfilter (server found: %s)" % state['_cluster'],
             make("-l", "vmem=%s" % vmem),
         ])
-        syslogger.info("submitfiler - no [vp]mem specified by user %s. adding %s", current_user, vmem)
+        syslogger.warn("submitfiler - no [vp]mem specified by user %s. adding %s", current_user, vmem)
     else:
         try:
             requested_memory = ('vmem', state['l']['vmem'])
         except KeyError:
             requested_memory = ('pmem', state['l']['pmem'])
-        syslogger.info("submitfilter - %s requested by user %s was %s", requested_memory[0], current_user, requested_memory[1])
+        syslogger.warn("submitfilter - %s requested by user %s was %s", requested_memory[0], current_user, requested_memory[1])
 
-
-    #    check whether VSC_NODE_PARTITION environment variable is set
+    #  check whether VSC_NODE_PARTITION environment variable is set
     if 'VSC_NODE_PARTITION' in os.environ:
         header.extend([
             "# Adding PARTITION as specified in VSC_NODE_PARTITION",
