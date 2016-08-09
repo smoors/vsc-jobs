@@ -79,15 +79,16 @@ def make_new_header(sf):
     # pvmem: add default when not specified
     if 'vmem' not in state['l'] and 'pmem' not in state['l']:
         (_, vpp) = get_cluster_mpp(state['_cluster'])
+        vmem = vpp * ppn
         state['l'].update({
-            'vmem': "%s" % (vpp * ppn),
-            '_vmem': vpp,
+            'vmem': "%s" % vmem,
+            '_vmem': vmem,
         })
         header.extend([
             "# No pmem or vmem limit specified - added by submitfilter (server found: %s)" % state['_cluster'],
-            make("-l", "vmem=%s" % (vpp * ppn)),
+            make("-l", "vmem=%s" % vmem),
         ])
-        syslogger.info("submitfiler - no [vp]mem specified by user %s. adding %s", current_user, vpp * ppn)
+        syslogger.info("submitfiler - no [vp]mem specified by user %s. adding %s", current_user, vmem)
     else:
         try:
             requested_memory = ('vmem', state['l']['vmem'])
