@@ -38,6 +38,10 @@ import os
 
 from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead, MASTER_REGEXP
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn
+from vsc.utils import fancylogger
+
+fancylogger.logToDevLog(True, 'syslogger')
+syslogger = fancylogger.getLogger('syslogger')
 
 
 def make_new_header(sf):
@@ -80,6 +84,14 @@ def make_new_header(sf):
             "# No pmem or vmem limit specified - added by submitfilter (server found: %s)" % state['_cluster'],
             make("-l", "vmem=%s" % (vpp * ppn)),
         ])
+        syslogger.info("submitfiler - no [vp]mem specified. adding %s", (vpp * ppn,))
+    else:
+        try:
+            requested_memory = ('vmem', state['l']['vmem'])
+        except KeyError:
+            requested_memory = ('pmem', state['l']['pmem'])
+        syslogger.info("submitfilter - %s requested by user was %s", requested_memory[0], requested_memory[1])
+
 
     #    check whether VSC_NODE_PARTITION environment variable is set
     if 'VSC_NODE_PARTITION' in os.environ:
