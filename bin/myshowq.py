@@ -82,7 +82,6 @@ def read_cache(owner, showvo, running, idle, blocked, path):
     if not showvo:
         for user in res.keys():
             if not user == owner:
-                # del res[user]
                 pass
 
     for user in res.keys():
