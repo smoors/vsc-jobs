@@ -5,7 +5,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -84,10 +84,8 @@ def get_user_with_status(status):
     return users
 
 
-def remove_queued_jobs(jobs, grace_users, inactive_users, dry_run=True):
+def remove_queued_jobs(jobs, grace_users, inactive_users):
     """Determine the queued jobs for users in grace or inactive states.
-
-    These jobs are removed if dry_run is False.
 
     FIXME: I think that jobs may still slip through the mazes. If a job can start
            sooner than a person becomes inactive, a gracing user might still make
@@ -113,13 +111,14 @@ def remove_queued_jobs(jobs, grace_users, inactive_users, dry_run=True):
     return jobs_to_remove
 
 
-def remove_running_jobs(jobs, inactive_users, dry_run=True):
+def remove_running_jobs(jobs, inactive_users):
     """Determine the jobs that are currently running that should be removed due to owners being in grace or inactive state.
 
     FIXME: At this point there is no actual removal.
 
     @returns: list of jobs that have been removed.
     """
+    logger.info("Not actually removing jobs %s for inactive users %s", jobs, inactive_users)
     return []
 
 
@@ -173,8 +172,8 @@ def mail_report(t, queued_jobs, running_jobs):
 
     message = """Dear admins,
 
-These are the jobs on belonging to users who have entered their grace period or have become inactive, as indicated by the
-LDAP replica on {master} at {time}.
+These are the jobs on belonging to users who have entered their grace period or have become inactive, as indicated by
+the LDAP replica on {master} at {time}.
 
 {message_queued_jobs}
 
@@ -182,7 +181,10 @@ LDAP replica on {master} at {time}.
 
 Kind regards,
 Your friendly pbs job checking script
-""".format(master=socket.gethostname(), time=time.ctime(), message_queued_jobs=message_queued_jobs, message_running_jobs=message_running_jobs)
+""".format(master=socket.gethostname(),
+           time=t,
+           message_queued_jobs=message_queued_jobs,
+           message_running_jobs=message_running_jobs)
 
     try:
         logger.info("Sending report mail to %s" % (mail_to))
@@ -195,7 +197,7 @@ Your friendly pbs job checking script
         logger.error("Failed in sending mail to %s (%s)." % (mail_to, err))
 
 
-def main(args):
+def main():
     """Main script."""
 
     options = {
@@ -217,8 +219,8 @@ def main(args):
         t = time.ctime()
         jobs = pbs_query.getjobs()  # we just get them all
 
-        removed_queued = remove_queued_jobs(jobs, grace_users, inactive_users, opts.options.dry_run)
-        removed_running = remove_running_jobs(jobs, inactive_users, opts.options.dry_run)
+        removed_queued = remove_queued_jobs(jobs, grace_users, inactive_users)
+        removed_running = remove_running_jobs(jobs, inactive_users)
 
         if opts.options.mail_report and not opts.options.dry_run:
             if len(removed_queued) > 0 or len(removed_running) > 0:
@@ -238,4 +240,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()

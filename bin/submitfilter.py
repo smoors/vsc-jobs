@@ -5,7 +5,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -34,7 +34,6 @@ for processing by pbs
 """
 
 import sys
-import re
 import os
 
 from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead, MASTER_REGEXP
@@ -71,15 +70,15 @@ def make_new_header(sf):
         ])
 
     # pvmem: add default when not specified
-    if 'pvmem' not in state['l'] and 'pmem' not in state['l']:
-        (ppp, vpp) = get_cluster_mpp(state['_cluster'])
+    if 'vmem' not in state['l'] and 'pmem' not in state['l']:
+        (_, vpp) = get_cluster_mpp(state['_cluster'])
         state['l'].update({
-            'pvmem': "%s" % vpp,
-            '_pvmem': vpp,
+            'vmem': "%s" % (vpp * ppn),
+            '_vmem': vpp,
         })
         header.extend([
-            "# No pmem or pvmem limit specified - added by submitfilter (server found: %s)" % state['_cluster'],
-            make("-l", "pvmem=%s" % vpp),
+            "# No pmem or vmem limit specified - added by submitfilter (server found: %s)" % state['_cluster'],
+            make("-l", "vmem=%s" % (vpp * ppn)),
         ])
 
     #    check whether VSC_NODE_PARTITION environment variable is set

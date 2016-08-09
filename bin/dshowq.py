@@ -5,7 +5,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -142,14 +142,13 @@ class MasterSshShowq(SshShowq):
     def __init__(self, target_master, target_user, *args, **kwargs):
         """Initialisation."""
         super(MasterSshShowq, self).__init__(*args, **kwargs)
-        self.target_master = target_master
-        self.target_user = target_user
+        self.master = "%s@%s" % (target_user, target_master)
 
     def _command(self, path):
         """
-        Got through master15 instead of the master you wish to interrogate
+        Go through master15 instead of the master you wish to interrogate
         """
-        return super(MasterSshShowq, self)._command("sudo %s" % (path,), "%s@%s" % (self.target_user, self.target_master))
+        return super(MasterSshShowq, self)._command("sudo %s" % (path,))
 
 
 def main():

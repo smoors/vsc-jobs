@@ -4,7 +4,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -57,7 +57,6 @@ cd $VSC_HOME
 ##logs to stderr by default, redirect this to stdout
 ./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out
 """,
-
 """#!/bin/bash
 hostname
 """,
@@ -119,7 +118,7 @@ class TestSubmitfilter(TestCase):
         os.environ['VSC_NODE_PARTITION'] = partname
         sf = SubmitFilter(
             [],
-            [ x + "\n" for x in SCRIPTS[1].split("\n")]
+            [x + "\n" for x in SCRIPTS[1].split("\n")]
         )
         sf.parse_header()
 
@@ -129,8 +128,8 @@ class TestSubmitfilter(TestCase):
             '#!/bin/bash',
             '# No mail specified - added by submitfilter',
             '#PBS -m n',
-            '# No pmem or pvmem limit specified - added by submitfilter (server found: delcatty)',
-            '#PBS -l pvmem=4720302336',
+            '# No pmem or vmem limit specified - added by submitfilter (server found: delcatty)',
+            '#PBS -l vmem=4720302336',
             '# Adding PARTITION as specified in VSC_NODE_PARTITION',
             '#PBS -W x=PARTITION:%s' % partname,
         ], msg='added missing defaults and pratiton information to header')
@@ -141,7 +140,7 @@ class TestSubmitfilter(TestCase):
         """Test make_new_header resource replacement"""
         sf = SubmitFilter(
             [],
-            [ x + "\n" for x in SCRIPTS[2].split("\n")]
+            [x + "\n" for x in SCRIPTS[2].split("\n")]
         )
         sf.parse_header()
 
@@ -164,20 +163,16 @@ class TestSubmitfilter(TestCase):
 
         sf = SubmitFilter(
             [],
-            [ x + "\n" for x in SCRIPTS[3].split("\n")]
+            [x + "\n" for x in SCRIPTS[3].split("\n")]
         )
         sf.parse_header()
 
         header = submitfilter.make_new_header(sf)
-        self.assertEqual(header, sf.header + [
-            "# No pmem or pvmem limit specified - added by submitfilter (server found: golett)",
-            "#PBS -l pvmem=3141869653"
-        ], msg='unmodified header')
+        self.assertEqual(header, sf.header, msg='unmodified header')
         self.assertEqual(get_warnings(), [
             'The chosen ppn 4 is not considered ideal: should use either lower than or multiple of 3',
             'Warning, requested 1099511627776b vmem per node, this is more than the available vmem (86142287872b), this job will never start.',
-        ], msg='warnings for ideal ppn and vmmem too high')
-
+        ], msg='warnings for ideal ppn and vmem too high')
 
     def test_run_subshell(self):
         """Read data from testjobs_submitfilter and feed it through submitfilter script"""

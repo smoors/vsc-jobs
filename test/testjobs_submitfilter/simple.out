@@ -1,6 +1,6 @@
 #!/bin/bash
 # No mail specified - added by submitfilter
 #PBS -m n
-# No vmem limit specified - added by submitfilter (server found: delcatty)
+# No pmem or vmem limit specified - added by submitfilter (server found: delcatty)
 #PBS -l vmem=4720302336
 hostname

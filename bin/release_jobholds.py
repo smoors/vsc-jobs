@@ -5,7 +5,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -33,7 +33,6 @@ import sys
 
 from vsc.jobs.moab.internal import MoabCommand
 from vsc.jobs.moab.showq import Showq
-from vsc.utils.availability import proceed_on_ha_service
 from vsc.utils.cache import FileCache
 from vsc.utils import fancylogger
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
@@ -63,29 +62,29 @@ logger = fancylogger.getLogger(__name__)
 fancylogger.logToScreen(True)
 fancylogger.setLogLevelInfo()
 
+
 def process_hold(clusters, dry_run=False):
     """Process a filtered queueinfo dict"""
     releasejob_cache = FileCache(RELEASEJOB_CACHE_FILE)
 
     # get the showq data
-    for hosts, data in clusters.items():
+    for data in clusters.values():
         data['path'] = data['spath']  # showq path
     showq = Showq(clusters, cache_pickle=True)
-    (queue_information, reported_hosts, failed_hosts) = showq.get_moab_command_information()
+    (queue_information, _, _) = showq.get_moab_command_information()
 
     # release the jobs, prepare the command
     m = MoabCommand(cache_pickle=False, dry_run=dry_run)
-    for hosts, data in clusters.items():
+    for data in clusters.values():
         data['path'] = data['mpath']  # mjobctl path
     m.clusters = clusters
 
     # read the previous data
     ts_data = releasejob_cache.load('queue_information')
     if ts_data is None:
-        oldts = 0
         old_queue_information = {}
     else:
-        (oldts, old_queue_information) = ts_data
+        (_, old_queue_information) = ts_data
 
     stats = {
         'peruser': 0,
@@ -102,7 +101,7 @@ def process_hold(clusters, dry_run=False):
             olddata = oldclusterdata.setdefault(cluster, {})
             # DRMJID is supposed to be unique
             # get all oldjobids in one dict
-            oldjobs = dict([(j['DRMJID'], j['_release']) for jt in olddata.values() for j in  jt])
+            oldjobs = dict([(j['DRMJID'], j['_release']) for jt in olddata.values() for j in jt])
             for jobtype, jobs in data.items():
                 removeids = []
                 for idx, job in enumerate(jobs):
@@ -156,6 +155,7 @@ def process_hold(clusters, dry_run=False):
     releasejob_cache.close()
 
     return release_jobids, stats
+
 
 def main():
     """Main function"""

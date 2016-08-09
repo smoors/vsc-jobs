@@ -4,7 +4,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -311,9 +311,9 @@ class TestSubmitfilter(TestCase):
         allpmem = 67630407680 - overhead
         data = [
             ('pmem=100k', {'pmem': '100k', '_pmem': 100*2**10}, 'pmem=100k'),
-            ('vmem=half', {'pvmem': '%s' % int(allvmem/16), '_pvmem': int(allvmem/16)}, 'pvmem=%s' % int(allvmem/16)),
-            ('pmem=full', {'pmem': '%s' % int(allpmem/16), '_pmem': int(allpmem/16)}, 'pmem=%s' % int(allpmem/16)),
-            ('vmem=all', {'pvmem': '%s' % int(allvmem/16), '_pvmem': int(allvmem/16)}, 'vmem=%s' % int(allvmem/16)),
+            ('vmem=half', {'vmem': '%s' % int(allvmem/2), '_vmem': int(allvmem/2)}, 'vmem=%s' % int(allvmem/2)),
+            ('pmem=full', {'pmem': '%s' % int(allpmem), '_pmem': int(allpmem)}, 'pmem=%s' % int(allpmem)),
+            ('vmem=all', {'vmem': '%s' % int(allvmem), '_vmem': int(allvmem)}, 'vmem=%s' % int(allvmem)),
         ]
         for txt, rsc, newtxt in data:
             k, v = txt.split('=')

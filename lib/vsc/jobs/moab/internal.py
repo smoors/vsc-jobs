@@ -5,7 +5,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -184,11 +184,11 @@ class MoabCommand(object):
             self.logger.debug("Returning parsed output for cluster %s" % (cluster))
             return parsed
 
-    def parser(self):
+    def parser(self, host=None, txt=None):
         """Parse the returned XML into the desired data structure for further processing.
             When None is returned, it assumes nothing is parsed, and raw unparsed output is used.
         """
-        self.logger.debug("Empty parser used.")
+        self.logger.debug("Empty parser used with arguments %s %s.", host, txt)
         return None
 
     def get_moab_command_information(self):
@@ -223,7 +223,11 @@ class MoabCommand(object):
 
 class SshMoabCommand(MoabCommand):
     """Similar to MoabCommand, but use ssh to contact the Moab master."""
+    def __init__(self, master, cache_pickle=False, dry_run=False):
+        """Initialise with a master to run the command at."""
+        super(SshMoabCommand, self).__init__(cache_pickle, dry_run)
+        self.master = master
 
-    def _command(self, path, master):
+    def _command(self, path):
         """Wrap the command in an ssh shell."""
-        return ['ssh', master, path]
+        return ['ssh', self.master, path]
