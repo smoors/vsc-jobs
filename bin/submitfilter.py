@@ -88,7 +88,7 @@ def make_new_header(sf):
             "# No pmem or vmem limit specified - added by submitfilter (server found: %s)" % state['_cluster'],
             make("-l", "vmem=%s" % vmem),
         ])
-        syslogger.warn("submitfiler - no [vp]mem specified by user %s. adding %s", current_user, vmem)
+        syslogger.warn("submitfilter - no [vp]mem specified by user %s. adding %s", current_user, vmem)
     else:
         try:
             requested_memory = ('vmem', state['l']['vmem'])

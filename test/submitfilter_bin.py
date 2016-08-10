@@ -30,6 +30,7 @@
 import glob
 import os
 import sys
+import re
 
 import submitfilter
 
@@ -185,6 +186,7 @@ class TestSubmitfilter(TestCase):
             script = os.path.join(testdir, scriptname)
             out = os.path.join(testdir, "%s.out" % name)
             err = os.path.join(testdir, "%s.err" % name)
+            log = os.path.join(testdir, "%s.log" % name)
             cmdline = os.path.join(testdir, "%s.cmdline" % name)
 
             # avoid pyc files in e.g. bin
@@ -200,6 +202,17 @@ class TestSubmitfilter(TestCase):
             self.assertEqual(ec, 0, msg="submitfiler ended with ec 0 for script %s and cmdline %s" % (name, cmd))
 
             res = ''
+            if os.path.exists(log):
+                # multiline pattern match, line per line
+                for pattern in open(log).readlines():
+                    if not pattern or pattern.startswith('#'):
+                        continue
+                    reg = re.compile(r''+pattern, re.M)
+                    if reg.search(output):
+                        output = reg.sub('', output)
+                    else:
+                        self.assertTrue(False, "Expected a log pattern match %s for script %s" % (pattern, name))
+
             if os.path.exists(out):
                 res += open(out).read()
             else:
