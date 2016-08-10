@@ -190,7 +190,7 @@ class TestSubmitfilter(TestCase):
             cmdline = os.path.join(testdir, "%s.cmdline" % name)
 
             # avoid pyc files in e.g. bin
-            cmd = 'PYTHONPATH=%s ' % os.pathsep.join([p for p in sys.path if p.startswith(REPO_BASE_DIR)])
+            cmd = 'PYTHONPATH=%s:$PYTHONPATH ' % os.pathsep.join([p for p in sys.path if p.startswith(REPO_BASE_DIR)])
             cmd += "python -B %s" % submitfilter.__file__
             if os.path.exists(cmdline):
                 cmd += " " + open(cmdline).readline().strip()
