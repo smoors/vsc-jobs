@@ -38,7 +38,7 @@ import pwd
 import sys
 
 from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead, MASTER_REGEXP
-from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn
+from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VMEM
 from vsc.utils import fancylogger
 
 fancylogger.logToDevLog(True, 'syslogger')
@@ -77,23 +77,23 @@ def make_new_header(sf):
     current_user = pwd.getpwuid(os.getuid()).pw_name
 
     # vmem: add default when not specified
-    if 'vmem' not in state['l'] and 'pmem' not in state['l']:
+    if VMEM not in state['l'] and PMEM not in state['l']:
         (_, vpp) = get_cluster_mpp(state['_cluster'])
         vmem = vpp * ppn
         state['l'].update({
-            'vmem': "%s" % vmem,
-            '_vmem': vmem,
+            VMEM: "%s" % vmem,
+            '_%s' % VMEM: vmem,
         })
         header.extend([
             "# No pmem or vmem limit specified - added by submitfilter (server found: %s)" % state['_cluster'],
-            make("-l", "vmem=%s" % vmem),
+            make("-l", "%s=%s" % (VMEM, vmem)),
         ])
         syslogger.warn("submitfilter - no [vp]mem specified by user %s. adding %s", current_user, vmem)
     else:
         try:
-            requested_memory = ('vmem', state['l']['vmem'])
+            requested_memory = (VMEM, state['l'][VMEM])
         except KeyError:
-            requested_memory = ('pmem', state['l']['pmem'])
+            requested_memory = (PMEM, state['l'][PMEM])
         syslogger.warn("submitfilter - %s requested by user %s was %s", requested_memory[0], current_user, requested_memory[1])
 
     #  check whether VSC_NODE_PARTITION environment variable is set
@@ -117,9 +117,9 @@ def make_new_header(sf):
     #    vmem too high: job will not start
     overhead = get_cluster_overhead(state['_cluster'])
     availmem = cl_data['TOTMEM'] - overhead
-    if state['l'].get('_vmem') > availmem:
+    if state['l'].get('_%s' % VMEM) > availmem:
         warn("Warning, requested %sb vmem per node, this is more than the available vmem (%sb), this"
-             " job will never start." % (state['l']['_vmem'], availmem))
+             " job will never start." % (state['l']['_%s' % VMEM], availmem))
 
     #    TODO: mem too low on big-memory systems ?
 

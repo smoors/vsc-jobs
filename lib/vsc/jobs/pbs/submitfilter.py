@@ -45,6 +45,9 @@ MEM_REGEXP = re.compile(r'^(p|v|pv)mem')
 MEM_VALUE_REG = re.compile(r'^(\d+)(?:(|[kK]|[mM]|[gG]|[tT])[bBw]?)?$')
 MEM_VALUE_UNITS = ('', 'k', 'm', 'g', 't')
 
+PMEM = 'pmem'
+VMEM = 'vmem'
+
 _warnings = []
 
 
@@ -299,20 +302,20 @@ def parse_mem(name, txt, cluster, resources):
         maxppn = get_cluster_maxppn(cluster)
 
         convert = {
-            'pmem': maxppn * ppp,
-            'vmem': maxppn * vpp,
+            PMEM: maxppn * ppp,
+            VMEM: maxppn * vpp,
         }
 
         # multiplier 1 == identity op
         multi = lambda x: x
-        if name not in ('pmem', 'vmem'):
+        if name not in (PMEM, VMEM):
             # TODO: and do what? use pmem?
             warn('Unsupported memory specification %s with value %s' % (name, txt))
         elif txt == 'half':
             multi = lambda x: int(x/2)
 
         # default to pmem
-        req_in_bytes = multi(convert.get(name, convert['pmem']))
+        req_in_bytes = multi(convert.get(name, convert[PMEM]))
         txt = "%s" % req_in_bytes
 
     resources.update({
