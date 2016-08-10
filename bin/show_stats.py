@@ -5,7 +5,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -47,7 +47,7 @@ def main():
 
     options = {
         'detailed': ('Report detailed information', None, 'store_true', False, 'D'),
-        'moabxml': ('Use xml moab data from file (for testing)', None, 'store', None),
+        'moabxml': ('File containing moab XML data (only for testing)', None, 'store', None),
         'max-retries': ('Maximum number retries prior to going critical', 'int', 'store', 2),
         'retry-interval': ('Seconds in between retries', 'int', 'store', 60),
     }
@@ -59,7 +59,7 @@ def main():
         if opts.options.moabxml:
             try:
                 moabxml = open(opts.options.moabxml).read()
-            except:
+            except (IOError, OSError):
                 logger.raiseException('Failed to read moab xml from %s' % opts.options.moabxml)
         else:
             moabxml = None

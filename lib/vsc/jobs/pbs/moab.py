@@ -4,7 +4,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -50,11 +50,10 @@ MOAB_PBS_NODEMAP = {
 }
 
 
-def get_nodes_dict(something=None, xml=None):
+def get_nodes_dict(xml=None):
     """Similar to derived getnodes from vsc.pbs.interface.get_nodes_dict
 
     returns a dict of nodes, with a 'status' field which is a dict of statusses
-    the something parameter is ignored. (for now)
     """
     if xml is None:
         cmd = "mdiag -n --format=xml"
@@ -156,34 +155,34 @@ def showstats(xml=None):
 
     # build tree
     # GPHDed is missing with initial moab restart, would trigger KeyError later on
-    res = {'stats':{'GPHDed': 0.0, }}
+    res = {'stats': {'GPHDed': 0.0, }}
     tree = etree.fromstring(xml)
-    for el in  tree.getchildren():
+    for el in tree.getchildren():
         elres = res.setdefault(el.tag, {})
         for k, v in el.items():
             try:
                 v = int(v)
-            except:
+            except ValueError:
                 try:
                     v = float(v)
-                except:
+                except ValueError:
                     pass
             elres[k] = v
 
     upp = res['sys'].get('UPP', 0)
-    ipc = res['sys'].get('IPC',0)
-    if upp:
-        ste = 100.0 * (1.0 - 1.0 * ipc / upp)
-    else:
-        ste = 0
+    ipc = res['sys'].get('IPC', 0)
+    # if upp:
+    #    ste = 100.0 * (1.0 - 1.0 * ipc / upp)
+    # else:
+    #    ste = 0
     summary = {
-               'DPH': res['stats']['GPHDed'],  # Dedicated ProcHours
-               'TPH': res['stats']['GPHAvl'],  # Total ProcHours
-               'LTE': 100.0 * (res['stats']['GPHDed'] / res['stats']['GPHAvl']),  # LongTerm Efficiency in %
-               'CAP': upp - ipc,  # Current Active Procs
-               'CTP': upp,  # Current Total Procs
-               'STE': upp,  # ShortTerm Efficiency in %
-               }
+        'DPH': res['stats']['GPHDed'],  # Dedicated ProcHours
+        'TPH': res['stats']['GPHAvl'],  # Total ProcHours
+        'LTE': 100.0 * (res['stats']['GPHDed'] / res['stats']['GPHAvl']),  # LongTerm Efficiency in %
+        'CAP': upp - ipc,  # Current Active Procs
+        'CTP': upp,  # Current Total Procs
+        'STE': upp,  # ShortTerm Efficiency in %
+    }
 
     res['summary'] = summary
     return res

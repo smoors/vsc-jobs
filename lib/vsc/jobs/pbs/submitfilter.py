@@ -4,7 +4,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -30,11 +30,9 @@ Module with submitfilter tools
 """
 import os
 import re
-import sys
 
-from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER, MIN_VMEM
+from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER
 from vsc.jobs.pbs.clusterdata import get_cluster_maxppn, get_cluster_mpp
-from vsc.jobs.pbs.clusterdata import get_clusterdata
 
 NODES_PREFIX = 'nodes'
 
@@ -43,21 +41,27 @@ PBS_DIRECTIVE_PREFIX_DEFAULT = '#PBS'
 PBS_OPTION_REGEXP = re.compile(r"(?:^|\s)-(\w+)(?:(?!\s*(?:\s-\w+|$))\s+(.*?(?=\s*(?:\s-\w+|$))))?")
 
 # TODO: all lower and uppercase combos?
-MEM_REGEXP = re.compile(r'^(p|v)mem')
+MEM_REGEXP = re.compile(r'^(p|v|pv)mem')
 MEM_VALUE_REG = re.compile(r'^(\d+)(?:(|[kK]|[mM]|[gG]|[tT])[bBw]?)?$')
 MEM_VALUE_UNITS = ('', 'k', 'm', 'g', 't')
 
+PMEM = 'pmem'
+VMEM = 'vmem'
+
 _warnings = []
+
 
 def reset_warnings():
     """Reset the list of warnings"""
     global _warnings
     _warnings = []
 
+
 def get_warnings():
     """Return the list of warnings"""
     global _warnings
     return _warnings
+
 
 def warn(*txt):
     """Collect warning, not actually print anything"""
@@ -76,13 +80,13 @@ class SubmitFilter(object):
         all options and list with index in header where they were found (index None means commandline)
         """
 
-        self.cmdlineopts = parse_commandline_list(arguments)
+        self.cmdlineopts = parse_commandline_list(arguments)  # list of (opt, val)
 
         self.dprefix = None
         self.regexp = None
 
         self.header = []
-        self.prebody = '' # TODO insert it back in stdin iterator and get rid of it?
+        self.prebody = ''  # TODO insert it back in stdin iterator and get rid of it?
         self.allopts = []
         self.occur = []
 
@@ -130,13 +134,13 @@ class SubmitFilter(object):
 
     def parse_header(self):
         """Parse the header (and add cmdline options too)"""
-        for idx,line in enumerate(self.stdin):
+        for idx, line in enumerate(self.stdin):
             headeropts = self.parseline(line)
             if headeropts is None:
                 # keep this one line (don't strip newline)
                 self.prebody = line
                 break
-            
+
             self.header.append(line.rstrip("\n"))
 
             if headeropts:
@@ -145,7 +149,6 @@ class SubmitFilter(object):
                 self.allopts.extend(headeropts)
                 self.occur.extend([idx] * len(headeropts))
 
-                
         # extend with commandline opts
         self.allopts.extend(self.cmdlineopts)
         self.occur.extend([None] * len(self.cmdlineopts))
@@ -153,14 +156,14 @@ class SubmitFilter(object):
     def gather_state(self, master_reg):
         """
         Build a total state as defined by the options from headers and commandline
-        
+
         Returns a tuple of a dict and a list:
           dict, with key/values
             - option and value
                 - resource option l is treated specially
             - extras
                 - _cluster : clustername
-            (always contains the 'l' key).   
+            (always contains the 'l' key).
 
           list with all newopts (in case they were modified)
         """
@@ -196,9 +199,10 @@ def parse_commandline_list(args):
 
     size = len(args)
     for idx, data in enumerate(args):
-        if not data.startswith('-'): continue
+        if not data.startswith('-'):
+            continue
 
-        opt = data[1:] # cut off leading -
+        opt = data[1:]  # cut off leading -
 
         if (idx + 1 == size) or args[idx + 1].startswith('-'):
             val = None
@@ -280,7 +284,7 @@ def _parse_mem_units(txt):
 
 def parse_mem(name, txt, cluster, resources):
     """
-    Convert <name:(p|v)mem>=<txt> for cluster
+    Convert <name:(p|v|pv)mem>=<txt> for cluster
 
     update resources instance with
         _<name>: value in bytes
@@ -292,29 +296,30 @@ def parse_mem(name, txt, cluster, resources):
         (v|p)mem=all/full ; (v|p)mem=half
     """
     req_in_bytes = _parse_mem_units(txt)
+
     if req_in_bytes is None:
         (ppp, vpp) = get_cluster_mpp(cluster)
         maxppn = get_cluster_maxppn(cluster)
 
         convert = {
-            'pmem': maxppn * ppp,
-            'vmem': maxppn * vpp,
+            PMEM: maxppn * ppp,
+            VMEM: maxppn * vpp,
         }
 
         # multiplier 1 == identity op
         multi = lambda x: x
-        if not name in ('pmem', 'vmem'):
+        if name not in (PMEM, VMEM):
             # TODO: and do what? use pmem?
             warn('Unsupported memory specification %s with value %s' % (name, txt))
         elif txt == 'half':
             multi = lambda x: int(x/2)
 
         # default to pmem
-        req_in_bytes = multi(convert.get(name, convert['pmem']))
+        req_in_bytes = multi(convert.get(name, convert[PMEM]))
         txt = "%s" % req_in_bytes
 
     resources.update({
-        name: txt, # original notation if possible
+        name: txt,  # original notation if possible
         "_%s" % name: req_in_bytes,
     })
 
@@ -349,12 +354,12 @@ def parse_resources_nodes(txt, cluster, resources):
     for node_spec in txt.split('+'):
         props = node_spec.split(':')
 
-        ppns = [(x.split('=')[1], idx) for idx,x in enumerate(props) if x.startswith('ppn=')] or [(1, None)]
+        ppns = [(x.split('=')[1], idx) for idx, x in enumerate(props) if x.startswith('ppn=')] or [(1, None)]
 
         ppn = ppns[0][0]
         try:
             ppn = int(ppn)
-        except:
+        except ValueError:
             if ppn in ('all', 'full',):
                 ppn = maxppn
             elif ppn == 'half':
@@ -373,7 +378,7 @@ def parse_resources_nodes(txt, cluster, resources):
 
         try:
             nodes = int(props[0])
-        except:
+        except (ValueError, IndexError):
             # some description
             nodes = 1
 
@@ -384,7 +389,7 @@ def parse_resources_nodes(txt, cluster, resources):
 
     # update shared resources dict
     resources.update({
-        '_nrnodes' : nrnodes,
+        '_nrnodes': nrnodes,
         '_nrcores': nrcores,
         '_ppn': max(1, int(nrcores / nrnodes)),
         NODES_PREFIX: '+'.join(newtxt),
@@ -396,7 +401,7 @@ def parse_resources_nodes(txt, cluster, resources):
 def cluster_from_options(opts, master_reg):
     """Return the cluster based on options and/or environment"""
 
-    queues = [val for opt,val in opts if opt == 'q']
+    queues = [val for opt, val in opts if opt == 'q']
 
     warntxt = []
     if queues:
@@ -418,9 +423,7 @@ def cluster_from_options(opts, master_reg):
     else:
         warntxt.append('no PBS_DEFAULT')
 
-    warn("Unable to determine clustername, using default %s (%s)" % 
+    warn("Unable to determine clustername, using default %s (%s)" %
          (DEFAULT_SERVER_CLUSTER, ', '.join(warntxt)))
 
     return DEFAULT_SERVER_CLUSTER
-
-

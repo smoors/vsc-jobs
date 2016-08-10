@@ -5,7 +5,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -72,7 +72,7 @@ class TestQstatWrapper(TestCase):
 
         for d in zip(dates, date_infos):
             self.assertEqual(
-                normalise_time(None, date1),
+                normalise_time(date1),
                 sum([t*s for (t, s) in zip(date_info1, (24*60*60, 60*60, 60, 1))])
             )
 

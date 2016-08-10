@@ -5,7 +5,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -31,7 +31,6 @@ where every entry is placed on a single line.
 @author: Andy Georges (Ghent University)
 """
 import itertools
-import logging
 
 from collections import defaultdict
 
@@ -47,7 +46,7 @@ def ranges(numbers):
     This will convert [1,2,3,6,7,8,12,23,25,26] into [(1,3), (6,8), (12,12), (23,23), (25,26)]. Note that
     the original list need not be sorted.
     """
-    for a, b in itertools.groupby(enumerate(numbers), lambda (x, y): y - x):
+    for _, b in itertools.groupby(enumerate(numbers), lambda (x, y): y - x):
         b = list(b)
         yield b[0][1], b[-1][1]
 
@@ -83,17 +82,16 @@ def normalise_exec_host(job, nodes):
 
     s = list()
     for node in sorted(nodecores.keys()):
-        range = convert_to_range(nodecores[node])
-        s.append("%s/%s" % (node, range))
+        range_ = convert_to_range(nodecores[node])
+        s.append("%s/%s" % (node, range_))
 
     return ",".join(s)
 
 
-def normalise_time(job, time):
+def normalise_time(time):
     """
     Convert a PBS time to a time in seconds. The time is expected to be given as [[[DD:]HH:]MM]:SS.
     """
-
     # workaround for the format provided by PBSQuery
     if isinstance(time, list):
         time = time[0]
@@ -142,7 +140,7 @@ def transform_info(job, info):
             continue
 
         try:
-            transformed_value = transformers[input_key](job, value)
+            transformed_value = transformers[input_key](value)
         except KeyError:
             transformed_value = value
         s.append("%s: %s" % (output_key, transformed_value))

@@ -4,7 +4,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -30,16 +30,18 @@
 import glob
 import os
 import sys
+import re
 
-import pprint
 import submitfilter
 
-from vsc.install.shared_setup import REPO_BASE_DIR
+#from vsc.install.shared_setup import REPO_BASE_DIR
+from vsc.install.shared_setup import vsc_setup
 from vsc.install.testing import TestCase
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, reset_warnings
 from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER
 from vsc.utils.run import run_simple
 
+REPO_BASE_DIR = vsc_setup().REPO_BASE_DIR
 
 SCRIPTS = ["""#!/bin/sh
 #
@@ -48,7 +50,7 @@ SCRIPTS = ["""#!/bin/sh
 #PBS -o output_testrun.txt -l nodes=5:ppn=all,pmem=half
 #PBS -e error_testrun.txt
 #PBS -l walltime=11:25:00
-#PBS -l vmem=500mb
+#PBS -l pvmem=500mb
 #PBS -m bea
 #PBS -q short
 #
@@ -56,7 +58,6 @@ cd $VSC_HOME
 ##logs to stderr by default, redirect this to stdout
 ./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out
 """,
-
 """#!/bin/bash
 hostname
 """,
@@ -73,8 +74,8 @@ whatever
 #PBS -l vmem=1tb
 #PBS -m bea
 whatever
-"""
-]
+"""]
+
 
 class TestSubmitfilter(TestCase):
 
@@ -89,7 +90,7 @@ class TestSubmitfilter(TestCase):
         """Basic test for make_new_header"""
         sf = SubmitFilter(
             ['-q', 'verylong'],
-            [ x + "\n" for x in SCRIPTS[0].split("\n")]
+            [x + "\n" for x in SCRIPTS[0].split("\n")]
         )
         sf.parse_header()
 
@@ -110,7 +111,7 @@ class TestSubmitfilter(TestCase):
         """
         Test make_new_header
           add missing mail / unless present
-          add vmem unless defined
+          add pvmem unless defined
           VSC_NODE_PARTITION
         """
 
@@ -118,7 +119,7 @@ class TestSubmitfilter(TestCase):
         os.environ['VSC_NODE_PARTITION'] = partname
         sf = SubmitFilter(
             [],
-            [ x + "\n" for x in SCRIPTS[1].split("\n")]
+            [x + "\n" for x in SCRIPTS[1].split("\n")]
         )
         sf.parse_header()
 
@@ -128,7 +129,7 @@ class TestSubmitfilter(TestCase):
             '#!/bin/bash',
             '# No mail specified - added by submitfilter',
             '#PBS -m n',
-            '# No vmem limit specified - added by submitfilter (server found: delcatty)',
+            '# No pmem or vmem limit specified - added by submitfilter (server found: delcatty)',
             '#PBS -l vmem=4720302336',
             '# Adding PARTITION as specified in VSC_NODE_PARTITION',
             '#PBS -W x=PARTITION:%s' % partname,
@@ -140,7 +141,7 @@ class TestSubmitfilter(TestCase):
         """Test make_new_header resource replacement"""
         sf = SubmitFilter(
             [],
-            [ x + "\n" for x in SCRIPTS[2].split("\n")]
+            [x + "\n" for x in SCRIPTS[2].split("\n")]
         )
         sf.parse_header()
 
@@ -163,7 +164,7 @@ class TestSubmitfilter(TestCase):
 
         sf = SubmitFilter(
             [],
-            [ x + "\n" for x in SCRIPTS[3].split("\n")]
+            [x + "\n" for x in SCRIPTS[3].split("\n")]
         )
         sf.parse_header()
 
@@ -172,8 +173,7 @@ class TestSubmitfilter(TestCase):
         self.assertEqual(get_warnings(), [
             'The chosen ppn 4 is not considered ideal: should use either lower than or multiple of 3',
             'Warning, requested 1099511627776b vmem per node, this is more than the available vmem (86142287872b), this job will never start.',
-        ], msg='warnings for ideal ppn and vmmem too high')
-
+        ], msg='warnings for ideal ppn and vmem too high')
 
     def test_run_subshell(self):
         """Read data from testjobs_submitfilter and feed it through submitfilter script"""
@@ -186,10 +186,11 @@ class TestSubmitfilter(TestCase):
             script = os.path.join(testdir, scriptname)
             out = os.path.join(testdir, "%s.out" % name)
             err = os.path.join(testdir, "%s.err" % name)
+            log = os.path.join(testdir, "%s.log" % name)
             cmdline = os.path.join(testdir, "%s.cmdline" % name)
 
             # avoid pyc files in e.g. bin
-            cmd = 'PYTHONPATH=%s ' % os.pathsep.join([p for p in sys.path if p.startswith(REPO_BASE_DIR)])
+            cmd = 'PYTHONPATH=%s:$PYTHONPATH ' % os.pathsep.join([p for p in sys.path if p.startswith(REPO_BASE_DIR)])
             cmd += "python -B %s" % submitfilter.__file__
             if os.path.exists(cmdline):
                 cmd += " " + open(cmdline).readline().strip()
@@ -201,6 +202,17 @@ class TestSubmitfilter(TestCase):
             self.assertEqual(ec, 0, msg="submitfiler ended with ec 0 for script %s and cmdline %s" % (name, cmd))
 
             res = ''
+            if os.path.exists(log):
+                # multiline pattern match, line per line
+                for pattern in open(log).readlines():
+                    if not pattern or pattern.startswith('#'):
+                        continue
+                    reg = re.compile(r''+pattern, re.M)
+                    if reg.search(output):
+                        output = reg.sub('', output)
+                    else:
+                        self.assertTrue(False, "Expected a log pattern match %s for script %s" % (pattern, name))
+
             if os.path.exists(out):
                 res += open(out).read()
             else:
@@ -208,5 +220,5 @@ class TestSubmitfilter(TestCase):
 
             if os.path.exists(err):
                 res += open(err).read()
-            
+
             self.assertEqual(output, res, msg="expected output for script %s and cmdline %s" % (name, cmd))

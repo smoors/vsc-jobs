@@ -4,7 +4,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -30,7 +30,6 @@ The main pbs module
 """
 import re
 from vsc.utils import fancylogger
-from vsc.utils.missing import all
 from vsc.jobs.pbs.interface import get_query
 from vsc.jobs.pbs.tools import str2byte, str2sec
 
@@ -121,7 +120,7 @@ def get_jobs_dict():
             exec_hosts = {}
             for host in nodes:
                 hostname = host.split('/')[0]
-                if not hostname in exec_hosts:
+                if hostname not in exec_hosts:
                     exec_hosts[hostname] = 0
                 exec_hosts[hostname] += 1
             derived['exec_hosts'] = exec_hosts
@@ -140,26 +139,26 @@ def get_userjob_stats():
 
     # order as printed by nagios
     categories = [
-                  ('R', 'running'),
-                  ('RN', 'running nodes'),
-                  ('RC', 'running cores'),
-                  ('RP', 'running procseconds'),
+        ('R', 'running'),
+        ('RN', 'running nodes'),
+        ('RC', 'running cores'),
+        ('RP', 'running procseconds'),
 
-                  ('Q', 'queued'),
-                  ('QN', 'queued nodes'),
-                  ('QC', 'queued cores'),
-                  ('QP', 'queued procseconds'),
+        ('Q', 'queued'),
+        ('QN', 'queued nodes'),
+        ('QC', 'queued cores'),
+        ('QP', 'queued procseconds'),
 
-                  # this one last
-                  ('O', 'other jobids')
-                  ]
+        # this one last
+        ('O', 'other jobids')
+    ]
 
     cat_map = dict([(x[0], idx) for idx, x in enumerate(categories)])
 
     for name, jobdata in jobs.items():
         derived = jobdata['derived']
 
-        if not 'user' in derived:
+        if 'user' not in derived:
             faults.append(('Missing user in job %s' % name, jobdata))
             continue
 
@@ -173,7 +172,7 @@ def get_userjob_stats():
             faults.append(('Missing totalwalltimesec in job %s. Counts as 0.' % (name), jobdata))
             totalwalltimesec = 0
 
-        if not 'nodes' in derived:
+        if 'nodes' not in derived:
             faults.append(('Missing nodes/cores in job %s. Marked as other.' % (name), jobdata))
             ustat[-1].append(name)
             continue

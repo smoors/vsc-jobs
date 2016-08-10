@@ -5,7 +5,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -49,11 +49,11 @@ class ShowqInfo(RUDict):
 
     def add(self, user, host, state):
 
-        if not user in self:
+        if user not in self:
             self[user] = RUDict()
-        if not host in self[user]:
+        if host not in self[user]:
             self[user][host] = RUDict()
-        if not state in self[user][host]:
+        if state not in self[user][host]:
             self[user][host][state] = []
 
 

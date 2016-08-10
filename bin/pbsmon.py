@@ -5,7 +5,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -48,8 +48,7 @@ def get_row_col():
     if os.path.exists(stty):
         try:
             row, col = [int(x) for x in os.popen('%s size 2>/dev/null' % stty).read().strip().split(' ')]
-        except:
-            # do nothing
+        except Exception:
             pass
     row = os.environ.get('ROWS', row)
     col = os.environ.get('COLUMNS', col)
@@ -65,7 +64,7 @@ def get_size(width, items, mode=None):
         @param mode plot style
     """
 
-    row, col = get_row_col()
+    _, col = get_row_col()
 
     if width < 2:
         width = 2
@@ -167,7 +166,7 @@ def display_node_types(types):
         txt[-1].replace(':', 's:')
         offset = " " * 2
 
-    for typ, nodes in sorted(types.items(), key=lambda x: len(x[1]), reverse=True):
+    for typ, _ in sorted(types.items(), key=lambda x: len(x[1]), reverse=True):
         # most frequent first
         cores, phys, swap, disk = typ
         txt.append(template % (offset, cores, phys, swap, phys + swap, disk))

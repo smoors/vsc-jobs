@@ -6,7 +6,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Hercules foundation (http://www.herculesstichting.be/in_English)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -22,7 +22,7 @@ vsc-jobs base distribution setup.py
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, sdw
 
-VERSION = '0.13.4'
+VERSION = '0.13.5'
 
 PACKAGE = {
     'version': VERSION,
@@ -36,7 +36,10 @@ PACKAGE = {
         'vsc-ldap >= 1.3.4',
         'vsc-ldap-extension >= 1.10',
         'vsc-utils >= 1.4.6',
-        'pbs_python >= 4.6', # don't use installs from pypi
+        # don't use installs from pbs-python from pypi
+        # use local install from https://oss.trac.surfsara.nl/pbs_python/ticket/41#attachments
+        # or rpms
+        'pbs_python >= 4.6',
         'lxml',
     ],
 }

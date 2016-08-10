@@ -5,7 +5,7 @@
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
 # with support of Ghent University (http://ugent.be/hpc),
-# the Flemish Supercomputer Centre (VSC) (https://vscentrum.be/nl/en),
+# the Flemish Supercomputer Centre (VSC) (https://www.vscentrum.be),
 # the Flemish Research Foundation (FWO) (http://www.fwo.be/en)
 # and the Department of Economy, Science and Innovation (EWI) (http://www.ewi-vlaanderen.be/en).
 #
@@ -31,7 +31,6 @@ users pickle directory.
 @author Andy Georges
 """
 import sys
-import time
 
 from vsc.administration.user import cluster_user_pickle_location_map, cluster_user_pickle_store_map
 from vsc.accountpage.client import AccountpageClient
@@ -43,7 +42,7 @@ from vsc.utils.fs_store import store_on_gpfs
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
 from vsc.utils.script_tools import ExtendedSimpleOption
 
-#Constants
+# Constants
 NAGIOS_CHECK_INTERVAL_THRESHOLD = 30 * 60  # 30 minutes
 
 logger = fancylogger.getLogger(__name__)
@@ -51,6 +50,7 @@ fancylogger.logToScreen(True)
 fancylogger.setLogLevelInfo()
 
 STORE_LIMIT_CRITICAL = 5
+
 
 # FIXME: common
 def get_pickle_path(location, user_id, rest_client):
@@ -79,11 +79,12 @@ class MasterSshCheckjob(SshCheckjob):
         self.target_master = target_master
         self.target_user = target_user
 
-    def _command(self, path, master):
+    def _command(self, path):
         """
         Got through master15 instead of the master you wish to interrogate
         """
         return super(MasterSshCheckjob, self)._command("sudo %s" % (path,), "%s@%s" % (self.target_user, self.target_master))
+
 
 def main():
     # Collect all info
@@ -96,7 +97,7 @@ def main():
         'location': ('the location for storing the pickle file: home, scratch', str, 'store', 'home'),
         'location': ('the location for storing the pickle file: delcatty, muk', str, 'store', 'delcatty'),
         'access_token': ('the token that will allow authentication against the account page', None, 'store', None),
-        'account_page_url': ('',None, 'store', None),
+        'account_page_url': ('', None, 'store', None),
         'target_master': ('the master used to execute showq commands', None, 'store', None),
         'target_user': ('the user for ssh to the target master', None, 'store', None),
     }
@@ -128,7 +129,7 @@ def main():
             cache_pickle=True,
             dry_run=opts.options.dry_run)
 
-        (job_information, reported_hosts, failed_hosts) = checkjob.get_moab_command_information()
+        (job_information, _, _) = checkjob.get_moab_command_information()
 
         active_users = job_information.keys()
 
@@ -145,7 +146,7 @@ def main():
             try:
                 user_queue_information = CheckjobInfo({user: job_information[user]})
                 store_on_gpfs(user, path, "checkjob", user_queue_information, gpfs, login_mount_point,
-                        gpfs_mount_point, ".checkjob.json.gz", opts.options.dry_run)
+                              gpfs_mount_point, ".checkjob.json.gz", opts.options.dry_run)
                 nagios_user_count += 1
             except Exception:
                 logger.exception("Could not store cache file for user %s" % (user))
