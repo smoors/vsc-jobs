@@ -42,6 +42,7 @@ from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VM
 from vsc.utils import fancylogger
 
 fancylogger.logToDevLog(True, 'syslogger')
+fancylogger.logToScreen(enable=False)
 syslogger = fancylogger.getLogger('syslogger')
 
 
