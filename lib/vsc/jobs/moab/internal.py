@@ -176,7 +176,7 @@ class MoabCommand(object):
         if not output:
             return None
 
-        parsed = self.parser()
+        parsed = self.parser(cluster, output)
         if parsed is None:
             self.logger.debug("Returning raw output")
             return output
@@ -184,7 +184,7 @@ class MoabCommand(object):
             self.logger.debug("Returning parsed output for cluster %s" % (cluster))
             return parsed
 
-    def parser(self, host=None, txt=None):
+    def parser(self, host, txt):
         """Parse the returned XML into the desired data structure for further processing.
             When None is returned, it assumes nothing is parsed, and raw unparsed output is used.
         """
