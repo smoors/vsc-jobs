@@ -88,7 +88,7 @@ def normalise_exec_host(job, nodes):
     return ",".join(s)
 
 
-def normalise_time(time):
+def normalise_time(job, time): # pylint: disable-msg=W0613
     """
     Convert a PBS time to a time in seconds. The time is expected to be given as [[[DD:]HH:]MM]:SS.
     """
@@ -140,7 +140,7 @@ def transform_info(job, info):
             continue
 
         try:
-            transformed_value = transformers[input_key](value)
+            transformed_value = transformers[input_key](job, value)
         except KeyError:
             transformed_value = value
         s.append("%s: %s" % (output_key, transformed_value))

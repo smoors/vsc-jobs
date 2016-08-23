@@ -72,7 +72,7 @@ class TestQstatWrapper(TestCase):
 
         for d in zip(dates, date_infos):
             self.assertEqual(
-                normalise_time(date1),
+                normalise_time(None, date1), # unused first arg job with normalise_time
                 sum([t*s for (t, s) in zip(date_info1, (24*60*60, 60*60, 60, 1))])
             )
 
