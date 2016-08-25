@@ -71,8 +71,9 @@ class TestQstatWrapper(TestCase):
         date_infos = [date_info1]
 
         for d in zip(dates, date_infos):
+            # pass non-existing named arg blablah to make sure that possible future argumnets do not cause failures
             self.assertEqual(
-                normalise_time(date1),
+                normalise_time(job=None, time=date1, blablah='future argument'),
                 sum([t*s for (t, s) in zip(date_info1, (24*60*60, 60*60, 60, 1))])
             )
 
@@ -90,4 +91,5 @@ class TestQstatWrapper(TestCase):
 
         job = Job()
 
-        self.assertEqual(normalise_exec_host(job, None), expected1)
+        # pass non-existing named arg blablah to make sure that possible future argumnets do not cause failures
+        self.assertEqual(normalise_exec_host(job=job, time=None, blablah='future argument'), expected1)

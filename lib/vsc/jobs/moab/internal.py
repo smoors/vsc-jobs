@@ -47,6 +47,8 @@ class MoabCommand(object):
     This class should be subclassed to allow actual running things
     """
 
+    TIMEOUT = 120
+
     def __init__(self, cache_pickle=False, dry_run=False):
         """Initialise"""
 
@@ -209,7 +211,7 @@ class MoabCommand(object):
             path = info['path']
             command = self._command(path)
 
-            host_job_information = self._run_moab_command(command, host, ["--host=%s" % (master), "--xml"])
+            host_job_information = self._run_moab_command(command, host, ["--host=%s" % (master), "--xml", "--timeout=%s" % self.TIMEOUT])
 
             if not host_job_information:
                 failed_hosts.append(host)
