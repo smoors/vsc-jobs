@@ -131,13 +131,6 @@ class Showq(MoabCommand):
         return showq_info
 
 
-class SshShowq(Showq, SshMoabCommand):
-    """
-    Allows for retrieving showq information through an ssh command to the remote master
-    """
-    pass
-
-
 class MasterSshShowq(Showq, MasterSshMoabCommand):
     """
     Allows for retrieving showq information through an ssh command to the remote master

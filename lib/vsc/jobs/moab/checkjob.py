@@ -128,15 +128,8 @@ class CheckjobInfoJSONEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 
-class SshCheckjob(Checkjob, SshMoabCommand):
-    """
-    Allows for retrieving showq information through an ssh command to the remote master
-    """
-    pass
-
-
 class MasterSshCheckjob(Checkjob, MasterSshMoabCommand):
     """
-    Allows for retrieving showq information through an ssh command to the remote master
+    Allows for retrieving checkjob information through an ssh command over a remote master
     """
     pass
