@@ -1,4 +1,3 @@
-# -*- coding: latin-1 -*-
 #
 # Copyright 2009-2016 Ghent University
 #
@@ -31,7 +30,7 @@ All things showq.
 """
 from lxml import etree
 
-from vsc.jobs.moab.internal import MoabCommand, SshMoabCommand
+from vsc.jobs.moab.internal import MoabCommand, SshMoabCommand, MasterSshMoabCommand
 from vsc.utils.missing import RUDict
 
 
@@ -91,7 +90,8 @@ class Showq(MoabCommand):
         <job Account="gvo00000" BlockReason="IdlePolicy" Class="short" DRMJID="1231456789.master.gengar.gent.vsc"
         Description="job 123456789 violates idle HARD MAXIPROC limit of 800 for user vsc40000  (Req: 8  InUse: 800)"
         EEDuration="1278486173" Group="vsc40023" JobID="1859934" JobName="job.sh" ReqAWDuration="7200" ReqProcs="8"
-        StartPriority="660" StartTime="0" State="Idle" SubmissionTime="1278480000" SuspendDuration="0" User="vsc40000"></job>
+        StartPriority="660" StartTime="0" State="Idle" SubmissionTime="1278480000" SuspendDuration="0" User="vsc40000">
+        </job>
         """
         mandatory_attributes = ['ReqProcs', 'SubmissionTime', 'JobID', 'DRMJID', 'Class']
         running_attributes = ['MasterHost']
@@ -132,6 +132,13 @@ class Showq(MoabCommand):
 
 
 class SshShowq(Showq, SshMoabCommand):
+    """
+    Allows for retrieving showq information through an ssh command to the remote master
+    """
+    pass
+
+
+class MasterSshShowq(Showq, MasterSshMoabCommand):
     """
     Allows for retrieving showq information through an ssh command to the remote master
     """

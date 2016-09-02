@@ -233,3 +233,16 @@ class SshMoabCommand(MoabCommand):
     def _command(self, path):
         """Wrap the command in an ssh shell."""
         return ['ssh', self.master, path]
+
+
+class MasterSshMoabCommand(SshMoabCommand):
+     def __init__(self, target_master, target_user, *args, **kwargs):
+        """Initialisation."""
+        super(SshMoabCommand, self).__init__(*args, **kwargs)
+        self.master = "%s@%s" % (target_user, target_master)
+
+     def _command(self, path):
+        """
+        Go through the master  instead of the master you wish to interrogate
+        """
+        return super(MasterSshMoabCommand, self)._command("sudo %s" % (path,))

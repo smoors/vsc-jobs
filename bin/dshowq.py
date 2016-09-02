@@ -43,7 +43,7 @@ from vsc.administration.user import cluster_user_pickle_store_map, cluster_user_
 from vsc.accountpage.client import AccountpageClient
 from vsc.config.base import VscStorage
 from vsc.filesystem.gpfs import GpfsOperations
-from vsc.jobs.moab.showq import SshShowq
+from vsc.jobs.moab.showq import MasterSshShowq
 from vsc.utils import fancylogger
 from vsc.utils.fs_store import store_on_gpfs
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
@@ -133,22 +133,6 @@ def get_pickle_path(location, user_id, rest_client):
                         the relevant storing function in vsc.utils.fs_store).
     """
     return cluster_user_pickle_location_map[location](user_id, rest_client=rest_client).pickle_path()
-
-
-class MasterSshShowq(SshShowq):
-    """
-    ssh into delcatty's master to run the showq command there for fetching information from other clusters
-    """
-    def __init__(self, target_master, target_user, *args, **kwargs):
-        """Initialisation."""
-        super(MasterSshShowq, self).__init__(*args, **kwargs)
-        self.master = "%s@%s" % (target_user, target_master)
-
-    def _command(self, path):
-        """
-        Go through master15 instead of the master you wish to interrogate
-        """
-        return super(MasterSshShowq, self)._command("sudo %s" % (path,))
 
 
 def main():

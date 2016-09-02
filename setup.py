@@ -22,7 +22,7 @@ vsc-jobs base distribution setup.py
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, sdw
 
-VERSION = '0.13.8'
+VERSION = '0.13.9'
 
 PACKAGE = {
     'version': VERSION,
@@ -39,7 +39,7 @@ PACKAGE = {
         # don't use installs from pbs-python from pypi
         # use local install from https://oss.trac.surfsara.nl/pbs_python/ticket/41#attachments
         # or rpms
-        'pbs_python >= 4.6',
+        'pbs-python >= 4.6',
         'lxml',
     ],
 }
