@@ -30,7 +30,7 @@ All things showq.
 """
 from lxml import etree
 
-from vsc.jobs.moab.internal import MoabCommand, MasterSshMoabCommand
+from vsc.jobs.moab.internal import MoabCommand, SshMoabCommand
 from vsc.utils.missing import RUDict
 
 
@@ -131,7 +131,7 @@ class Showq(MoabCommand):
         return showq_info
 
 
-class MasterSshShowq(Showq, MasterSshMoabCommand):
+class SshShowq(Showq, SshMoabCommand):
     """
     Allows for retrieving showq information through an ssh command to the remote master
     """

@@ -34,7 +34,7 @@ import pprint
 
 from lxml import etree
 
-from vsc.jobs.moab.internal import MoabCommand, MasterSshMoabCommand
+from vsc.jobs.moab.internal import MoabCommand, SshMoabCommand
 from vsc.utils.fancylogger import getLogger
 from vsc.utils.missing import RUDict
 
@@ -128,7 +128,7 @@ class CheckjobInfoJSONEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 
-class MasterSshCheckjob(Checkjob, MasterSshMoabCommand):
+class SshCheckjob(Checkjob, SshMoabCommand):
     """
     Allows for retrieving checkjob information through an ssh command over a remote master
     """

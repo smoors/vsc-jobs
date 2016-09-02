@@ -36,7 +36,7 @@ from vsc.administration.user import cluster_user_pickle_location_map, cluster_us
 from vsc.accountpage.client import AccountpageClient
 from vsc.config.base import VscStorage
 from vsc.filesystem.gpfs import GpfsOperations
-from vsc.jobs.moab.checkjob import MasterSshCheckjob, CheckjobInfo
+from vsc.jobs.moab.checkjob import SshCheckjob, CheckjobInfo
 from vsc.utils import fancylogger
 from vsc.utils.fs_store import store_on_gpfs
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
@@ -106,7 +106,7 @@ def main():
                 'path': checkjob_path
             }
 
-        checkjob = MasterSshCheckjob(
+        checkjob = SshCheckjob(
             opts.options.target_master,
             opts.options.target_user,
             clusters,

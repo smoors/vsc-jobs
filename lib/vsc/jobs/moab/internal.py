@@ -223,12 +223,12 @@ class MoabCommand(object):
         return (job_information, reported_hosts, failed_hosts)
 
 
-class MasterSshMoabCommand(MoabCommand):
+class SshMoabCommand(MoabCommand):
     """Similar to MoabCommand, but use ssh to contact the Moab master."""
 
     def __init__(self, target_master, target_user, cache_pickle=False, dry_run=False):
         """Initialise with a master to run the command at."""
-        super(MasterSshMoabCommand, self).__init__(cache_pickle, dry_run)
+        super(SshMoabCommand, self).__init__(cache_pickle, dry_run)
         self.master = "%s@%s" % (target_user, target_master)
 
     def _command(self, path):
