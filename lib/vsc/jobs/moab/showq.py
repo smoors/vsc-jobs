@@ -30,7 +30,7 @@ All things showq.
 """
 from lxml import etree
 
-from vsc.jobs.moab.internal import MoabCommand, SshMoabCommand, MasterSshMoabCommand
+from vsc.jobs.moab.internal import MoabCommand, MasterSshMoabCommand
 from vsc.utils.missing import RUDict
 
 

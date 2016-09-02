@@ -223,26 +223,14 @@ class MoabCommand(object):
         return (job_information, reported_hosts, failed_hosts)
 
 
-class SshMoabCommand(MoabCommand):
+class MasterSshMoabCommand(MoabCommand):
     """Similar to MoabCommand, but use ssh to contact the Moab master."""
-    def __init__(self, master, cache_pickle=False, dry_run=False):
+
+    def __init__(self, target_master, target_user, cache_pickle=False, dry_run=False):
         """Initialise with a master to run the command at."""
-        super(SshMoabCommand, self).__init__(cache_pickle, dry_run)
-        self.master = master
+        super(MasterSshMoabCommand, self).__init__(cache_pickle, dry_run)
+        self.master = "%s@%s" % (target_user, target_master)
 
     def _command(self, path):
         """Wrap the command in an ssh shell."""
-        return ['ssh', self.master, path]
-
-
-class MasterSshMoabCommand(SshMoabCommand):
-     def __init__(self, target_master, target_user, *args, **kwargs):
-        """Initialisation."""
-        super(SshMoabCommand, self).__init__(*args, **kwargs)
-        self.master = "%s@%s" % (target_user, target_master)
-
-     def _command(self, path):
-        """
-        Go through the master  instead of the master you wish to interrogate
-        """
-        return super(MasterSshMoabCommand, self)._command("sudo %s" % (path,))
+        return ['sudo', 'ssh', self.master, path]
