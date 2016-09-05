@@ -32,7 +32,7 @@ import os
 import sys
 from vsc.install.testing import TestCase
 
-from vsc.jobs.moab.checkjob import SshCheckjob
+from vsc.jobs.moab.checkjob import SshCheckjob, CheckjobInfo
 
 
 class TestSshCheckjob(TestCase):
@@ -49,3 +49,5 @@ class TestSshCheckjob(TestCase):
             cache_pickle=True,
             dry_run=True)
         self.assertEqual(checkjob._command('/opt/moab/bin/showq'), ['sudo', 'ssh', 'testuser@master1', '/opt/moab/bin/showq'])
+        self.assertEquals(checkjob.info, CheckjobInfo)
+        self.assertEquals(checkjob.info(), {})

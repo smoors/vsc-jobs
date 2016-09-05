@@ -22,7 +22,7 @@ vsc-jobs base distribution setup.py
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, sdw
 
-VERSION = '0.13.12'
+VERSION = '0.13.13'
 
 PACKAGE = {
     'version': VERSION,

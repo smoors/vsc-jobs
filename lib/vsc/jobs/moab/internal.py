@@ -52,12 +52,6 @@ class MoabCommand(object):
     def __init__(self, cache_pickle=False, dry_run=False):
         """Initialise"""
 
-        # data type for the resulting information
-        self.info = None
-
-        # dict mapping hosts to {master: FQN, showq_path: path}
-        self.clusters = None
-
         # key to index the cache store
         self.cache_key = 'default'
 

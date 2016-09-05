@@ -32,7 +32,7 @@ import os
 import sys
 from vsc.install.testing import TestCase
 
-from vsc.jobs.moab.showq import SshShowq
+from vsc.jobs.moab.showq import SshShowq, ShowqInfo
 
 
 class TestSshShowq(TestCase):
@@ -42,11 +42,12 @@ class TestSshShowq(TestCase):
 
         clusters = {'delcatty': {'path': '/opt/moab/bin/checkjob', 'master': 'master15.delcatty.gent.vsc'}, 'phanpy': {'path': '/opt/moab/bin/checkjob', 'master': 'master17.phanpy.gent.vsc'}, 'raichu': {'path': '/opt/moab/bin/checkjob', 'master': 'master13.raichu.gent.vsc'}, 'golett': {'path': '/opt/moab/bin/checkjob', 'master': 'master19.golett.gent.vsc'}, 'swalot': {'path': '/opt/moab/bin/checkjob', 'master': 'master21.swalot.gent.vsc'}}
 
-        checkjob = SshShowq(
+        showq = SshShowq(
             'master1',
             'testuser',
             clusters=clusters,
             cache_pickle=True,
             dry_run=True)
-        self.assertEqual(checkjob._command('/opt/moab/bin/checkjob'), ['sudo', 'ssh', 'testuser@master1', '/opt/moab/bin/checkjob'])
-
+        self.assertEqual(showq._command('/opt/moab/bin/checkjob'), ['sudo', 'ssh', 'testuser@master1', '/opt/moab/bin/checkjob'])
+        self.assertEquals(showq.info, ShowqInfo)
+        self.assertEquals(showq.info(), {})
