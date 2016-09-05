@@ -88,7 +88,7 @@ class Checkjob(MoabCommand):
 
     def __init__(self, clusters, cache_pickle=False, dry_run=False):
 
-        super(Checkjob, self).__init__(cache_pickle, dry_run)
+        MoabCommand.__init__(self, cache_pickle=cache_pickle, dry_run=dry_run)
 
         self.info = CheckjobInfo
         self.clusters = clusters
@@ -132,4 +132,6 @@ class SshCheckjob(Checkjob, SshMoabCommand):
     """
     Allows for retrieving checkjob information through an ssh command over a remote master
     """
-    pass
+    def __init__(self, master, user, clusters, cache_pickle=False, dry_run=False):
+        SshMoabCommand.__init__(self, master, user, cache_pickle, dry_run)
+        Checkjob.__init__(self, clusters=clusters, cache_pickle=cache_pickle, dry_run=dry_run)
