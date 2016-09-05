@@ -228,7 +228,7 @@ class SshMoabCommand(MoabCommand):
 
     def __init__(self, target_master, target_user, cache_pickle=False, dry_run=False):
         """Initialise with a master to run the command at."""
-        super(SshMoabCommand, self).__init__(cache_pickle, dry_run)
+        MoabCommand.__init__(self, cache_pickle=cache_pickle, dry_run=dry_run)
         self.master = "%s@%s" % (target_user, target_master)
 
     def _command(self, path):

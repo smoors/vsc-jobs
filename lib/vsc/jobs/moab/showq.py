@@ -135,6 +135,6 @@ class SshShowq(Showq, SshMoabCommand):
     """
     Allows for retrieving showq information through an ssh command to the remote master
     """
-    def __init__(self, master, user, clusters, cache_pickle=False, dry_run=False):
-        SshMoabCommand.__init__(self, master, user, cache_pickle, dry_run)
+    def __init__(self, target_master, target_user, clusters, cache_pickle=False, dry_run=False):
         Showq.__init__(self, clusters=clusters, cache_pickle=cache_pickle, dry_run=dry_run)
+        SshMoabCommand.__init__(self, target_master=target_master, target_user=target_user, cache_pickle=cache_pickle, dry_run=dry_run)

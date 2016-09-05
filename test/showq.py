@@ -48,3 +48,5 @@ class TestSshShowq(TestCase):
             clusters=clusters,
             cache_pickle=True,
             dry_run=True)
+        self.assertEqual(checkjob._command('/opt/moab/bin/checkjob'), ['sudo', 'ssh', 'testuser@master1', '/opt/moab/bin/checkjob'])
+
