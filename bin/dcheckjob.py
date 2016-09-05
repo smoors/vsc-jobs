@@ -69,22 +69,6 @@ def get_pickle_path(location, user_id, rest_client):
     return cluster_user_pickle_location_map[location](user_id, rest_client=rest_client).pickle_path()
 
 
-class MasterSshCheckjob(SshCheckjob):
-    """
-    ssh into delcatty's master to run the showq command there for fetching information from other clusters
-    """
-    def __init__(self, target_master, target_user, *args, **kwargs):
-        """Initialisation."""
-        super(MasterSshCheckjob, self).__init__(*args, **kwargs)
-        self.target_master = target_master
-        self.target_user = target_user
-
-    def _command(self, path):
-        """
-        Got through master15 instead of the master you wish to interrogate
-        """
-        return super(MasterSshCheckjob, self)._command("sudo %s" % (path,), "%s@%s" % (self.target_user, self.target_master))
-
 
 def main():
     # Collect all info
@@ -122,7 +106,7 @@ def main():
                 'path': checkjob_path
             }
 
-        checkjob = MasterSshCheckjob(
+        checkjob = SshCheckjob(
             opts.options.target_master,
             opts.options.target_user,
             clusters,

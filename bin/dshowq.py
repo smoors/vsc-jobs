@@ -135,22 +135,6 @@ def get_pickle_path(location, user_id, rest_client):
     return cluster_user_pickle_location_map[location](user_id, rest_client=rest_client).pickle_path()
 
 
-class MasterSshShowq(SshShowq):
-    """
-    ssh into delcatty's master to run the showq command there for fetching information from other clusters
-    """
-    def __init__(self, target_master, target_user, *args, **kwargs):
-        """Initialisation."""
-        super(MasterSshShowq, self).__init__(*args, **kwargs)
-        self.master = "%s@%s" % (target_user, target_master)
-
-    def _command(self, path):
-        """
-        Go through master15 instead of the master you wish to interrogate
-        """
-        return super(MasterSshShowq, self)._command("sudo %s" % (path,))
-
-
 def main():
     # Collect all info
 
@@ -188,7 +172,7 @@ def main():
             }
 
         logger.debug("clusters = %s" % (clusters,))
-        showq = MasterSshShowq(opts.options.target_master,
+        showq = SshShowq(opts.options.target_master,
                                opts.options.target_user,
                                clusters,
                                cache_pickle=True,
