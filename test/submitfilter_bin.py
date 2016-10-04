@@ -74,7 +74,13 @@ whatever
 #PBS -l vmem=1tb
 #PBS -m bea
 whatever
-"""]
+""",
+"""
+#!/bin/bash
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=10g
+"""
+]
 
 
 class TestSubmitfilter(TestCase):
@@ -152,6 +158,19 @@ class TestSubmitfilter(TestCase):
             '#PBS -l vmem=75524837376',
             '#PBS -l pmem=32393711616',
             '#PBS -m n',
+        ], msg='modified header with resources replaced')
+
+    def test_make_new_header_with_exiting_mem(self):
+        sf = SubmitFilter(
+            [],
+            [x + "\n" for x in SCRIPTS[4].split("\n")]
+        )
+        sf.parse_header()
+        header = submitfilter.make_new_header(sf)
+        self.assertEqual(header, [
+            '#!/bin/bash',
+            '#PBS -l nodes=1:ppn=4',
+            '#PBS -l mem=10',
         ], msg='modified header with resources replaced')
 
     def test_make_new_header_warn(self):
