@@ -124,7 +124,7 @@ class SubmitFilter(object):
         """
 
         # header: either start with '#' or is empty (allow whitespace)
-        if not line.startswith('#') and line.strip():
+        if not line.lstrip().startswith('#') and line.strip():
             return None
 
         pbsheader = self.regexp.search(line)
@@ -142,7 +142,7 @@ class SubmitFilter(object):
                 self.prebody = line
                 break
 
-            self.header.append(line.rstrip("\n"))
+            self.header.append(line.lstrip().rstrip("\n"))
 
             if headeropts:
                 # last processed option wins ?

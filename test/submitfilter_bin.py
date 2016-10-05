@@ -79,7 +79,12 @@ whatever
 #!/bin/bash
 #PBS -l nodes=1:ppn=4
 #PBS -l mem=10g
+""",
 """
+#!/bin/bash
+        #PBS -l nodes=1:ppn=4
+#PBS -l vmem=1g
+""",
 ]
 
 
@@ -170,8 +175,21 @@ class TestSubmitfilter(TestCase):
         self.assertEqual(header, [
             '#!/bin/bash',
             '#PBS -l nodes=1:ppn=4',
-            '#PBS -l mem=10',
-        ], msg='modified header with resources replaced')
+            '#PBS -l mem=10g',
+        ], msg='header with existing mem set')
+
+    def test_make_new_header_ignore_indentation(self):
+        sf = SubmitFilter(
+            [],
+            [x + "\n" for x in SCRIPTS[5].split("\n")]
+        )
+        sf.parse_header()
+        header = submitfilter.make_new_header(sf)
+        self.assertEqual(header, [
+            '#!/bin/bash',
+            '#PBS -l nodes=1:ppn=4',
+            '#PBS -l vmem=10g',
+        ], msg='header with an indented line')
 
     def test_make_new_header_warn(self):
         """
