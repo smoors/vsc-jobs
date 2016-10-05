@@ -94,8 +94,13 @@ def make_new_header(sf):
         try:
             requested_memory = (VMEM, state['l'][VMEM])
         except KeyError:
-            requested_memory = (PMEM, state['l'][PMEM])
-        syslogger.warn("submitfilter - %s requested by user %s was %s", requested_memory[0], current_user, requested_memory[1])
+            try:
+                requested_memory = (PMEM, state['l'][PMEM])
+            except KeyError:
+                requested_memory = (MEM, state['l'][MEM])
+
+        syslogger.warn("submitfilter - %s requested by user %s was %s",
+                       requested_memory[0], current_user, requested_memory[1])
 
     #  check whether VSC_NODE_PARTITION environment variable is set
     if 'VSC_NODE_PARTITION' in os.environ:
