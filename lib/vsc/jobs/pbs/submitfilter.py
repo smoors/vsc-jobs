@@ -309,7 +309,7 @@ def parse_mem(name, txt, cluster, resources):
 
         # multiplier 1 == identity op
         multi = lambda x: x
-        if name not in (PMEM, VMEM):
+        if name not in (PMEM, VMEM, MEM):
             # TODO: and do what? use pmem?
             warn('Unsupported memory specification %s with value %s' % (name, txt))
         elif txt == 'half':
