@@ -38,7 +38,8 @@ import pwd
 import sys
 
 from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead, MASTER_REGEXP
-from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VMEM, MEM
+from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VMEM
+from vsc.jobs.pbs.submitfilter import MEM
 from vsc.utils import fancylogger
 
 fancylogger.logToDevLog(True, 'syslogger')
