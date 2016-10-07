@@ -75,15 +75,15 @@ whatever
 #PBS -m bea
 whatever
 """,
-"""
-#!/bin/bash
+""" #!/bin/bash
 #PBS -l nodes=1:ppn=4
 #PBS -l mem=10g
+#PBS -m n
 """,
-"""
-#!/bin/bash
+""" #!/bin/bash
         #PBS -l nodes=1:ppn=4
 #PBS -l vmem=1g
+#PBS -m n
 """,
 ]
 
@@ -165,7 +165,7 @@ class TestSubmitfilter(TestCase):
             '#PBS -m n',
         ], msg='modified header with resources replaced')
 
-    def test_make_new_header_with_exiting_mem(self):
+    def test_make_new_header_with_existing_mem(self):
         sf = SubmitFilter(
             [],
             [x + "\n" for x in SCRIPTS[4].split("\n")]
@@ -176,6 +176,9 @@ class TestSubmitfilter(TestCase):
             '#!/bin/bash',
             '#PBS -l nodes=1:ppn=4',
             '#PBS -l mem=10g',
+            '#PBS -m n'
+            '',
+            '',
         ], msg='header with existing mem set')
 
     def test_make_new_header_ignore_indentation(self):
@@ -188,7 +191,9 @@ class TestSubmitfilter(TestCase):
         self.assertEqual(header, [
             '#!/bin/bash',
             '#PBS -l nodes=1:ppn=4',
-            '#PBS -l vmem=10g',
+            '#PBS -l vmem=1g',
+            '#PBS -m n',
+            '',
         ], msg='header with an indented line')
 
     def test_make_new_header_warn(self):
