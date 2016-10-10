@@ -41,7 +41,7 @@ PBS_DIRECTIVE_PREFIX_DEFAULT = '#PBS'
 PBS_OPTION_REGEXP = re.compile(r"(?:^|\s)-(\w+)(?:(?!\s*(?:\s-\w+|$))\s+(.*?(?=\s*(?:\s-\w+|$))))?")
 
 # TODO: all lower and uppercase combos?
-MEM_REGEXP = re.compile(r'^(p|v|pv)+mem')
+MEM_REGEXP = re.compile(r'^(p|v|pv)?mem')
 MEM_VALUE_REG = re.compile(r'^(\d+)(?:(|[kK]|[mM]|[gG]|[tT])[bBw]?)?$')
 MEM_VALUE_UNITS = ('', 'k', 'm', 'g', 't')
 
