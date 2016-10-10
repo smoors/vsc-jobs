@@ -39,7 +39,7 @@ PACKAGE = {
         # don't use installs from pbs-python from pypi
         # use local install from https://oss.trac.surfsara.nl/pbs_python/ticket/41#attachments
         # or rpms
-#        'pbs_python >= 4.6',
+        'pbs_python >= 4.6',
         'lxml',
     ],
     'tests_require': [
