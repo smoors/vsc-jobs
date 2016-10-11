@@ -285,7 +285,7 @@ def _parse_mem_units(txt):
 
 def parse_mem(name, txt, cluster, resources):
     """
-    Convert <name:(p|v|pv)mem>=<txt> for cluster
+    Convert <name:(p|v|pv)?mem>=<txt> for cluster
 
     update resources instance with
         _<name>: value in bytes

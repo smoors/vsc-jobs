@@ -37,7 +37,7 @@ import submitfilter
 #from vsc.install.shared_setup import REPO_BASE_DIR
 from vsc.install.shared_setup import vsc_setup
 from vsc.install.testing import TestCase
-from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, reset_warnings
+from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, reset_warnings, MEM_REGEXP
 from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER
 from vsc.utils.run import run_simple
 
@@ -264,3 +264,17 @@ class TestSubmitfilter(TestCase):
                 res += open(err).read()
 
             self.assertEqual(output, res, msg="expected output for script %s and cmdline %s" % (name, cmd))
+
+    def test_mem_regex(self):
+        """
+        See if the regex matches properly
+        """
+        self.assertFalse(MEM_REGEXP.search("vmem") is None)
+        self.assertFalse(MEM_REGEXP.search("pmem") is None)
+        self.assertFalse(MEM_REGEXP.search("pvmem") is None)
+        self.assertFalse(MEM_REGEXP.search("mem") is None)
+
+        self.assertTrue(MEM_REGEXP.search("vvmem") is None)
+        self.assertTrue(MEM_REGEXP.search("pvvmem") is None)
+        self.assertTrue(MEM_REGEXP.search("vpvmem") is None)
+        self.assertTrue(MEM_REGEXP.search("rmem") is None)
