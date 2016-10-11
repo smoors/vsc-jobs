@@ -41,12 +41,13 @@ PBS_DIRECTIVE_PREFIX_DEFAULT = '#PBS'
 PBS_OPTION_REGEXP = re.compile(r"(?:^|\s)-(\w+)(?:(?!\s*(?:\s-\w+|$))\s+(.*?(?=\s*(?:\s-\w+|$))))?")
 
 # TODO: all lower and uppercase combos?
-MEM_REGEXP = re.compile(r'^(p|v|pv)mem')
+MEM_REGEXP = re.compile(r'^(p|v|pv)?mem')
 MEM_VALUE_REG = re.compile(r'^(\d+)(?:(|[kK]|[mM]|[gG]|[tT])[bBw]?)?$')
 MEM_VALUE_UNITS = ('', 'k', 'm', 'g', 't')
 
 PMEM = 'pmem'
 VMEM = 'vmem'
+MEM = 'mem'
 
 _warnings = []
 
@@ -123,7 +124,7 @@ class SubmitFilter(object):
         """
 
         # header: either start with '#' or is empty (allow whitespace)
-        if not line.startswith('#') and line.strip():
+        if not line.lstrip().startswith('#') and line.strip():
             return None
 
         pbsheader = self.regexp.search(line)
@@ -141,7 +142,7 @@ class SubmitFilter(object):
                 self.prebody = line
                 break
 
-            self.header.append(line.rstrip("\n"))
+            self.header.append(line.lstrip().rstrip("\n"))
 
             if headeropts:
                 # last processed option wins ?
@@ -284,7 +285,7 @@ def _parse_mem_units(txt):
 
 def parse_mem(name, txt, cluster, resources):
     """
-    Convert <name:(p|v|pv)mem>=<txt> for cluster
+    Convert <name:(p|v|pv)?mem>=<txt> for cluster
 
     update resources instance with
         _<name>: value in bytes
@@ -308,7 +309,7 @@ def parse_mem(name, txt, cluster, resources):
 
         # multiplier 1 == identity op
         multi = lambda x: x
-        if name not in (PMEM, VMEM):
+        if name not in (PMEM, VMEM, MEM):
             # TODO: and do what? use pmem?
             warn('Unsupported memory specification %s with value %s' % (name, txt))
         elif txt == 'half':

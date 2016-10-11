@@ -37,7 +37,7 @@ import submitfilter
 #from vsc.install.shared_setup import REPO_BASE_DIR
 from vsc.install.shared_setup import vsc_setup
 from vsc.install.testing import TestCase
-from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, reset_warnings
+from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, reset_warnings, MEM_REGEXP
 from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER
 from vsc.utils.run import run_simple
 
@@ -74,7 +74,18 @@ whatever
 #PBS -l vmem=1tb
 #PBS -m bea
 whatever
-"""]
+""",
+""" #!/bin/bash
+#PBS -l nodes=1:ppn=4
+#PBS -l mem=10g
+#PBS -m n
+""",
+""" #!/bin/bash
+        #PBS -l nodes=1:ppn=4
+#PBS -l vmem=1g
+#PBS -m n
+""",
+]
 
 
 class TestSubmitfilter(TestCase):
@@ -154,6 +165,37 @@ class TestSubmitfilter(TestCase):
             '#PBS -m n',
         ], msg='modified header with resources replaced')
 
+    def test_make_new_header_with_existing_mem(self):
+        sf = SubmitFilter(
+            [],
+            [x + "\n" for x in SCRIPTS[4].split("\n")]
+        )
+        sf.parse_header()
+        header = submitfilter.make_new_header(sf)
+        self.assertEqual(header, [
+            '#!/bin/bash',
+            '#PBS -l nodes=1:ppn=4',
+            '#PBS -l mem=10g',
+            '#PBS -m n'
+            '',
+            '',
+        ], msg='header with existing mem set')
+
+    def test_make_new_header_ignore_indentation(self):
+        sf = SubmitFilter(
+            [],
+            [x + "\n" for x in SCRIPTS[5].split("\n")]
+        )
+        sf.parse_header()
+        header = submitfilter.make_new_header(sf)
+        self.assertEqual(header, [
+            '#!/bin/bash',
+            '#PBS -l nodes=1:ppn=4',
+            '#PBS -l vmem=1g',
+            '#PBS -m n',
+            '',
+        ], msg='header with an indented line')
+
     def test_make_new_header_warn(self):
         """
         Test make_new_header warnings
@@ -222,3 +264,17 @@ class TestSubmitfilter(TestCase):
                 res += open(err).read()
 
             self.assertEqual(output, res, msg="expected output for script %s and cmdline %s" % (name, cmd))
+
+    def test_mem_regex(self):
+        """
+        See if the regex matches properly
+        """
+        self.assertFalse(MEM_REGEXP.search("vmem") is None)
+        self.assertFalse(MEM_REGEXP.search("pmem") is None)
+        self.assertFalse(MEM_REGEXP.search("pvmem") is None)
+        self.assertFalse(MEM_REGEXP.search("mem") is None)
+
+        self.assertTrue(MEM_REGEXP.search("vvmem") is None)
+        self.assertTrue(MEM_REGEXP.search("pvvmem") is None)
+        self.assertTrue(MEM_REGEXP.search("vpvmem") is None)
+        self.assertTrue(MEM_REGEXP.search("rmem") is None)

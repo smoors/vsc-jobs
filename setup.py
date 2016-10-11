@@ -22,7 +22,7 @@ vsc-jobs base distribution setup.py
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, sdw
 
-VERSION = '0.13.13'
+VERSION = '0.13.14'
 
 PACKAGE = {
     'version': VERSION,
@@ -42,6 +42,9 @@ PACKAGE = {
         'pbs_python >= 4.6',
         'lxml',
     ],
+    'tests_require': [
+        'mock',
+    ]
 }
 
 
