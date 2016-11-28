@@ -78,7 +78,6 @@ def main():
     options = {
         'nagios-check-interval-threshold': NAGIOS_CHECK_INTERVAL_THRESHOLD,
         'hosts': ('the hosts/clusters that should be contacted for job information', None, 'extend', []),
-        'location': ('the location for storing the pickle file: home, scratch', str, 'store', 'home'),
         'location': ('the location for storing the pickle file: delcatty, muk', str, 'store', 'delcatty'),
         'access_token': ('the token that will allow authentication against the account page', None, 'store', None),
         'account_page_url': ('', None, 'store', None),

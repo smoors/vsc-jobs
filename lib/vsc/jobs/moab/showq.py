@@ -137,4 +137,5 @@ class SshShowq(Showq, SshMoabCommand):
     """
     def __init__(self, target_master, target_user, clusters, cache_pickle=False, dry_run=False):
         Showq.__init__(self, clusters=clusters, cache_pickle=cache_pickle, dry_run=dry_run)
-        SshMoabCommand.__init__(self, target_master=target_master, target_user=target_user, cache_pickle=cache_pickle, dry_run=dry_run)
+        SshMoabCommand.__init__(self, target_master=target_master, target_user=target_user, cache_pickle=cache_pickle, 
+                dry_run=dry_run)
