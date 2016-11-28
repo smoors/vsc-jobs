@@ -112,7 +112,9 @@ class Checkjob(MoabCommand):
 
             user = job.attrib['User']
             checkjob_info.add(user, host)
-            checkjob_info[user][host] += [(dict(job.attrib.items()), map(lambda r: dict(r.attrib.items()), job.getchildren()))]
+            checkjob_info[user][host] += [
+                    (dict(job.attrib.items()), map(lambda r: dict(r.attrib.items()), job.getchildren()))
+            ]
 
         return checkjob_info
 
@@ -133,5 +135,6 @@ class SshCheckjob(Checkjob, SshMoabCommand):
     Allows for retrieving checkjob information through an ssh command over a remote master
     """
     def __init__(self, master, user, clusters, cache_pickle=False, dry_run=False):
-        SshMoabCommand.__init__(self, target_master=master, target_user=user, cache_pickle=cache_pickle, dry_run=dry_run)
+        SshMoabCommand.__init__(self, target_master=master, target_user=user, cache_pickle=cache_pickle, 
+                dry_run=dry_run)
         Checkjob.__init__(self, clusters=clusters, cache_pickle=cache_pickle, dry_run=dry_run)

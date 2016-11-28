@@ -205,7 +205,8 @@ class MoabCommand(object):
             path = info['path']
             command = self._command(path)
 
-            host_job_information = self._run_moab_command(command, host, ["--host=%s" % (master), "--xml", "--timeout=%s" % self.TIMEOUT])
+            host_job_information = self._run_moab_command(command, host, 
+                    ["--host=%s" % (master), "--xml", "--timeout=%s" % self.TIMEOUT])
 
             if not host_job_information:
                 failed_hosts.append(host)
