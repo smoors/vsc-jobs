@@ -28,9 +28,10 @@ The main pbs module
 
 @author: Stijn De Weirdt (Ghent University)
 """
+
 import re
 from vsc.utils import fancylogger
-from vsc.jobs.pbs.interface import get_query
+from vsc.jobs.pbs.interface import get_query, pbs
 from vsc.jobs.pbs.tools import str2byte, str2sec
 
 _log = fancylogger.getLogger('pbs.jobs', fname=False)
@@ -38,17 +39,44 @@ _log = fancylogger.getLogger('pbs.jobs', fname=False)
 
 JOBID_REG = re.compile(r"\w+/\w+(\.|\w|\[|\])+")
 
+# qstat list + exechost + times
+# l -> Resource_List
+# exechost -> exec_host (ie no typo)
+DEFAULT_ATTRS = ['name', 'owner', 'used', 'state', 'queue', 'session' ,'l',
+                 'exechost'] + [x+'time' for x in ['start_', 'c', 'e', 'q', 'm']]
 
-def get_jobs():
-    """Get the jobs"""
+
+def get_jobs(attrs=None):
+    """
+    Get the jobs
+
+    attrs is an optional list of PBS ATTR_ attribute names
+        default is None, which uses a predefined set of attributes, i.e. not all
+        if attrs is string 'ALL', gather all attributes
+    """
     query = get_query()
-    jobs = query.getjobs()
+
+    attrib_list = None
+
+    if isinstance(attrs, basestring) and attrs == 'ALL':
+        attrs = None
+    elif attrs is None:
+        attrs = DEFAULT_ATTRS
+
+    if attrs is not None:
+        attrib_list = filter(None, [getattr(pbs, 'ATTR_'+x, None) for x in attrs])
+
+    jobs = query.getjobs(attrib_list=attrib_list)
     return jobs
 
 
-def get_jobs_dict():
-    """Get jobs dict with derived info"""
-    jobs = get_jobs()
+def get_jobs_dict(attrs=None):
+    """
+    Get jobs dict with derived info
+
+    attrs is passed to get_jobs
+    """
+    jobs = get_jobs(attrs=attrs)
 
     reg_user = re.compile(r"(?P<user>\w+)@\S+")
 
