@@ -32,9 +32,9 @@ import grp
 import re
 import sys
 
-from vsc.utils.generaloption import simple_option
+from vsc.utils.script_tools import ExtendedSimpleOption
 from vsc.jobs.pbs.jobs import get_userjob_stats, get_jobs_dict
-from vsc.utils import fancylogger
+from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
 from vsc.utils.nagios import NagiosResult, ok_exit, critical_exit
 
 SHOW_LIST = ['nodes']
@@ -56,7 +56,7 @@ def show_individual():
 
     # filter out jobs
     for jobid in all_jobs.keys():
-        if not jobid in jobid_ok:
+        if jobid not in jobid_ok:
             all_jobs.pop(jobid)
 
     # do something
@@ -80,20 +80,17 @@ def show_summary():
         if found_group:
             go.options.users += found_group[group_members_idx]
 
-    try:
-        ustats, faults, categories = get_userjob_stats()
-        if faults:
-            go.log.warning("Faults %s" % ([x[0] for x in faults]))
-            go.log.debug("Faults %s" % (faults))
-        cat_map = dict([(x[0], idx) for idx, x in enumerate(categories)])
-    except Exception, err:
-        msg = "show_jobs %s" % err
-        critical_exit(msg)
+    ustats, faults, categories = get_userjob_stats()
+    if faults:
+        go.log.warning("Faults %s" % ([x[0] for x in faults]))
+        go.log.debug("Faults %s" % (faults))
+
+    cat_map = dict([(x[0], idx) for idx, x in enumerate(categories)])
 
     if go.options.users:
         # remove all non-listed users
         for user in ustats.keys():
-            if not user in go.options.users:
+            if user not in go.options.users:
                 del ustats[user]
 
     agg_ans = [0] * (len(categories) - 1) + [[]]
@@ -122,57 +119,69 @@ def show_summary():
         return msg
 
     msg = make_msg(agg_ans, 'show_jobs', ustats=ustats)
-    if go.options.nagios:
-        ok_exit(msg)
-    else:
-        txt = []
-        run_template = "%s%s running jobs on %s nodes (%s cores, %s prochours)"
-        queued_template = "%s%s queued jobs for %s nodes (%s cores, %s prochours)"
-        other_template = "%sOther jobs: %s (%s)"
+    if go.options.check:
+        return msg
 
-        run_values = ('', msg.R, msg.RN, msg.RC, int(msg.RP),)
-        txt.append(run_template % run_values)
-        queued_values = ('', msg.Q, msg.QN, msg.QC, int(msg.QP),)
-        txt.append(queued_template % queued_values)
+    txt = []
+    run_template = "%s%s running jobs on %s nodes (%s cores, %s prochours)"
+    queued_template = "%s%s queued jobs for %s nodes (%s cores, %s prochours)"
+    other_template = "%sOther jobs: %s (%s)"
 
-        if msg.O:
-            txt.append(other_template % ('', msg.O, ','.join(agg_ans[cat_map['O']])))
+    run_values = ('', msg.R, msg.RN, msg.RC, int(msg.RP),)
+    txt.append(run_template % run_values)
+    queued_values = ('', msg.Q, msg.QN, msg.QC, int(msg.QP),)
+    txt.append(queued_template % queued_values)
 
-        if go.options.detailed:
-            indent = " " * 2
-            users = ustats.keys()
-            for user in sorted(users):
-                txt.append("%s%s" % (indent, user))
-                ans = ustats[user]
-                tmpmsg = make_msg(ans, 'tmp')
-                run_values = (indent * 2, tmpmsg.R, tmpmsg.RN, tmpmsg.RC, int(tmpmsg.RP),)
-                txt.append(run_template % run_values)
-                queued_values = (indent * 2, tmpmsg.Q, tmpmsg.QN, tmpmsg.QC, int(tmpmsg.QP),)
-                txt.append(queued_template % queued_values)
-                if  tmpmsg.O:
-                    txt.append(other_template % (indent * 2, tmpmsg.O, ','.join(ans[cat_map['O']])))
+    if msg.O:
+        txt.append(other_template % ('', msg.O, ','.join(agg_ans[cat_map['O']])))
 
-        print "\n".join(txt)
-        sys.exit(0)
+    if go.options.detailed:
+        indent = " " * 2
+        users = ustats.keys()
+        for user in sorted(users):
+            txt.append("%s%s" % (indent, user))
+            ans = ustats[user]
+            tmpmsg = make_msg(ans, 'tmp')
+            run_values = (indent * 2, tmpmsg.R, tmpmsg.RN, tmpmsg.RC, int(tmpmsg.RP),)
+            txt.append(run_template % run_values)
+            queued_values = (indent * 2, tmpmsg.Q, tmpmsg.QN, tmpmsg.QC, int(tmpmsg.QP),)
+            txt.append(queued_template % queued_values)
+            if tmpmsg.O:
+                txt.append(other_template % (indent * 2, tmpmsg.O, ','.join(ans[cat_map['O']])))
+
+    print "\n".join(txt)
+    return
+
+
+def main():
+    """Like, the main."""
+
+    options = {
+        'check': ('Gather information for a nagios check', None, 'store_true', False),
+        'detailed': ('Report detailed information', None, 'store_true', False, 'D'),
+        'groups': ('Report for groups', None, "extend", [], 'g'),
+        'users': ('Report for users', None, "extend", [], 'u'),
+        'show': ('Show details: %s' % ','.join(SHOW_LIST), "strlist", "store", None),
+        'jobs': ("Jobid(s)", "strlist", "store", None),
+    }
+
+    global go
+    go = ExtendedSimpleOption(options)
+
+    try:
+
+        if go.options.show:
+            show_individual()  # does not need to affect the cached nagios result?
+            sys.exit(0)
+        else:
+            msg = show_summary()
+
+    except Exception, err:
+        go.log.exception("critical exception caught: %s" % err)
+        go.critical("Script failed in a horrible way: %s" % err)
+        sys.exit(NAGIOS_EXIT_CRITICAL)
+
+    go.epilogue('show_jobs finished %s' % msg, {})
 
 if __name__ == '__main__':
-    options = {
-           'detailed':('Report detailed information', None, 'store_true', False, 'D'),
-           'groups':('Report for groups', None, "extend", [], 'g'),
-           'nagios':('Report in nagios format', None, 'store_true', False, 'n'),
-           'users':('Report for users', None, "extend", [], 'u'),
-           'show':('Show details: %s' % ','.join(SHOW_LIST), "strlist", "store", None),
-           'jobs':("Jobid(s)", "strlist", "store", None),
-           }
-
-    go = simple_option(options)
-
-    if go.options.nagios and not go.options.debug:
-        fancylogger.logToDevLog(enable=True)
-        fancylogger.logToScreen(enable=False)
-        fancylogger.setLogLevelInfo()
-
-    if go.options.show:
-        show_individual()
-    else:
-        show_summary()
+    main()
