@@ -32,7 +32,7 @@ import os
 import sys
 from vsc.install.testing import TestCase
 
-from vsc.jobs.pbs.jobs import get_jobs_dict
+from vsc.jobs.pbs.jobs import DEFAULT_ATTRS, get_jobs, get_jobs_dict
 
 
 class JobData(dict):
@@ -53,6 +53,65 @@ def wrap_jobdata(jobs):
 
 
 class TestJobs(TestCase):
+    @patch('vsc.jobs.pbs.jobs.pbs')
+    @patch('vsc.jobs.pbs.interface.PBSQuery.__init__', return_value=None)
+    @patch('vsc.jobs.pbs.interface.PBSQuery.getjobs')
+    def test_get_jobs(self, qgj, pbsquery, ppbs):
+        """Test get_jobs"""
+
+        def_attrs = ['name', 'owner', 'used', 'state', 'queue', 'session' ,'l',
+                      'exechost'] + [x+'time' for x in ['start_', 'c', 'e', 'q', 'm']]
+        self.assertEqual(DEFAULT_ATTRS, def_attrs, msg="DEFAULT_ATTRS")
+
+        # default
+        get_jobs()
+        all_args = qgj.call_args_list
+        self.assertEqual(len(all_args), 1, 'getjobs called once');
+
+        args, kwargs = all_args[0]
+        self.assertEqual(len(args), 0, 'getjobs called once with no positional args')
+        self.assertEqual(len(kwargs), 1, 'getjobs called once with one named arg')
+        self.assertEqual(len(kwargs['attrib_list']), len(def_attrs),
+                         'getjobs called once with named arg atrrib_list with same size as def_attrs')
+
+        # the pbs ATTR constants are MagicMock instances
+        # yuck would be a better name for mock
+        mock_txt = str(kwargs['attrib_list'][0])
+        self.assertTrue("name='pbs.ATTR_name'" in mock_txt,
+                        msg='first value of attrib_list is mocked pbs.ATTR_name constant '+mock_txt)
+
+        # ALL
+        qgj.reset_mock()
+        get_jobs('ALL')
+
+        all_args = qgj.call_args_list
+        self.assertEqual(len(all_args), 1, 'getjobs called once w ALL');
+
+        args, kwargs = all_args[0]
+        self.assertEqual(len(args), 0, 'getjobs called once with no positional args w ALL')
+        self.assertEqual(len(kwargs), 1, 'getjobs called once with one named arg w ALL')
+        self.assertEqual(kwargs['attrib_list'], None,
+                         'getjobs called once with named arg atrrib_list None w ALL')
+
+        # non-def
+        qgj.reset_mock()
+        get_jobs(['some', 'thing'])
+
+        all_args = qgj.call_args_list
+        self.assertEqual(len(all_args), 1, 'getjobs called once w non-def');
+
+        args, kwargs = all_args[0]
+        self.assertEqual(len(args), 0, 'getjobs called once with no positional args w non-def')
+        self.assertEqual(len(kwargs), 1, 'getjobs called once with one named arg w non-def')
+        self.assertEqual(len(kwargs['attrib_list']), 2,
+                         'getjobs called once with named arg atrrib_list with 2 attrs')
+
+        # the pbs ATTR constants are MagicMock instances
+        mock_txt = str(kwargs['attrib_list'][0])
+        self.assertTrue("name='pbs.ATTR_some'" in mock_txt,
+                        msg='first value of attrib_list is mocked pbs.ATTR_some constant '+mock_txt)
+
+
     def test_get_jobs_dict(self):
         """Test get_jobs_dict"""
 
