@@ -35,7 +35,7 @@ import sys
 from vsc.utils.script_tools import ExtendedSimpleOption
 from vsc.jobs.pbs.jobs import get_userjob_stats, get_jobs_dict
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
-from vsc.utils.nagios import NagiosResult, ok_exit, critical_exit
+from vsc.utils.nagios import NagiosResult
 
 SHOW_LIST = ['nodes']
 
