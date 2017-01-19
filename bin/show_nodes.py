@@ -35,7 +35,7 @@ from vsc.utils import fancylogger
 from vsc.jobs.pbs.nodes import get_nodes, collect_nodeinfo, NDNAG_CRITICAL, NDNAG_WARNING, NDNAG_OK
 from vsc.jobs.pbs.nodes import ND_NAGIOS_CRITICAL, ND_NAGIOS_WARNING, ND_NAGIOS_OK, ND_down, ND_offline
 from vsc.jobs.pbs.nodes import ND_free, ND_free_and_job, ND_job_exclusive
-from vsc.jobs.pbs.nodes import ND_state_unknown, ND_bad, ND_error, ND_idle, ND_down_on_error
+from vsc.jobs.pbs.nodes import ND_state_unknown, ND_bad, ND_error, ND_idle, ND_down_on_error, ND_offline_idle
 from vsc.jobs.pbs.moab import get_nodes_dict as moab_get_nodes_dict
 from vsc.utils.generaloption import simple_option
 from vsc.utils.nagios import NagiosResult, warning_exit, ok_exit, critical_exit
@@ -55,6 +55,7 @@ def main():
         'down': ('Down nodes', None, 'store_true', False, 'D'),
         'downonerror': ('Down on error nodes', None, 'store_true', False, 'E'),
         'offline': ('Offline nodes', None, 'store_true', False, 'o'),
+        'offline_idle': ('Offline idle nodes', None, 'store_true', False, 'O'),
         'partial': ('Partial nodes (one or more running job(s), jobslot(s) available)', None, 'store_true', False, 'p'),
         'job-exclusive': ('Job-exclusive nodes (no jobslots available)', None, 'store_true', False, 'x'),
         'free': ('Free nodes (0 or more running jobs, jobslot(s) available)', None, 'store_true', False, 'f'),
@@ -101,6 +102,8 @@ def main():
         report_states.append(ND_error)
     if go.options.idle:
         report_states.append(ND_idle)
+    if go.options.offline_idle:
+        report_states.append(ND_offline_idle)
 
     if len(report_states) == 0:
         report_states = all_states
@@ -180,6 +183,8 @@ def main():
 
         if state == ND_free and ND_idle in states:
             state = ND_idle  # special case for idle
+        if state == ND_offline and ND_idle in states:
+            state = ND_offline_idle
         if state not in detailed_res:
             detailed_res[state] = []
 

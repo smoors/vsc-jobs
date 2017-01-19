@@ -43,6 +43,7 @@ ND_free = pbs.ND_free
 ND_job_exclusive = pbs.ND_job_exclusive
 # problem
 ND_offline = pbs.ND_offline
+ND_offline_idle = 'idle_offline'
 ND_down = pbs.ND_down
 ND_down_on_error = 'down_on_error'
 ND_error = 'error'
@@ -169,6 +170,9 @@ def get_nodes_dict():
         if ND_free in states and ATTR_JOBS not in full_state:
             _log.debug('Append idle node %s' % (name))
             states.append(ND_idle)  # append it, not insert
+        if ND_offline in states and ATTR_JOBS not in full_state:
+            _log.debug('Append idle node %s' % (name))
+            states.append(ND_idle)
 
         if ATTR_ERROR in full_state:
             _log.debug('Added error node %s' % (name))
