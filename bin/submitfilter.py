@@ -164,8 +164,8 @@ def main(arguments=None):
     # print all generated warnings
     # flush it so it doesn't get mixed with stderr
     sys.stdout.flush()
-    for warn in ["%s\n" % w for w in get_warnings()]:
-        sys.stderr.write(warn)
+    for warning in ["%s\n" % w for w in get_warnings()]:
+        sys.stderr.write(warning)
     sys.stderr.flush()
 
     sys.exit(0)

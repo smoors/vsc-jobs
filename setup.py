@@ -26,8 +26,8 @@ VERSION = '0.16'
 
 PACKAGE = {
     'version': VERSION,
-    'author': [sdw, ag],
-    'maintainer': [sdw, ag],
+    'author': [sdw, ag, jt],
+    'maintainer': [sdw, ag, jt],
     'install_requires': [
         'vsc-administration >= 0.20.1',
         'vsc-accountpage-clients >= 0.1.2',
