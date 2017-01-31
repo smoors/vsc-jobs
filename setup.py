@@ -29,17 +29,19 @@ PACKAGE = {
     'author': [sdw, ag, jt],
     'maintainer': [sdw, ag, jt],
     'install_requires': [
-        'vsc-administration >= 0.20.1',
-        'vsc-accountpage-clients >= 0.1.2',
-        'vsc-base >= 2.4.2',
-        'vsc-config >= 1.26',
-        'vsc-ldap >= 1.3.4',
-        #'vsc-ldap-extension >= 1.10',
-        'vsc-utils >= 1.4.6',
+        'lxml',
         # don't use installs from pbs-python from pypi
         # use local install from https://oss.trac.surfsara.nl/pbs_python/ticket/41#attachments
         # or rpms
         # 'pbs_python >= 4.6',
+        'vsc-administration >= 0.20.1',
+        'vsc-accountpage-clients >= 0.1.2',
+        'vsc-base >= 2.4.2',
+        'vsc-config >= 1.26',
+        'vsc-install >= 10.23',
+        'vsc-ldap >= 1.3.4',
+        #'vsc-ldap-extension >= 1.10',
+        'vsc-utils >= 1.4.6',
         'lxml',
     ],
     'tests_require': [
