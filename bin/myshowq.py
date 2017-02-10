@@ -1,4 +1,4 @@
-#!/usr/bin/env python-noenv
+#!/usr/bin/python-noenv
 # -*- coding: latin-1 -*-
 #
 # Copyright 2009-2017 Ghent University
