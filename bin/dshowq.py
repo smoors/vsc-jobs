@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python-noenv
 #
 # Copyright 2009-2017 Ghent University
 #
