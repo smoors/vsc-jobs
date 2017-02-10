@@ -100,7 +100,7 @@ def make_new_header(sf):
             except KeyError:
                 requested_memory = (MEM, state['l'][MEM])
 
-        syslogger.warn("submitfilter - %s requested by user %s was %s",
+        syslogger.info("submitfilter - %s requested by user %s was %s",
                        requested_memory[0], current_user, requested_memory[1])
 
     #  check whether VSC_NODE_PARTITION environment variable is set
@@ -124,9 +124,11 @@ def make_new_header(sf):
     #    vmem too high: job will not start
     overhead = get_cluster_overhead(state['_cluster'])
     availmem = cl_data['TOTMEM'] - overhead
-    if state['l'].get('_%s' % VMEM) > availmem:
+    physmem = cl_data['PHYSMEM'] - overhead
+    if state['l'].get('_%s' % VMEM) > availmem or state['l'].get('_%s' % MEM) > physmem:
+        requested = state['l'].get('_%s' % VMEM) or state['l'].get('_%s' % MEM)
         warn("Warning, requested %sb vmem per node, this is more than the available vmem (%sb), this"
-             " job will never start." % (state['l']['_%s' % VMEM], availmem))
+             " job will never start." % (requested, availmem))
 
     #    TODO: mem too low on big-memory systems ?
 
