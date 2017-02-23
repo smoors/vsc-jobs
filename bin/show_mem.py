@@ -1,4 +1,4 @@
-#!/usr/bin/python-noenv
+#!/usr/bin/python-stripped-env
 #
 # Copyright 2013-2017 Ghent University
 #
