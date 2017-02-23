@@ -20,30 +20,33 @@ vsc-jobs base distribution setup.py
 """
 
 import vsc.install.shared_setup as shared_setup
-from vsc.install.shared_setup import ag, sdw
+from vsc.install.shared_setup import ag, sdw, jt
 
-VERSION = '0.15'
+VERSION = '0.16'
 
 PACKAGE = {
     'version': VERSION,
-    'author': [sdw, ag],
-    'maintainer': [sdw, ag],
+    'author': [sdw, ag, jt],
+    'maintainer': [sdw, ag, jt],
     'install_requires': [
+        'lxml',
+        # don't use installs from pbs-python from pypi
+        # use local install from https://oss.trac.surfsara.nl/pbs_python/ticket/41#attachments
+        # or rpms
+        # 'pbs_python >= 4.6',
         'vsc-administration >= 0.20.1',
         'vsc-accountpage-clients >= 0.1.2',
         'vsc-base >= 2.4.2',
         'vsc-config >= 1.26',
+        'vsc-install >= 0.10.24',
         'vsc-ldap >= 1.3.4',
-        'vsc-ldap-extension >= 1.10',
+        #'vsc-ldap-extension >= 1.10',
         'vsc-utils >= 1.4.6',
-        # don't use installs from pbs-python from pypi
-        # use local install from https://oss.trac.surfsara.nl/pbs_python/ticket/41#attachments
-        # or rpms
-        'pbs_python >= 4.6',
         'lxml',
     ],
     'tests_require': [
         'mock',
+        'pbs-python >= 4.4.1',
     ]
 }
 
