@@ -7,7 +7,6 @@ node {
     sh "wget -O ez_setup.py https://bootstrap.pypa.io/ez_setup.py"
     sh "python ez_setup.py --user"
     sh "python -m easy_install -U --user vsc-install"
-    sh "python -m easy_install -U --user pbs-python"
     stage 'cleanup'
     sh "git clean -fd"
     stage 'test'
