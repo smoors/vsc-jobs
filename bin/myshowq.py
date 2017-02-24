@@ -1,4 +1,4 @@
-#!/usr/bin/python-stripped-env
+#!/usr/bin/env python
 # -*- coding: latin-1 -*-
 #
 # Copyright 2009-2017 Ghent University
