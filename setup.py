@@ -22,12 +22,15 @@ vsc-jobs base distribution setup.py
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, sdw, jt
 
-VERSION = '0.17'
+VERSION = '0.18'
 
 PACKAGE = {
     'version': VERSION,
     'author': [sdw, ag, jt],
     'maintainer': [sdw, ag, jt],
+    'setup_requires': [
+        'vsc-install >= 0.10.25',
+    ],
     'install_requires': [
         'lxml',
         # don't use installs from pbs-python from pypi
@@ -38,7 +41,6 @@ PACKAGE = {
         'vsc-accountpage-clients >= 0.1.2',
         'vsc-base >= 2.4.2',
         'vsc-config >= 1.26',
-        'vsc-install >= 0.10.25',
         'vsc-ldap >= 1.3.4',
         #'vsc-ldap-extension >= 1.10',
         'vsc-utils >= 1.4.6',
@@ -47,7 +49,11 @@ PACKAGE = {
     'tests_require': [
         'mock',
         'pbs-python >= 4.4.1',
-    ]
+    ],
+    'dependency_links': [
+        # use this old pbs_python for testing
+        'git+https://github.com/ehiggs/pbs-python.git#egg=pbs-python-4.4.1',
+    ],
 }
 
 
