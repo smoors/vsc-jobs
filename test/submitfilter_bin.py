@@ -44,7 +44,9 @@ from vsc.utils.run import run_simple
 
 REPO_BASE_DIR = vsc_setup().REPO_BASE_DIR
 
-SCRIPTS = ["""#!/bin/sh
+SCRIPTS = [
+# 0        
+"""#!/bin/sh
 #
 #
 #PBS -N testrun
@@ -59,9 +61,13 @@ cd $VSC_HOME
 ##logs to stderr by default, redirect this to stdout
 ./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out
 """,
+
+# 1
 """#!/bin/bash
 hostname
 """,
+
+# 2
 """#!/bin/bash
 #PBS -l nodes=3:ppn=half
 #PBS -l vmem=full
@@ -69,6 +75,8 @@ hostname
 #PBS -m n
 whatever
 """,
+
+# 3
 """#!/bin/bash
 #PBS -q short@master19.golett.gent.vsc
 #PBS -l nodes=1:ppn=4
@@ -76,11 +84,15 @@ whatever
 #PBS -m bea
 whatever
 """,
+
+# 4  -- requesting mem
 """ #!/bin/bash
 #PBS -l nodes=1:ppn=4
 #PBS -l mem=10g
 #PBS -m n
 """,
+
+# 5
 """ #!/bin/bash
         #PBS -l nodes=1:ppn=4
 #PBS -l vmem=1g
@@ -184,6 +196,37 @@ class TestSubmitfilter(TestCase):
 
     @mock.patch('submitfilter.get_clusterdata')
     def test_make_new_header_mem_limits(self, mock_clusterdata):
+        reset_warnings()
+        sf = SubmitFilter(
+            [],
+            [x + "\n" for x in SCRIPTS[4].split("\n")]  # requesting mem example
+        )
+
+        mock_clusterdata.return_value = {
+            'TOTMEM': 4096 << 20,
+            'PHYSMEM': 3072 << 20,
+            'NP': 8,
+            'NP_LCD': 2,
+        }
+
+        sf.parse_header()
+        header = submitfilter.make_new_header(sf)
+
+        # header should not change
+        self.assertEqual(header, [
+            '#!/bin/bash',
+            '#PBS -l nodes=1:ppn=4',
+            '#PBS -l mem=10g',
+            '#PBS -m n'
+            '',
+            '',
+        ], msg='header with existing mem set')
+        self.assertEqual(get_warnings(), [
+            "Warning, requested %sb mem per node, this is more than the available mem (%sb), this job will never start." % (10 * 4096 << 20, 3072 << 20 ))
+        ])
+
+    @mock.patch('submitfilter.get_clusterdata')
+    def test_make_new_header_pmem_limits(self, mock_clusterdata):
         sf = SubmitFilter(
             [],
             [x + "\n" for x in SCRIPTS[4].split("\n")]
@@ -201,11 +244,12 @@ class TestSubmitfilter(TestCase):
         self.assertEqual(header, [
             '#!/bin/bash',
             '#PBS -l nodes=1:ppn=4',
-            '#PBS -l mem=10g',
+            '#PBS -l mem=1g',
             '#PBS -m n'
             '',
             '',
         ], msg='header with existing mem set')
+
 
     def test_make_new_header_ignore_indentation(self):
         sf = SubmitFilter(
