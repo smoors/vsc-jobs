@@ -100,7 +100,7 @@ def make_new_header(sf):
             except KeyError:
                 requested_memory = (MEM, state['l'][MEM])
 
-        syslogger.warn("submitfilter - %s requested by user %s was %s",
+        syslogger.info("submitfilter - %s requested by user %s was %s",
                        requested_memory[0], current_user, requested_memory[1])
 
     #  check whether VSC_NODE_PARTITION environment variable is set
@@ -121,14 +121,22 @@ def make_new_header(sf):
         warn('The chosen ppn %s is not considered ideal: should use either lower than or multiple of %s' %
              (ppn, np_lcd))
 
-    #    vmem too high: job will not start
+    # vmem, mem, pmem too high: job will not start
     overhead = get_cluster_overhead(state['_cluster'])
     availmem = cl_data['TOTMEM'] - overhead
+    physmem = cl_data['PHYSMEM'] - overhead
     if state['l'].get('_%s' % VMEM) > availmem:
+        requested = state['l'].get('_%s' % VMEM) or state['l'].get('_%s' % MEM)
         warn("Warning, requested %sb vmem per node, this is more than the available vmem (%sb), this"
-             " job will never start." % (state['l']['_%s' % VMEM], availmem))
-
-    #    TODO: mem too low on big-memory systems ?
+             " job will never start." % (requested, availmem))
+    elif state['l'].get('_%s' % MEM) > physmem:
+        requested = state['l'].get('_%s' % MEM)
+        warn("Warning, requested %sb mem per node, this is more than the available mem (%sb), this"
+             " job will never start." % (requested, physmem))
+    elif state['l'].get('_%s' % PMEM) > physmem / cl_data['NP']:
+        requested = state['l'].get('_%s' % PMEM)
+        warn("Warning, requested %sb pmem per node, this is more than the available pmem (%sb), this"
+             " job will never start." % (requested, physmem / cl_data['NP']))
 
     return header
 

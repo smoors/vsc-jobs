@@ -31,6 +31,7 @@ import glob
 import os
 import sys
 import re
+import mock
 
 import submitfilter
 
@@ -170,6 +171,31 @@ class TestSubmitfilter(TestCase):
             [],
             [x + "\n" for x in SCRIPTS[4].split("\n")]
         )
+        sf.parse_header()
+        header = submitfilter.make_new_header(sf)
+        self.assertEqual(header, [
+            '#!/bin/bash',
+            '#PBS -l nodes=1:ppn=4',
+            '#PBS -l mem=10g',
+            '#PBS -m n'
+            '',
+            '',
+        ], msg='header with existing mem set')
+
+    @mock.patch('submitfilter.get_clusterdata')
+    def test_make_new_header_mem_limits(self, mock_clusterdata):
+        sf = SubmitFilter(
+            [],
+            [x + "\n" for x in SCRIPTS[4].split("\n")]
+        )
+
+        mock_clusterdata.return_value = {
+            'TOTMEM': 4096 << 20,
+            'PHYSMEM': 3072 << 20,
+            'NP': 8,
+            'NP_LCD': 2,
+        }
+
         sf.parse_header()
         header = submitfilter.make_new_header(sf)
         self.assertEqual(header, [
