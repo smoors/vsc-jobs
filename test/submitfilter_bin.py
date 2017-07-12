@@ -222,7 +222,7 @@ class TestSubmitfilter(TestCase):
             '',
         ], msg='header with existing mem set')
         self.assertEqual(get_warnings(), [
-            "Warning, requested %sb mem per node, this is more than the available mem (%sb), this job will never start." % (10 * 4096 << 20, 3072 << 20 ))
+            "Warning, requested %sb mem per node, this is more than the available mem (%sb), this job will never start." % (10 * 4096 << 20, 3072 << 20 )
         ])
 
     @mock.patch('submitfilter.get_clusterdata')
