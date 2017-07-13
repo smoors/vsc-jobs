@@ -125,13 +125,11 @@ def make_new_header(sf):
     overhead = get_cluster_overhead(state['_cluster'])
     availmem = cl_data['TOTMEM'] - overhead
     physmem = cl_data['PHYSMEM'] - overhead
-    #print "state MEM: %d  --- physmem: %d --- overhead: %d" % (state['l'].get('_%s' % MEM), physmem, overhead)
     if state['l'].get('_%s' % VMEM) > availmem:
         requested = state['l'].get('_%s' % VMEM) or state['l'].get('_%s' % MEM)
         warn("Warning, requested %sb vmem per node, this is more than the available vmem (%sb), this"
              " job will never start." % (requested, availmem))
     elif state['l'].get('_%s' % MEM) > physmem:
-    #    print "OOOOPS"
         requested = state['l'].get('_%s' % MEM)
         warn("Warning, requested %sb mem per node, this is more than the available mem (%sb), this"
              " job will never start." % (requested, physmem))
@@ -140,7 +138,6 @@ def make_new_header(sf):
         warn("Warning, requested %sb pmem per node, this is more than the available pmem (%sb), this"
              " job will never start." % (requested, physmem / cl_data['NP']))
 
-    #print "WHYYYY"
     return header
 
 
