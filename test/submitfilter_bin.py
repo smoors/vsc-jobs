@@ -98,6 +98,15 @@ whatever
 #PBS -l vmem=1g
 #PBS -m n
 """,
+
+# 6  -- requesting pmem
+""" #!/bin/bash
+#PBS -l nodes=1:ppn=4
+#PBS -l pmem=1g
+#PBS -m n
+""",
+
+
 ]
 
 
@@ -209,7 +218,6 @@ class TestSubmitfilter(TestCase):
             'NP': 8,
             'NP_LCD': 2,
         }
-
         mock_cluster_overhead.return_value = 0
 
         sf.parse_header()
@@ -230,10 +238,11 @@ class TestSubmitfilter(TestCase):
         ])
 
     @mock.patch('submitfilter.get_clusterdata')
-    def test_make_new_header_pmem_limits(self, mock_clusterdata):
+    @mock.patch('submitfilter.get_cluster_overhead')
+    def test_make_new_header_pmem_limits(self, mock_cluster_overhead, mock_clusterdata):
         sf = SubmitFilter(
             [],
-            [x + "\n" for x in SCRIPTS[4].split("\n")]
+            [x + "\n" for x in SCRIPTS[6].split("\n")]
         )
 
         mock_clusterdata.return_value = {
@@ -242,17 +251,22 @@ class TestSubmitfilter(TestCase):
             'NP': 8,
             'NP_LCD': 2,
         }
+        mock_cluster_overhead.return_value = 0
 
         sf.parse_header()
         header = submitfilter.make_new_header(sf)
         self.assertEqual(header, [
             '#!/bin/bash',
             '#PBS -l nodes=1:ppn=4',
-            '#PBS -l mem=1g',
+            '#PBS -l pmem=1g',
             '#PBS -m n'
             '',
             '',
         ], msg='header with existing mem set')
+        self.assertEqual(get_warnings(), [
+            "Unable to determine clustername, using default delcatty (no PBS_DEFAULT)",
+            "Warning, requested %sb pmem per node, this is more than the available pmem (%sb), this job will never start." % (1 << 30, (3072 << 20) / 8 )
+        ])
 
     def test_make_new_header_ignore_indentation(self):
         sf = SubmitFilter(
