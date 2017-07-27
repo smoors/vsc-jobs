@@ -72,6 +72,7 @@ TRANSLATE_STATE = {
     ND_down_on_error: 'x',
     ND_bad: 'b',
     ND_idle: 'i',  # same as free?
+    ND_offline_idle: '.',  # same as offline
 }
 
 NDST_OK = 'ok'
