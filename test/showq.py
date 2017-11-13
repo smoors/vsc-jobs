@@ -42,6 +42,7 @@ BlockReason="IdlePolicy:job 1109247 violates idle HARD MAXIPROC limit of 3528 fo
 Class="short" DRMJID="1109247.master19.golett.gent.vsc" EEDuration="337477" GJID="1109247" Group="vsc40485" JobID="1109247"
 JobName="JUBE-wrf-conus_2.5" PAL="golett" ReqAWDuration="14400" ReqProcs="480" StartPriority="1751" StartTime="0"
 State="Idle" SubmissionTime="1507045378" SuspendDuration="0" User="vsc40485"/>
+<job AWDuration="238262" Account="gvo00028" Class="long" DRMJID="2513269.master19.golett.gent.vsc" EEDuration="55" GJID="2513269" Group="vsc40002" JobID="2513269" JobName="myname" MasterHost="node832.golett.gent.vsc" PAL="golett" ReqAWDuration="259200" ReqProcs="1" RsvStartTime="1510331373" RunPriority="-406" StartPriority="-406" StartTime="1510331373" StatPSDed="238258.370000" StatPSUtl="240785.929800" State="Running" SubmissionTime="1510331318" SuspendDuration="0" User="vsc40002"/>
 </queue></Data>
 """
 
@@ -63,6 +64,21 @@ State="Idle" SubmissionTime="1507045378" SuspendDuration="0" TemplateSetList="DE
 <req ReqNodeMem="&gt;=0" ReqNodeProc="&gt;=0" ReqNodeSwap="&gt;=0" ReqProcPerTask="1" ReqSwapPerTask="149" TCReqMin="480" TPN="24"/>
 <tx/>
 </job>
+<job AWDuration="238262" Account="gvo00002" Class="long" DRMJID="2513269.master19.golett.gent.vsc" EEDuration="55"
+EFile="gligar02.gligar.gent.vsc:/kyukon/home/gent/vsc400/vsc40002/thesis/BasketballDrive_1920x1080_50/c100/myname.e2513269"
+EState="Running" EffPAL="[golett]" Flags="RESTARTABLE,FSVIOLATION" GAttr="FSVIOLATION,checkpoint" GJID="2513269" Group="vsc40002"
+IWD="/kyukon/home/gent/vsc400/vsc40002/thesis/abc/c100" JobID="2513269"
+JobName="myname" JobRank="0"
+OFile="gligar02.gligar.gent.vsc:/kyukon/home/gent/vsc400/vsc40002/thesis/abc/c100/myname.o2513269"
+PAL="DEFAULT,SHARED,golett" QueueStatus="active" RM="golett"
+RMStdErr="gligar02.gligar.gent.vsc:/kyukon/home/gent/vsc400/vsc40002/thesis/abc/c100/myname.e2513269"
+RMStdOut="gligar02.gligar.gent.vsc:/kyukon/home/gent/vsc400/vsc40002/thesis/abc/c100/myname.o2513269"
+ReqAWDuration="259200" SRMJID="2513269.master19.golett.gent.vsc" SessionID="58722" StartCount="1" StartPriority="-406"
+StartTime="1510331373" StatMSUtl="618489537.740" StatPSDed="238258.370" StatPSUtl="240785.930" State="Running"
+SubmissionTime="1510331318" SuspendDuration="0" TemplateSetList="DEFAULT" User="vsc40002">
+<req AllocNodeList="node832.golett.gent.vsc" AllocPartition="golett" NCReqMin="1" ReqNodeMem="&gt;=0" ReqNodeProc="&gt;=0"
+ReqNodeSwap="&gt;=0" ReqPartition="golett" ReqProcPerTask="1" ReqSwapPerTask="2610" TCReqMin="1" UtilMem="2610" UtilProc="1" UtilSwap="1684"/>
+<tx/></job>
 </Data>
 """
 

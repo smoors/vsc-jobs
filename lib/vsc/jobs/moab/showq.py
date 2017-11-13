@@ -114,7 +114,10 @@ class Showq(MoabCommand):
 
         for job in xml.findall('.//job'):
             if self.jobctl:
-                self._process_jobctl(job)
+                # updates the job in place
+                if not self._process_jobctl(job):
+                    continue
+
             user = job.attrib['User']
             state = job.attrib['State']
 
@@ -145,6 +148,9 @@ class Showq(MoabCommand):
     def _process_jobctl(self, job):
         """
         Adapt parsed mjobctl -q diag ALL --xml output to match parsed showq XML structure
+
+        Update job lxml etree element in place.
+        Retruns False if the whole job can be ignored (e.g. in case of an internal array parentjob)
 
         # invalid xml due to forced line breaks
         <job Account="gvo00002" BecameEligible="1508512430"
@@ -179,13 +185,40 @@ class Showq(MoabCommand):
         JobID="1109247" JobName="JUBE-wrf-conus_2.5" PAL="golett" ReqAWDuration="14400" ReqProcs="480"
         StartPriority="1751" StartTime="0" State="Idle" SubmissionTime="1507045378" SuspendDuration="0"
         User="vsc40485"/>
-        """
-        # handle jobctl xml ReqProcs via req child
-        if 'ReqProcs' not in job.attrib:
-            for child in job:
-                if child.tag == 'req':
-                    job.set('ReqProcs', child.get('TCReqMin'))
 
+        Array parent job:
+        <job ... JobID="2513782" --> no [] or ()
+        ... RM="internal" ... >
+        <req ... "/><ArrayInfo Active="9" Complete="0" Count="9" Idle="0" Name="2513782">
+        <child JobArrayIndex="1" Name="2513782[1]" State="Running"/>
+        ...
+        <child JobArrayIndex="9" Name="2513782[9]" State="Running"/></ArrayInfo>
+        <tx/></job>
+        """
+
+        if job.get('RM') == 'internal':
+            for child in job:
+                if child.tag == 'ArrayInfo':
+                    # Parent arrayjob
+                    return False
+
+        def set_attr(new, old, subtree, func):
+            if new not in job.attrib:
+                for child in job:
+                    if child.tag == subtree:
+                        val = child.get(old)
+                        if val is not None:
+                            job.set(new, func(val))
+
+        # handle jobctl xml ReqProcs via req child
+        set_attr('ReqProcs', 'TCReqMin', 'req', lambda x: x)
+
+        # MasterHost
+        # format, eg: AllocNodeList="node2535.golett.gent.vsc:24,node2536.golett.gent.vsc:24"
+        set_attr('MasterHost', 'AllocNodeList', 'req', lambda x: x.split(",")[0].split(":")[0])
+
+        # Keep this job
+        return True
 
 class SshShowq(Showq, SshMoabCommand):
     """
