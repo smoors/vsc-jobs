@@ -217,6 +217,17 @@ class Showq(MoabCommand):
         # format, eg: AllocNodeList="node2535.golett.gent.vsc:24,node2536.golett.gent.vsc:24"
         set_attr('MasterHost', 'AllocNodeList', 'req', lambda x: x.split(",")[0].split(":")[0])
 
+        # Hold state
+        if 'Hold' in job.attrib:
+            job.set('State', "%sHold" % job.get('Hold'))
+
+        # TODO: fix missing Description errors
+        #if 'BlockReason' in job.attrib:
+        #    reason = job.get('BlockReason').split(':', 1)
+        #    if 'Description' not in job.attrib and len(reason) == 2:
+        #        job.set('BlockReason', reason[0])
+        #        job.set('Description', reason[1])
+
         # Keep this job
         return True
 
