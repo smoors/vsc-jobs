@@ -114,7 +114,8 @@ class TestSubmitfilter(TestCase):
 
     def setUp(self):
         reset_warnings()
-        for env in ['PBS_DEFAULT', 'PBS_DPREFIX', 'VSC_NODE_PARTITION', 'VSC_RESERVATION']:
+        for env in ['PBS_DEFAULT', 'PBS_DPREFIX',
+                    submitfilter.ENV_NODE_PARTITION, submitfilter.ENV_RESERVATION]:
             if env in os.environ:
                 del os.environ[env]
         super(TestSubmitfilter, self).setUp()
@@ -149,10 +150,10 @@ class TestSubmitfilter(TestCase):
         """
 
         partname = 'mypartition'
-        os.environ['VSC_NODE_PARTITION'] = partname
+        os.environ[submitfilter.ENV_NODE_PARTITION] = partname
 
         reserv = 'magicreserv'
-        os.environ['VSC_RESERVATION'] = reserv
+        os.environ[submitfilter.ENV_RESERVATION] = reserv
 
         sf = SubmitFilter(
             [],
@@ -174,8 +175,8 @@ class TestSubmitfilter(TestCase):
             '#PBS -W x=FLAGS:ADVRES:%s' % reserv,
         ], msg='added missing defaults and pratiton information to header')
 
-        del os.environ['VSC_NODE_PARTITION']
-        del os.environ['VSC_RESERVATION']
+        del os.environ[submitfilter.ENV_NODE_PARTITION]
+        del os.environ[submitfilter.ENV_RESERVATION]
 
     def test_make_new_header(self):
         """Test make_new_header resource replacement"""
