@@ -46,6 +46,8 @@ fancylogger.logToDevLog(True, 'syslogger')
 fancylogger.logToScreen(enable=False)
 syslogger = fancylogger.getLogger('syslogger')
 
+ENV_NODE_PARTITION = 'VSC_NODE_PARTITION'
+ENV_RESERVATION = 'VSC_RESERVATION'
 
 def make_new_header(sf):
     """
@@ -104,10 +106,17 @@ def make_new_header(sf):
                        requested_memory[0], current_user, requested_memory[1])
 
     #  check whether VSC_NODE_PARTITION environment variable is set
-    if 'VSC_NODE_PARTITION' in os.environ:
+    if ENV_NODE_PARTITION in os.environ:
         header.extend([
-            "# Adding PARTITION as specified in VSC_NODE_PARTITION",
-            make("-W", "x=PARTITION:%s" % os.environ['VSC_NODE_PARTITION']),
+            "# Adding PARTITION as specified in %s" % ENV_NODE_PARTITION,
+            make("-W", "x=PARTITION:%s" % os.environ[ENV_NODE_PARTITION]),
+        ])
+
+    #  check whether VSC_RESERVATION environment variable is set
+    if ENV_RESERVATION in os.environ:
+        header.extend([
+            "# Adding reservation as specified in %s" % ENV_RESERVATION,
+            make("-W", "x=FLAGS:ADVRES:%s" % os.environ[ENV_RESERVATION]),
         ])
 
     # test/warn:

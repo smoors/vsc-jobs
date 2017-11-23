@@ -178,7 +178,7 @@ class TestSubmitfilter(TestCase):
 
     def setUp(self):
         reset_warnings()
-        for env in ['PBS_DEFAULT', 'PBS_DPREFIX', 'VSC_NODE_PARTITION']:
+        for env in ['PBS_DEFAULT', 'PBS_DPREFIX', 'VSC_NODE_PARTITION', 'VSC_RESERVATION']:
             if env in os.environ:
                 del os.environ[env]
 
