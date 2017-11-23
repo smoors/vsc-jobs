@@ -110,6 +110,13 @@ def make_new_header(sf):
             make("-W", "x=PARTITION:%s" % os.environ['VSC_NODE_PARTITION']),
         ])
 
+    #  check whether VSC_RESERVATION environment variable is set
+    if 'VSC_RESERVATION' in os.environ:
+        header.extend([
+            "# Adding reservation as specified in VSC_RESERVATION",
+            make("-W", "x=FLAGS:ADVRES:%s" % os.environ['VSC_RESERVATION']),
+        ])
+
     # test/warn:
     cl_data = get_clusterdata(state['_cluster'])
 
