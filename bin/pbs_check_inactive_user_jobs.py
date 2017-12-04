@@ -39,7 +39,6 @@ Script can be run with the following options:
 This script is running on the masters, which are at Python 2.6.x.
 """
 
-import logging
 import socket
 import sys
 import time
@@ -208,7 +207,7 @@ def main():
                 if a.expiry_date and datetime.datetime.strptime(a.expiry_date, "%d-%m-%Y") - now < datetime.timedelta(days=7):
                     grace_users.append(a)
             except AttributeError as err:
-                logging.error("Account %s does not have expiry date", a.vsc_id)
+                logger.error("Account %s does not have expiry date", a.vsc_id)
 
         inactive_users = [a for a in candidate_users if a.status == INACTIVE]
 
