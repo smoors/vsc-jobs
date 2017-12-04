@@ -39,6 +39,7 @@ Script can be run with the following options:
 This script is running on the masters, which are at Python 2.6.x.
 """
 
+import logging
 import socket
 import sys
 import time
@@ -195,13 +196,20 @@ def main():
     opts = ExtendedSimpleOption(options)
 
     try:
-        now = datetime.utcnow()
+        now = datetime.datetime.utcnow()
         timestamp = now - datetime.timedelta(days=1)
         client = AccountpageClient(token=opts.options.access_token, url=opts.options.account_page_url + "/api/")
 
         candidate_users = [mkVscAccount(a) for a in client.account.modified[timestamp.strftime("%Y%m%d%H%M")].get()[1]]
 
-        grace_users = [a for a in candidate_users if a.expiry_date and datetime.datetime.strptime(a.expiry_date, "%d-%m-%Y") - now < datetime.timedelta(days=7)]
+        grace_users = []
+        for a in candidate_users:
+            try:
+                if a.expiry_date and datetime.datetime.strptime(a.expiry_date, "%d-%m-%Y") - now < datetime.timedelta(days=7):
+                    grace_users.append(a)
+            except AttributeError as err:
+                logging.error("Account %s does not have expiry date", a.vsc_id)
+
         inactive_users = [a for a in candidate_users if a.status == INACTIVE]
 
         pbs_query = PBSQuery()
