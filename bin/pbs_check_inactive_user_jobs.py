@@ -43,13 +43,13 @@ import socket
 import sys
 import time
 
+import datetime
+
 from PBSQuery import PBSQuery
 
-from vsc.config.base import VSC_CONF_DEFAULT_FILENAME
-from vsc.ldap.configuration import VscConfiguration
-from vsc.ldap.entities import VscLdapUser
-from vsc.ldap.filters import LdapFilter
-from vsc.ldap.utils import LdapQuery
+from vsc.accountpage.client import AccountpageClient
+from vsc.accountpage.wrappers import mkVscAccount
+from vsc.config.base import INACTIVE
 from vsc.utils import fancylogger
 from vsc.utils.mail import VscMail
 from vsc.utils.nagios import NAGIOS_EXIT_CRITICAL
@@ -65,25 +65,6 @@ fancylogger.setLogLevelInfo()
 NAGIOS_CHECK_INTERVAL_THRESHOLD = 60 * 60  # 60 minutes
 
 
-def get_user_with_status(status):
-    """Get the users from the HPC LDAP that match the given status.
-
-    @type ldap: vsc.ldap.utils.LdapQuery instance
-    @type status: string represeting a valid status in the HPC LDAP
-
-    @returns: list of VscLdapUser nametuples of matching users.
-    """
-    logger.info("Retrieving users from the HPC LDAP with status=%s." % (status))
-
-    ldap_filter = LdapFilter("status=%s" % (status))
-    users = VscLdapUser.lookup(ldap_filter)
-
-    logger.info("Found %d users in the %s state." % (len(users), status))
-    logger.debug("The following users are in the %s state: %s" % (status, [u.user_id for u in users]))
-
-    return users
-
-
 def remove_queued_jobs(jobs, grace_users, inactive_users):
     """Determine the queued jobs for users in grace or inactive states.
 
@@ -91,13 +72,13 @@ def remove_queued_jobs(jobs, grace_users, inactive_users):
            sooner than a person becomes inactive, a gracing user might still make
            a succesfull submission that gets started.
     @type jobs: dictionary of all jobs known to PBS, indexed by PBS job name
-    @type grace_users: list of VscLdapUser of users in grace
-    @type inactive_users: list of VscLdapUser of users who are inactive
+    @type grace_users: list of VscAccount who are in grace
+    @type inactive_users: list of VscAccount who are inactive
 
     @returns: list of jobs that have been removed
     """
-    uids = [u.user_id for u in grace_users]
-    uids.extend([u.user_id for u in inactive_users])
+    uids = [u.vsc_id for u in grace_users]
+    uids.extend([u.vsc_id for u in inactive_users])
 
     jobs_to_remove = []
     for (job_name, job) in jobs.items():
@@ -105,7 +86,9 @@ def remove_queued_jobs(jobs, grace_users, inactive_users):
         if user_id in uids:
             jobs_to_remove.append((job_name, job))
 
-    logger.info("Found {queued_count} queued jobs belonging to gracing or inactive users".format(queued_count=len(jobs_to_remove)))
+    logger.info("Found {queued_count} queued jobs belonging to gracing or inactive users".format(
+        queued_count=len(jobs_to_remove))
+    )
     logger.debug("These are the jobs names: {job_names}".format(job_names=[n for (n, _) in jobs_to_remove]))
 
     return jobs_to_remove
@@ -119,7 +102,8 @@ def remove_running_jobs(jobs, inactive_users):
     @returns: list of jobs that have been removed.
     """
     logger.debug("Not actually removing jobs %s for inactive users %s", sorted(jobs.keys()), [u.user_id for u in
-        inactive_users])
+        inactive_users]
+    )
     return []
 
 
@@ -205,15 +189,20 @@ def main():
         'nagios-check-interval-threshold': NAGIOS_CHECK_INTERVAL_THRESHOLD,
         'mail-report': ('mail a report to the hpc-admin list with job list for gracing or inactive users',
                         None, 'store_true', False),
+        'access_token': ('OAuth2 token to access the account page REST API', None, 'store', None),
+        'account_page_url': ('URL of the account page where we can find the REST API', None, 'store', None)
     }
     opts = ExtendedSimpleOption(options)
 
     try:
-        vsc_config = VscConfiguration(VSC_CONF_DEFAULT_FILENAME)
-        LdapQuery(vsc_config)
+        now = datetime.utcnow()
+        timestamp = now - datetime.timedelta(days=1)
+        client = AccountpageClient(token=opts.options.access_token, url=opts.options.account_page_url + "/api/")
 
-        grace_users = get_user_with_status('grace')
-        inactive_users = get_user_with_status('inactive')
+        candidate_users = [mkVscAccount(a) for a in client.account.modified[timestamp.strftime("%Y%m%d%H%M")].get()[1]]
+
+        grace_users = [a for a in candidate_users if a.expiry_date and datetime.datetime.strptime(a.expiry_date, "%d-%m-%Y") - now < datetime.timedelta(days=7)]
+        inactive_users = [a for a in candidate_users if a.status == INACTIVE]
 
         pbs_query = PBSQuery()
 
