@@ -101,7 +101,7 @@ def remove_running_jobs(jobs, inactive_users):
 
     @returns: list of jobs that have been removed.
     """
-    logger.debug("Not actually removing jobs %s for inactive users %s", sorted(jobs.keys()), [u.user_id for u in
+    logger.debug("Not actually removing jobs %s for inactive users %s", sorted(jobs.keys()), [u.vsc_id for u in
         inactive_users]
     )
     return []
