@@ -204,7 +204,7 @@ def main():
         grace_users = []
         for a in candidate_users:
             try:
-                if a.expiry_date and datetime.datetime.strptime(a.expiry_date, "%d-%m-%Y") - now < datetime.timedelta(days=7):
+                if a.expiry_date and datetime.datetime.strptime(a.expiry_date, "%Y-%m-%d") - now < datetime.timedelta(days=7):
                     grace_users.append(a)
             except AttributeError as err:
                 logger.error("Account %s does not have expiry date", a.vsc_id)
