@@ -28,6 +28,7 @@ Module with submitfilter tools
 
 @author: Stijn De Weirdt (Ghent University)
 """
+import logging
 import os
 import re
 
@@ -198,6 +199,8 @@ def parse_commandline_list(args):
     """
     res = []
 
+    logging.info("submitfilter: commandline %s", " ".join(args))
+
     size = len(args)
     for idx, data in enumerate(args):
         if not data.startswith('-'):
@@ -347,6 +350,7 @@ def parse_resources_nodes(txt, cluster, resources):
     # id is integer (=number of nodes) or a single node name
     # property: either special ppn=integer or something else/arbitrary
 
+    logging.info("submitfilter: node resources requested %s", txt)
     maxppn = get_cluster_maxppn(cluster)
 
     nrnodes = 0
