@@ -137,6 +137,7 @@ class SubmitFilter(object):
     def parse_header(self):
         """Parse the header (and add cmdline options too)"""
         for idx, line in enumerate(self.stdin):
+            logging.info("submitfilter: original header line %s", line)
             headeropts = self.parseline(line)
             if headeropts is None:
                 # keep this one line (don't strip newline)
