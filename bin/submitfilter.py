@@ -44,8 +44,8 @@ from vsc.jobs.pbs.submitfilter import MEM
 from vsc.utils import fancylogger
 
 fancylogger.setroot()
-fancylogger.logToDevLog(True)
 fancylogger.logToScreen(enable=False)
+fancylogger.logToDevLog(True)
 fancylogger.setLogLevelInfo()
 
 ENV_NODE_PARTITION = 'VSC_NODE_PARTITION'
