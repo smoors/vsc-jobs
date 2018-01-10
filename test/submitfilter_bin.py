@@ -35,11 +35,9 @@ import mock
 
 import submitfilter
 
-#from vsc.install.shared_setup import REPO_BASE_DIR
 from vsc.install.shared_setup import vsc_setup
 from vsc.install.testing import TestCase
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, reset_warnings, MEM_REGEXP
-from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER
 from vsc.utils.run import run_simple
 
 REPO_BASE_DIR = vsc_setup().REPO_BASE_DIR
@@ -336,7 +334,7 @@ class TestSubmitfilter(TestCase):
             # get output, and exitcode
             ec, output = run_simple(cmd, input=open(script).read())
 
-            self.assertEqual(ec, 0, msg="submitfiler ended with ec 0 for script %s and cmdline %s" % (name, cmd))
+            self.assertEqual(ec, 0, msg="submitfilter ended with ec 0 for script %s and cmdline %s" % (name, cmd))
 
             res = ''
             if os.path.exists(log):

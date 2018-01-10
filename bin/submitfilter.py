@@ -34,6 +34,7 @@ for processing by pbs
 """
 
 import os
+import logging
 import pwd
 import sys
 
@@ -42,9 +43,10 @@ from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VM
 from vsc.jobs.pbs.submitfilter import MEM
 from vsc.utils import fancylogger
 
-fancylogger.logToDevLog(True, 'syslogger')
+fancylogger.setroot()
 fancylogger.logToScreen(enable=False)
-syslogger = fancylogger.getLogger('syslogger')
+fancylogger.logToDevLog(True)
+fancylogger.setLogLevelInfo()
 
 ENV_NODE_PARTITION = 'VSC_NODE_PARTITION'
 ENV_RESERVATION = 'VSC_RESERVATION'
@@ -92,7 +94,7 @@ def make_new_header(sf):
             "# No pmem or vmem limit specified - added by submitfilter (server found: %s)" % state['_cluster'],
             make("-l", "%s=%s" % (VMEM, vmem)),
         ])
-        syslogger.warn("submitfilter - no [vp]mem specified by user %s. adding %s", current_user, vmem)
+        logging.warn("submitfilter - no [vp]mem specified by user %s. adding %s", current_user, vmem)
     else:
         try:
             requested_memory = (VMEM, state['l'][VMEM])
@@ -102,7 +104,7 @@ def make_new_header(sf):
             except KeyError:
                 requested_memory = (MEM, state['l'][MEM])
 
-        syslogger.info("submitfilter - %s requested by user %s was %s",
+        logging.info("submitfilter - %s requested by user %s was %s",
                        requested_memory[0], current_user, requested_memory[1])
 
     #  check whether VSC_NODE_PARTITION environment variable is set

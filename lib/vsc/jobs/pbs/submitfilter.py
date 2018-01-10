@@ -28,6 +28,7 @@ Module with submitfilter tools
 
 @author: Stijn De Weirdt (Ghent University)
 """
+import logging
 import os
 import re
 
@@ -136,6 +137,7 @@ class SubmitFilter(object):
     def parse_header(self):
         """Parse the header (and add cmdline options too)"""
         for idx, line in enumerate(self.stdin):
+            logging.info("submitfilter: original header line %s", line)
             headeropts = self.parseline(line)
             if headeropts is None:
                 # keep this one line (don't strip newline)
@@ -197,6 +199,8 @@ def parse_commandline_list(args):
     Returns list of tuples (option, value)
     """
     res = []
+
+    logging.info("submitfilter: commandline %s", " ".join(args))
 
     size = len(args)
     for idx, data in enumerate(args):
@@ -347,6 +351,7 @@ def parse_resources_nodes(txt, cluster, resources):
     # id is integer (=number of nodes) or a single node name
     # property: either special ppn=integer or something else/arbitrary
 
+    logging.info("submitfilter: node resources requested %s", txt)
     maxppn = get_cluster_maxppn(cluster)
 
     nrnodes = 0
