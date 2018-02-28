@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2017 Ghent University
+# Copyright 2009-2018 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -29,7 +29,7 @@ All things showq.
 @author Andy Georges
 """
 import os
-from lxml import etree
+from lxml.etree import XMLParser, fromstring
 
 from vsc.jobs.moab.internal import MoabCommand, SshMoabCommand
 from vsc.utils.missing import RUDict
@@ -108,7 +108,8 @@ class Showq(MoabCommand):
         blocked_attributes = ['BlockReason', 'Description']
 
         showq_info = ShowqInfo()
-        xml = etree.fromstring(txt)
+        p = XMLParser(huge_tree=True)
+        xml = fromstring(txt, parser=p)
 
         self.logger.debug("Parsing showq output")
 
