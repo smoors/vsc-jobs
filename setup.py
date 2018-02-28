@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 # #
-# Copyright 2009-2015 Ghent University
+# Copyright 2009-2018 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -22,7 +22,7 @@ vsc-jobs base distribution setup.py
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, sdw, jt
 
-VERSION = '0.21.0'
+VERSION = '0.21.1'
 
 PACKAGE = {
     'version': VERSION,
