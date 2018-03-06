@@ -122,7 +122,7 @@ class Checkjob(MoabCommand):
 class CheckjobInfoJSONEncoder(json.JSONEncoder):
     """Encoding for the CheckjobInfo class to a JSON format."""
 
-    def default(self, obj):
+    def default(self, obj): # pylint: disable=arguments-differ
 
         if isinstance(obj, CheckjobInfo):
             return obj.encode_json()
