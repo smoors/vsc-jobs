@@ -45,6 +45,7 @@ PACKAGE = {
         # hack, work around unknown issue with defined dependency_links
         'vsc-ldap-extension >= 1.3',
         'vsc-filesystems >= 0.19',
+        'vsc-config',
     ],
     'tests_require': [
         'mock',
