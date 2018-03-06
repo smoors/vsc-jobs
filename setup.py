@@ -47,6 +47,10 @@ PACKAGE = {
         'mock',
         'pbs-python >= 4.4.0',
     ],
+    'dependency_links': [
+        # use this old pbs_python for testing
+        'git+https://github.com/ehiggs/pbs-python.git#egg=pbs-python-4.4.0',
+    ],
 }
 
 
