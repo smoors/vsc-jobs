@@ -1,6 +1,6 @@
 # -*- coding: latin-1 -*-
 #
-# Copyright 2013-2017 Ghent University
+# Copyright 2013-2018 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -122,7 +122,7 @@ class Checkjob(MoabCommand):
 class CheckjobInfoJSONEncoder(json.JSONEncoder):
     """Encoding for the CheckjobInfo class to a JSON format."""
 
-    def default(self, obj):
+    def default(self, obj): # pylint: disable=arguments-differ
 
         if isinstance(obj, CheckjobInfo):
             return obj.encode_json()

@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Ghent University
+# Copyright 2016-2018 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -23,4 +23,4 @@
 # You should have received a copy of the GNU Library General Public License
 # along with vsc-jobs. If not, see <http://www.gnu.org/licenses/>.
 #
-
+""""""
