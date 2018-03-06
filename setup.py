@@ -42,6 +42,9 @@ PACKAGE = {
         'vsc-ldap >= 1.3.4',
         'vsc-utils >= 1.4.6',
         'lxml',
+        # hack, work around unknown issue with defined dependency_links
+        'vsc-ldap-extension >= 1.3',
+        'vsc-filesystems >= 0.19',
     ],
     'tests_require': [
         'mock',
