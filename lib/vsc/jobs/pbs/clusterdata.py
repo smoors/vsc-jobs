@@ -95,6 +95,20 @@ CLUSTERDATA = {
         'NP': 20,
         'NP_LCD': 5,
     },
+    'skitty': {
+        'PHYSMEM': 196682268 << 10,
+        'TOTMEM': 196682268 << 10,
+        'AVAILMEM': 194682268 << 10, # (1GB pagepool)
+        'NP': 36,
+        'NP_LCD': 9,
+    },
+    'victini': {
+        'PHYSMEM': 98341134 << 10,
+        'TOTMEM': 98341134 << 10,
+        'AVAILMEM': 98341134 << 10, # (no pagepool)
+        'NP': 36,
+        'NP_LCD': 9,
+    },
     'banette': {
         'PHYSMEM': 4056736 << 10,
         'TOTMEM':  12445340 << 10,
