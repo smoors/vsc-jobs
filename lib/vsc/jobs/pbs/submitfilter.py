@@ -418,7 +418,15 @@ def cluster_from_options(opts, master_reg):
         else:
             warntxt.append('queue %s' % queues[-1])
 
-    server = os.environ.get('PBS_DEFAULT', None)
+    slurm_clusters = os.environ.get('SLURM_CLUSTERS')
+    if slurm_clusters:
+        try:
+            return slurm_clusters.split(',')[0]
+        except Exception:
+            server = None
+            warntxt.append('invalid SLURM_CLUSTERS %s' % slurm_clusters)
+    else:
+        server = os.environ.get('PBS_DEFAULT', None)
 
     if server:
         r = master_reg.search(server)
