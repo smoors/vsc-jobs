@@ -356,6 +356,8 @@ def parse_resources_nodes(txt, cluster, resources):
 
     nrnodes = 0
     nrcores = 0
+    nrgpus = 0
+    features = []
     newtxt = []
     for node_spec in txt.split('+'):
         props = node_spec.split(':')
@@ -388,6 +390,11 @@ def parse_resources_nodes(txt, cluster, resources):
             # some description
             nodes = 1
 
+        gpus = [x.split('=')[1] for x in props if x.startswith('gpus=')] or [0]
+
+        features.extend([x for x in props if not x.find('=')])
+
+        nrgpus += int(gpus[0])
         nrnodes += nodes
         nrcores += nodes * ppn
 
@@ -397,6 +404,8 @@ def parse_resources_nodes(txt, cluster, resources):
     resources.update({
         '_nrnodes': nrnodes,
         '_nrcores': nrcores,
+        '_nrgpus': nrgpus,
+        '_features': features,
         '_ppn': max(1, int(nrcores / nrnodes)),
         NODES_PREFIX: '+'.join(newtxt),
     })
@@ -436,6 +445,12 @@ def cluster_from_options(opts, master_reg):
             warntxt.append('PBS_DEFAULT %s' % server)
     else:
         warntxt.append('no PBS_DEFAULT')
+
+    features = [val for opt, val in opts if opt == 'l']
+    if features:
+        r = master_reg.search(' '.join(features))
+        if r:
+            return r.group(1)
 
     warn("Unable to determine clustername, using default %s (%s)" %
          (DEFAULT_SERVER_CLUSTER, ', '.join(warntxt)))

@@ -35,13 +35,11 @@ TODO: read this (once) from config file
 import copy
 import re
 
-MIN_VMEM = 1536 << 20  # minimum amount of ram in our machines.
+MIN_VMEM = 2048 << 20  # minimum amount of ram in our machines.
 
-DEFAULT_SERVER_CLUSTER = 'delcatty'
+DEFAULT_SERVER_CLUSTER = 'hydra'
 
 DEFAULT_SERVER = "default"
-
-MASTER_REGEXP = re.compile(r'master[^.]*\.([^.]+)\.(?:[^.]+\.vsc|os)$')
 
 # these amounts are in kilobytes as reported by pbsnodes
 # availmem has to be taken from an clean idle node
@@ -115,7 +113,29 @@ CLUSTERDATA = {
         'NP': 2,
         'NP_LCD': 2,
     },
+    'hydra': {
+        # this is the default is not has been specified: 2GB
+        'PHYSMEM': MIN_VMEM,
+        'TOTMEM': MIN_VMEM,
+    },
+    'skylake': {
+        'PHYSMEM': 196681412 << 10,  # ~187.6GB
+        'TOTMEM': 197729984 << 10,  # ~188.6GB
+        'AVAILMEM': 193907328 << 10,  # (1GB pagepool)
+        'NP': 40,
+        'NP_LCD': 20,
+    },
 }
+
+
+GPUFEATURES = ['geforce', 'pascal', 'kepler']
+
+CPUFEATURES = ['intel', 'amd'] + CLUSTERDATA.keys()
+
+FEATURES = ['adf', 'awery', 'enc10', 'enc3', 'enc4', 'enc8', 'enc9', 'gbonte', 'himem', 'mpi',
+            'postgresql', 'public', 'qdr', 'refremov', 'sc', 'vdetours']
+
+MASTER_REGEXP = re.compile(r'(%s)' % '|'.join(CLUSTERDATA.keys()))
 
 
 def get_clusterdata(name, make_copy=True):
