@@ -392,7 +392,7 @@ def parse_resources_nodes(txt, cluster, resources):
 
         gpus = [x.split('=')[1] for x in props if x.startswith('gpus=')] or [0]
 
-        features.extend([x for x in props if not x.find('=')])
+        features.extend([x for x in props if '=' not in x])
 
         nrgpus += int(gpus[0])
         nrnodes += nodes

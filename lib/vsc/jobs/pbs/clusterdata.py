@@ -24,18 +24,20 @@
 # along with vsc-jobs. If not, see <http://www.gnu.org/licenses/>.
 #
 """
-Module with UGent cluster data
+Module with Hydra cluster data
 
 TODO: read this (once) from config file
 
 @author: Stijn De Weirdt (Ghent University)
 @author: Jens Timmerman (Ghent University)
+@author: Ward Poelmans (Vrije Universiteit Brussel)
+@author: Samuel Moors (Vrije Universiteit Brussel)
 """
 
 import copy
 import re
 
-MIN_VMEM = 2048 << 20  # minimum amount of ram in our machines.
+DEFAULT_VMEM = 2048 << 20  # minimum amount of ram in our machines.
 
 DEFAULT_SERVER_CLUSTER = 'hydra'
 
@@ -114,9 +116,10 @@ CLUSTERDATA = {
         'NP_LCD': 2,
     },
     'hydra': {
-        # this is the default is not has been specified: 2GB
-        'PHYSMEM': MIN_VMEM,
-        'TOTMEM': MIN_VMEM,
+        # this is the default if not specified: 2GB
+        'PHYSMEM': DEFAULT_VMEM,
+        'TOTMEM': DEFAULT_VMEM,
+        'NP_LCD': 1,
     },
     'skylake': {
         'PHYSMEM': 196681412 << 10,  # ~187.6GB
@@ -124,6 +127,27 @@ CLUSTERDATA = {
         'AVAILMEM': 193907328 << 10,  # (1GB pagepool)
         'NP': 40,
         'NP_LCD': 20,
+    },
+    'ivybridge': {
+        'PHYSMEM': 264114416 << 10,  # 251.9GB
+        'TOTMEM': 265162988 << 10,  # 252.9GB
+        'AVAILMEM': 260773208 << 10, # 248.7GB
+        'NP': 20,
+        'NP_LCD': 10,
+    },
+    'magnycours': {
+        'PHYSMEM': 65940712 << 10,  # 62.9GB
+        'TOTMEM': 66989284 << 10,  # 63.9GB
+        'AVAILMEM': 63786500 << 10, # 60.8GB
+        'NP': 16,
+        'NP_LCD': 4,
+    },
+    'broadwell': {
+        'PHYSMEM': 264020188 << 10,  # GB
+        'TOTMEM': 265068760 << 10,  # GB
+        'AVAILMEM': 261 << 30,
+        'NP': 28,
+        'NP_LCD': 14,
     },
 }
 
