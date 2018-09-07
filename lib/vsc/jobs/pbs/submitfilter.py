@@ -234,7 +234,7 @@ def parse_resources(txt, cluster, resources, update=False):
     Returns string with resources (which might be different from original 'txt'
     due to templating, e.g. ppn=all -> ppn=16)
 
-    If update is True, resources will be updated with new values will be updated
+    If update is True, resources will be updated with new values
     """
     newtxt = []
 
@@ -338,7 +338,10 @@ def parse_features(txt, cluster, resources):
     Convert -l feature=<txt> for cluster
 
     update resources instance with
-        _features: optional features
+        _extrafeatures: extra features
+
+    features specified in the '-l nodes=...' and '-l feature=...' directives are treated separately;
+    they are combined by the job scheduler
 
     txt is a :-separated list of features
 
@@ -347,8 +350,7 @@ def parse_features(txt, cluster, resources):
 
     logging.info("submitfilter: features requested %s", txt)
 
-    #features can also be specified in the '-l nodes=...' directive
-    features = resources.get('_features') or []
+    extrafeatures = []
     features.extend(txt.split(':')
 
     # update shared resources dict
@@ -357,7 +359,8 @@ def parse_features(txt, cluster, resources):
     })
 
     #TOCHECK: moet dit wel???????
-    return "%s=%s" % (NODES_PREFIX, resources[NODES_PREFIX])
+#     return "%s=%s" % (NODES_PREFIX, resources[NODES_PREFIX])
+    return
 
 
 def parse_resources_nodes(txt, cluster, resources):
