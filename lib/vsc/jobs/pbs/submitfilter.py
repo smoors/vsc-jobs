@@ -254,6 +254,8 @@ def parse_resources(txt, cluster, resources, update=False):
             newvtxt = parse_resources_nodes(value, cluster, newvalue)
         elif MEM_REGEXP.search(key):
             newvtxt = parse_mem(key, value, cluster, newvalue)
+        elif key == 'feature':
+            newvtxt = parse_features(value, cluster, newvalue)
         else:
             newvalue = {key: value}
             if value is None:
@@ -331,6 +333,33 @@ def parse_mem(name, txt, cluster, resources):
     return "%s=%s" % (name, txt)
 
 
+def parse_features(txt, cluster, resources):
+    """
+    Convert -l feature=<txt> for cluster
+
+    update resources instance with
+        _features: optional features
+
+    txt is a :-separated list of features
+
+    returns (possibly modified) resource text
+    """
+
+    logging.info("submitfilter: features requested %s", txt)
+
+    #features can also be specified in the '-l nodes=...' directive
+    features = resources.get('_features') or []
+    features.extend(txt.split(':')
+
+    # update shared resources dict
+    resources.update({
+        '_features': features,
+    })
+
+    #TOCHECK: moet dit wel???????
+    return "%s=%s" % (NODES_PREFIX, resources[NODES_PREFIX])
+
+
 def parse_resources_nodes(txt, cluster, resources):
     """
     Convert -l nodes=<txt> for cluster
@@ -338,7 +367,9 @@ def parse_resources_nodes(txt, cluster, resources):
     update resources instance with
         _nrnodes: number of nodes
         _nrcores: total cores
+        _nrgpus: number of GPUs
         _ppn: (avg) ppn
+        _features: optional features
         nodes: (possibly modified) resource text
 
     returns (possibly modified) resource text
@@ -357,7 +388,7 @@ def parse_resources_nodes(txt, cluster, resources):
     nrnodes = 0
     nrcores = 0
     nrgpus = 0
-    features = []
+    features = resources.get('_features') or []
     newtxt = []
     for node_spec in txt.split('+'):
         props = node_spec.split(':')
@@ -392,7 +423,7 @@ def parse_resources_nodes(txt, cluster, resources):
 
         gpus = [x.split('=')[1] for x in props if x.startswith('gpus=')] or [0]
 
-        features.extend([x for x in props if '=' not in x])
+        features.extend([x for x in props[1:] if '=' not in x])
 
         nrgpus += int(gpus[0])
         nrnodes += nodes
