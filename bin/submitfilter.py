@@ -136,45 +136,70 @@ def make_new_header(sf):
         logging.info("submitfilter - %s requested by user %s was %s",
                      requested_memory[0], current_user, requested_memory[1])
 
-    # test/warn:
-    cl_data = get_clusterdata(state['_cluster'])
-
-    #    cores on cluster: warn when non-ideal number of cores is used (eg 8 cores on 6-core numa domain etc)
-    #    ideal: either less than NP_LCD or multiple of NP_LCD
-    np_lcd = cl_data['NP_LCD']
-
-    if ppn > np_lcd and ppn % np_lcd:
-        warn('The chosen ppn %s is not considered ideal: should use either lower than or multiple of %s' %
-             (ppn, np_lcd))
-
     # check if requested feature(s) are valid
-    warn('state l: %s' % state['l'])
-    if state['l'].get('feature'):
-        warn('feature(s): %s' % state['l']['_features'])
+    warn('state_l: %s' % state['l'])
+    allfeatures = set(state['l']['_features'] + filter(None, [state['l'].get('feature')]))
+    for feat in allfeatures:
+        if feat not in (GPUFEATURES + CPUFEATURES + FEATURES):
+            warn('Warning, feature %s is not valid, this job will never start.' % feat)
+
+    cpufeat = allfeatures.intersection(CPUFEATURES)
+    if len(cpufeat) > 1:
+        warn('Warning, more than one CPU architecture requested (%s), this job will never start.' % ', '.join(cpufeat))
+
+    gpufeat = allfeatures.intersection(GPUFEATURES)
+    if len(gpufeat) > 1:
+        warn('Warning, more than one GPU architecture requested (%s), this job will never start.' % ', '.join(gpufeat))
+
+    # select the correct clusterdata for broadwell
+    if state['_cluster'] == 'broadwell':
+        if gpufeat == {'pascal'}:
+            state['_cluster'] = 'broadwell_pascal'
+        elif gpufeat == {'geforce'}:
+            state['_cluster'] = 'broadwell_geforce'
+        elif 'himem' in allfeatures:
+            state['_cluster'] = 'broadwell_himem'
+
+    # check if requested ppn is not more than available for a given CPU architecture
+    warn("%s" % state['_cluster'])
+    if cpufeat:
+#         maxppn = get_cluster_maxppn(cluster)
 
     # add feature gpgpu if 1 or more gpus is requested
     if state['l'].get('_nrgpus') > 0:
         make("-l", "feature=gpgpu")
         make("-q", "gpu")
 
+    # test/warn:
+    cl_data = get_clusterdata(state['_cluster'])
 
-    if state['_cluster'] != DEFAULT_SERVER_CLUSTER:
-        # vmem, mem, pmem too high: job will not start
-        overhead = get_cluster_overhead(state['_cluster'])
-        availmem = cl_data['TOTMEM'] - overhead
-        physmem = cl_data['PHYSMEM'] - overhead
-        if state['l'].get('_%s' % VMEM) > availmem:
-            requested = state['l'].get('_%s' % VMEM) or state['l'].get('_%s' % MEM)
-            warn("Warning, requested %sb vmem per node, this is more than the available vmem (%sb), this"
-                 " job will never start." % (requested, availmem))
-        elif state['l'].get('_%s' % MEM) > physmem:
-            requested = state['l'].get('_%s' % MEM)
-            warn("Warning, requested %sb mem per node, this is more than the available mem (%sb), this"
-                 " job will never start." % (requested, physmem))
-        elif state['l'].get('_%s' % PMEM) > physmem / cl_data['NP']:
-            requested = state['l'].get('_%s' % PMEM)
-            warn("Warning, requested %sb pmem per node, this is more than the available pmem (%sb), this"
-                 " job will never start." % (requested, physmem / cl_data['NP']))
+    if state['_cluster'] == DEFAULT_SERVER_CLUSTER:
+        return header
+
+    #    cores on cluster: warn when non-ideal number of cores is used (eg 8 cores on 6-core numa domain etc)
+    #    ideal: either less than NP_LCD or multiple of NP_LCD
+    np_lcd = cl_data['NP_LCD']
+
+    if ppn > np_lcd and ppn % np_lcd:
+        warn('The chosen ppn %s is not considered ideal: should use either lower than %s or a multiple of %s' %
+             (ppn, np_lcd, np_lcd))
+
+    # vmem, mem, pmem too high: job will not start
+    overhead = get_cluster_overhead(state['_cluster'])
+    availmem = cl_data['TOTMEM'] - overhead
+    physmem = cl_data['PHYSMEM'] - overhead
+    if state['l'].get('_%s' % VMEM) > availmem:
+        requested = state['l'].get('_%s' % VMEM) or state['l'].get('_%s' % MEM)
+        warn("Warning, requested %sb vmem per node, this is more than the available vmem (%sb), this"
+             " job will never start." % (requested, availmem))
+    elif state['l'].get('_%s' % MEM) > physmem:
+        requested = state['l'].get('_%s' % MEM)
+        warn("Warning, requested %sb mem per node, this is more than the available mem (%sb), this"
+             " job will never start." % (requested, physmem))
+    elif state['l'].get('_%s' % PMEM) > physmem / cl_data['NP']:
+        requested = state['l'].get('_%s' % PMEM)
+        warn("Warning, requested %sb pmem per node, this is more than the available pmem (%sb), this"
+             " job will never start." % (requested, physmem / cl_data['NP']))
 
     return header
 

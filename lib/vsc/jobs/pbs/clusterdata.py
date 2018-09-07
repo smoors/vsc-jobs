@@ -151,6 +151,29 @@ CLUSTERDATA = {
     },
 }
 
+EXTRACLUSTERDATA = {
+    'broadwell_himem': {
+        'PHYSMEM': 264020188 << 10,  # GB
+        'TOTMEM': 265068760 << 10,  # GB
+        'AVAILMEM': 261 << 30,
+        'NP': 40,
+        'NP_LCD': 20,
+    },
+    'broadwell_pascal': {
+        'PHYSMEM': 264020188 << 10,  # GB
+        'TOTMEM': 265068760 << 10,  # GB
+        'AVAILMEM': 261 << 30,
+        'NP': 24,
+        'NP_LCD': 12,
+    },
+    'broadwell_geforce': {
+        'PHYSMEM': 264020188 << 10,  # GB
+        'TOTMEM': 265068760 << 10,  # GB
+        'AVAILMEM': 261 << 30,
+        'NP': 32,
+        'NP_LCD': 16,
+    },
+}
 
 GPUFEATURES = ['geforce', 'pascal', 'kepler']
 

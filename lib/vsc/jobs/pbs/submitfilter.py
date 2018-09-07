@@ -254,8 +254,6 @@ def parse_resources(txt, cluster, resources, update=False):
             newvtxt = parse_resources_nodes(value, cluster, newvalue)
         elif MEM_REGEXP.search(key):
             newvtxt = parse_mem(key, value, cluster, newvalue)
-        elif key == 'feature':
-            newvtxt = parse_features(value, cluster, newvalue)
         else:
             newvalue = {key: value}
             if value is None:
@@ -333,36 +331,6 @@ def parse_mem(name, txt, cluster, resources):
     return "%s=%s" % (name, txt)
 
 
-def parse_features(txt, cluster, resources):
-    """
-    Convert -l feature=<txt> for cluster
-
-    update resources instance with
-        _extrafeatures: extra features
-
-    features specified in the '-l nodes=...' and '-l feature=...' directives are treated separately;
-    they are combined by the job scheduler
-
-    txt is a :-separated list of features
-
-    returns (possibly modified) resource text
-    """
-
-    logging.info("submitfilter: features requested %s", txt)
-
-    extrafeatures = []
-    features.extend(txt.split(':')
-
-    # update shared resources dict
-    resources.update({
-        '_features': features,
-    })
-
-    #TOCHECK: moet dit wel???????
-#     return "%s=%s" % (NODES_PREFIX, resources[NODES_PREFIX])
-    return
-
-
 def parse_resources_nodes(txt, cluster, resources):
     """
     Convert -l nodes=<txt> for cluster
@@ -391,12 +359,13 @@ def parse_resources_nodes(txt, cluster, resources):
     nrnodes = 0
     nrcores = 0
     nrgpus = 0
-    features = resources.get('_features') or []
+    features = []
     newtxt = []
     for node_spec in txt.split('+'):
         props = node_spec.split(':')
 
         ppns = [(x.split('=')[1], idx) for idx, x in enumerate(props) if x.startswith('ppn=')] or [(1, None)]
+        warn("%s" % ppns)
 
         ppn = ppns[0][0]
         try:
