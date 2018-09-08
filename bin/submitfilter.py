@@ -40,8 +40,8 @@ import logging
 import pwd
 import sys
 
-from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead, MASTER_REGEXP
-from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER, GPUFEATURES, CPUFEATURES, FEATURES
+from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead, get_cluster_maxppn
+from vsc.jobs.pbs.clusterdata import MASTER_REGEXP, DEFAULT_SERVER_CLUSTER, GPUFEATURES, CPUFEATURES, FEATURES
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VMEM
 from vsc.jobs.pbs.submitfilter import MEM, _parse_mem_units
 from vsc.utils import fancylogger
@@ -66,6 +66,7 @@ def make_new_header(sf):
     """
     state, newopts = sf.gather_state(MASTER_REGEXP)
 
+    cluster = state['_cluster']
     ppn = state['l'].get('_ppn', 1)
     make = sf.make_header
 
@@ -90,14 +91,14 @@ def make_new_header(sf):
 
     # vmem: add default when not specified
     if VMEM not in state['l'] and PMEM not in state['l'] and MEM not in state['l']:
-        (_, vpp) = get_cluster_mpp(state['_cluster'])
+        (_, vpp) = get_cluster_mpp(cluster)
         vmem = vpp * ppn
         state['l'].update({
             VMEM: "%s" % vmem,
             '_%s' % VMEM: vmem,
         })
         header.extend([
-            "# No pmem or vmem limit specified - added by submitfilter (server found: %s)" % state['_cluster'],
+            "# No pmem or vmem limit specified - added by submitfilter (server found: %s)" % cluster,
             make("-l", "%s=%s" % (VMEM, vmem)),
             make("-l", "%s=%s" % (MEM, vmem)),
         ])
@@ -114,12 +115,12 @@ def make_new_header(sf):
                 })
                 header.extend([
                     "# Force vmem limit equal to MIN_VMEM - added by submitfilter (server found: %s)"
-                    % state['_cluster'],
+                    % cluster,
                     make("-l", "%s=%s" % (VMEM, vmem)),
                 ])
             # add mem equal to vmem
             header.extend([
-                "# Force mem limit equal to vmem - added by submitfilter (server found: %s)" % state['_cluster'],
+                "# Force mem limit equal to vmem - added by submitfilter (server found: %s)" % cluster,
                 make("-l", "%s=%s" % (MEM, vmem)),
             ])
         except KeyError:
@@ -129,7 +130,7 @@ def make_new_header(sf):
                 requested_memory = (MEM, state['l'][MEM])
                 # add vmem equal to mem
                 header.extend([
-                    "# Force vmem limit equal to mem - added by submitfilter (server found: %s)" % state['_cluster'],
+                    "# Force vmem limit equal to mem - added by submitfilter (server found: %s)" % cluster,
                     make("-l", "%s=%s" % (VMEM, requested_memory[1])),
                 ])
 
@@ -151,19 +152,20 @@ def make_new_header(sf):
     if len(gpufeat) > 1:
         warn('Warning, more than one GPU architecture requested (%s), this job will never start.' % ', '.join(gpufeat))
 
-    # select the correct clusterdata for broadwell
-    if state['_cluster'] == 'broadwell':
+    # select the correct cluster for broadwell nodes
+    if cluster == 'broadwell':
         if gpufeat == {'pascal'}:
-            state['_cluster'] = 'broadwell_pascal'
+            cluster = 'broadwell_pascal'
         elif gpufeat == {'geforce'}:
-            state['_cluster'] = 'broadwell_geforce'
+            cluster = 'broadwell_geforce'
         elif 'himem' in allfeatures:
-            state['_cluster'] = 'broadwell_himem'
+            cluster = 'broadwell_himem'
 
-    # check if requested ppn is not more than available for a given CPU architecture
-    warn("%s" % state['_cluster'])
-    if cpufeat:
-#         maxppn = get_cluster_maxppn(cluster)
+    # check that requested ppn is not more than available
+    warn("%s" % cluster)
+    maxppn = get_cluster_maxppn(cluster)
+    if ppn > maxppn:
+        warn('Warning, requested ppn (%s) is more than available (%s), this job will never start.' (ppn, maxppn))
 
     # add feature gpgpu if 1 or more gpus is requested
     if state['l'].get('_nrgpus') > 0:
@@ -171,9 +173,9 @@ def make_new_header(sf):
         make("-q", "gpu")
 
     # test/warn:
-    cl_data = get_clusterdata(state['_cluster'])
+    cl_data = get_clusterdata(cluster)
 
-    if state['_cluster'] == DEFAULT_SERVER_CLUSTER:
+    if cluster == DEFAULT_SERVER_CLUSTER:
         return header
 
     #    cores on cluster: warn when non-ideal number of cores is used (eg 8 cores on 6-core numa domain etc)
@@ -185,7 +187,7 @@ def make_new_header(sf):
              (ppn, np_lcd, np_lcd))
 
     # vmem, mem, pmem too high: job will not start
-    overhead = get_cluster_overhead(state['_cluster'])
+    overhead = get_cluster_overhead(cluster)
     availmem = cl_data['TOTMEM'] - overhead
     physmem = cl_data['PHYSMEM'] - overhead
     if state['l'].get('_%s' % VMEM) > availmem:

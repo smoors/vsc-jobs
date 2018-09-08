@@ -120,6 +120,7 @@ CLUSTERDATA = {
         'PHYSMEM': DEFAULT_VMEM,
         'TOTMEM': DEFAULT_VMEM,
         'NP_LCD': 1,
+        'DEFMAXNP', 40,
     },
     'skylake': {
         'PHYSMEM': 196681412 << 10,  # ~187.6GB
@@ -149,15 +150,13 @@ CLUSTERDATA = {
         'NP': 28,
         'NP_LCD': 14,
     },
-}
-
-EXTRACLUSTERDATA = {
     'broadwell_himem': {
         'PHYSMEM': 264020188 << 10,  # GB
         'TOTMEM': 265068760 << 10,  # GB
         'AVAILMEM': 261 << 30,
         'NP': 40,
         'NP_LCD': 20,
+        'no_feature': True,
     },
     'broadwell_pascal': {
         'PHYSMEM': 264020188 << 10,  # GB
@@ -165,6 +164,7 @@ EXTRACLUSTERDATA = {
         'AVAILMEM': 261 << 30,
         'NP': 24,
         'NP_LCD': 12,
+        'no_feature': True,
     },
     'broadwell_geforce': {
         'PHYSMEM': 264020188 << 10,  # GB
@@ -172,12 +172,13 @@ EXTRACLUSTERDATA = {
         'AVAILMEM': 261 << 30,
         'NP': 32,
         'NP_LCD': 16,
+        'no_feature': True,
     },
 }
 
 GPUFEATURES = ['geforce', 'pascal', 'kepler']
 
-CPUFEATURES = ['intel', 'amd'] + CLUSTERDATA.keys()
+CPUFEATURES = ['intel', 'amd'] + [x for x in CLUSTERDATA.keys() if not CLUSTERDATA[x].get('no_feature')]
 
 FEATURES = ['adf', 'awery', 'enc10', 'enc3', 'enc4', 'enc8', 'enc9', 'gbonte', 'himem', 'mpi',
             'postgresql', 'public', 'qdr', 'refremov', 'sc', 'vdetours']
