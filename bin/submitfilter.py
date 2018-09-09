@@ -139,6 +139,7 @@ def make_new_header(sf):
 
     # check if requested feature(s) are valid
     warn('state_l: %s' % state['l'])
+    feature_list = filter(None, state['l'].get('feature').split(':'))
     allfeatures = set(state['l']['_features'] + filter(None, [state['l'].get('feature')]))
     for feat in allfeatures:
         if feat not in (GPUFEATURES + CPUFEATURES + FEATURES):
@@ -165,11 +166,17 @@ def make_new_header(sf):
     warn("%s" % cluster)
     maxppn = get_cluster_maxppn(cluster)
     if ppn > maxppn:
-        warn('Warning, requested ppn (%s) is more than available (%s), this job will never start.' (ppn, maxppn))
+        warn(
+            'Warning, requested ppn (%s) is more than the maximum available (%s) %,'
+            ' this job will never start.' % (ppn, maxppn, cluster)
+        )
+        sys.exit(1)
 
     # add feature gpgpu if 1 or more gpus is requested
     if state['l'].get('_nrgpus') > 0:
-        make("-l", "feature=gpgpu")
+        if 'gpgpu' not in gpufeat:
+            feature_list.append('gpgpu')
+            make("-l", "feature=%s" % ':'.join(feature_list))
         make("-q", "gpu")
 
     # test/warn:

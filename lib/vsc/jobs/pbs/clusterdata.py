@@ -120,7 +120,7 @@ CLUSTERDATA = {
         'PHYSMEM': DEFAULT_VMEM,
         'TOTMEM': DEFAULT_VMEM,
         'NP_LCD': 1,
-        'DEFMAXNP', 40,
+        'DEFMAXNP': 40,
     },
     'skylake': {
         'PHYSMEM': 196681412 << 10,  # ~187.6GB
@@ -144,32 +144,32 @@ CLUSTERDATA = {
         'NP_LCD': 4,
     },
     'broadwell': {
-        'PHYSMEM': 264020188 << 10,  # GB
-        'TOTMEM': 265068760 << 10,  # GB
-        'AVAILMEM': 261 << 30,
+        'PHYSMEM': 264020188 << 10,  # 251.8GB
+        'TOTMEM': 265068760 << 10,  # 252.8GB
+        'AVAILMEM': 261000000 << 10, #rough estimation
         'NP': 28,
         'NP_LCD': 14,
     },
     'broadwell_himem': {
-        'PHYSMEM': 264020188 << 10,  # GB
-        'TOTMEM': 265068760 << 10,  # GB
-        'AVAILMEM': 261 << 30,
+        'PHYSMEM': 1585239396 << 10,  # GB
+        'TOTMEM': 1586287968 << 10,  # GB
+        'AVAILMEM': 1582000000 << 10, #rough estimation
         'NP': 40,
         'NP_LCD': 20,
         'no_feature': True,
     },
     'broadwell_pascal': {
-        'PHYSMEM': 264020188 << 10,  # GB
-        'TOTMEM': 265068760 << 10,  # GB
-        'AVAILMEM': 261 << 30,
+        'PHYSMEM': 264020188 << 10,  # 251.8GB
+        'TOTMEM': 265068760 << 10,  # 252.8GB
+        'AVAILMEM': 261000000 << 10, #rough estimation
         'NP': 24,
         'NP_LCD': 12,
         'no_feature': True,
     },
     'broadwell_geforce': {
-        'PHYSMEM': 264020188 << 10,  # GB
-        'TOTMEM': 265068760 << 10,  # GB
-        'AVAILMEM': 261 << 30,
+        'PHYSMEM': 528296028 << 10,  # GB
+        'TOTMEM': 529344600 << 10,  # GB
+        'AVAILMEM': 525000000 << 10, #rough estimation
         'NP': 32,
         'NP_LCD': 16,
         'no_feature': True,
