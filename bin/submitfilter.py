@@ -117,7 +117,7 @@ def make_new_header(sf):
                     "# Force vmem limit equal to MIN_VMEM - added by submitfilter (server found: %s)" % cluster,
                     make("-l", "%s=%s" % (VMEM, vmem)),
                 ])
-            # add mem equal to vmem
+            # force/add mem equal to vmem
             header.extend([
                 "# Force mem limit equal to vmem - added by submitfilter (server found: %s)" % cluster,
                 make("-l", "%s=%s" % (MEM, vmem)),
@@ -139,7 +139,7 @@ def make_new_header(sf):
                         "# Force mem limit equal to MIN_MEM - added by submitfilter (server found: %s)" % cluster,
                         make("-l", "%s=%s" % (MEM, mem)),
                     ])
-                # add vmem equal to mem
+                # force/add vmem equal to mem
                 header.extend([
                     "# Force vmem limit equal to mem - added by submitfilter (server found: %s)" % cluster,
                     make("-l", "%s=%s" % (VMEM, mem)),
@@ -168,7 +168,7 @@ def make_new_header(sf):
 
     # select the corresponding cluster for given gpu:
     gpuclusters = {
-        'gpu': 'hydra',  # discard any given cpu feature
+        'gpu': 'hydra',  # discard any requested cpu feature
         'pascal': 'broadwell+pascal',
         'geforce': 'broadwell+geforce',
         'kepler': 'ivybridge'
@@ -178,7 +178,7 @@ def make_new_header(sf):
         cluster = gpuclusters[gpufeat]
 
     if 'himem' in allfeatures:
-        cluster = 'broadwell+himem'
+        cluster = 'broadwell+himem'  # discard any requested gpu or cpu feature
 
     # check that requested ppn is not more than available
     maxppn = get_cluster_maxppn(cluster)
