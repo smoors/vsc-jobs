@@ -125,7 +125,7 @@ FEATURECLUSTERS = {
     'gpgpu': DEFAULT_SERVER_CLUSTER,
     'pascal': 'broadwell+pascal',
     'geforce': 'broadwell+geforce',
-    'kepler': 'ivybridge',
+    'kepler': 'ivybridge+kepler',
     'himem': 'broadwell+himem',
 }
 
