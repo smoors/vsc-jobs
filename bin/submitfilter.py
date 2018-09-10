@@ -230,10 +230,10 @@ def make_new_header(sf):
     elif state['l'].get('_%s' % MEM) > physmem:
         requested = state['l'].get('_%s' % MEM)
         abort("requested %sb mem per node, this is more than the available mem (%sb)." % (requested, physmem))
-    elif state['l'].get('_%s' % PMEM) > physmem / cl_data['NP']:
+    elif state['l'].get('_%s' % PMEM) > physmem / maxppn:
         requested = state['l'].get('_%s' % PMEM)
         abort("requested %sb pmem per node, this is more than the available pmem (%sb)." %
-              (requested, physmem / cl_data['NP']))
+              (requested, physmem / maxppn))
 
     return header
 

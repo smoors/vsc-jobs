@@ -122,7 +122,7 @@ CLUSTERDATA = {
 
 # clusters corresponding to features
 FEATURECLUSTERS = {
-    'gpgpu': 'hydra',
+    'gpgpu': DEFAULT_SERVER_CLUSTER,
     'pascal': 'broadwell+pascal',
     'geforce': 'broadwell+geforce',
     'kepler': 'ivybridge',
