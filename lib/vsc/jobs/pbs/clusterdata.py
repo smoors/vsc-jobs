@@ -69,14 +69,13 @@ CLUSTERDATA = {
         'NP': 20,
         'NP_LCD': 10,
     },
-    'ivybridge+kepler': {
+    'ivybridge-kepler': {
         'PHYSMEM': 264114416 << 10,  # 251.9GB
         'TOTMEM': 265162988 << 10,  # 252.9GB
         'AVAILMEM': 260773208 << 10, # 248.7GB
         'NP': 20,
         'NP_LCD': 10,
         'NGPU': 2,
-        'no_feature': True,
     },
     'magnycours': {
         'PHYSMEM': 65940712 << 10,  # 62.9GB
@@ -92,49 +91,48 @@ CLUSTERDATA = {
         'NP': 28,
         'NP_LCD': 14,
     },
-    'broadwell+himem': {
+    'broadwell-himem': {
         'PHYSMEM': 1585239396 << 10,  # GB
         'TOTMEM': 1586287968 << 10,  # GB
         'AVAILMEM': 1582000000 << 10, #rough estimation
         'NP': 40,
         'NP_LCD': 20,
-        'no_feature': True,
     },
-    'broadwell+pascal': {
+    'broadwell-pascal': {
         'PHYSMEM': 264020188 << 10,  # 251.8GB
         'TOTMEM': 265068760 << 10,  # 252.8GB
         'AVAILMEM': 261000000 << 10, #rough estimation
         'NP': 24,
         'NP_LCD': 12,
         'NGPU': 2,
-        'no_feature': True,
     },
-    'broadwell+geforce': {
+    'broadwell-geforce': {
         'PHYSMEM': 528296028 << 10,  # GB
         'TOTMEM': 529344600 << 10,  # GB
         'AVAILMEM': 525000000 << 10, #rough estimation
         'NP': 32,
         'NP_LCD': 16,
         'NGPU': 4,
-        'no_feature': True,
     },
 }
 
-# clusters corresponding to features
-FEATURECLUSTERS = {
-    'gpgpu': DEFAULT_SERVER_CLUSTER,
-    'pascal': 'broadwell+pascal',
-    'geforce': 'broadwell+geforce',
-    'kepler': 'ivybridge+kepler',
-    'himem': 'broadwell+himem',
+# features corresponding to specific clusters
+# these features are mutually exclusive
+CLUSTERFEATURES = {
+    'pascal': 'broadwell-pascal',
+    'geforce': 'broadwell-geforce',
+    'kepler': 'ivybridge-kepler',
+    'himem': 'broadwell-himem',
 }
 
-GPUFEATURES = ['gpgpu', 'geforce', 'pascal', 'kepler']
+GPUFEATURES = ['geforce', 'pascal', 'kepler']
 
-CPUFEATURES = ['intel', 'amd'] + [x for x in CLUSTERDATA.keys() if not CLUSTERDATA[x].get('no_feature')]
+CPUFEATURES = ['magnycours', 'ivybridge', 'broadwell', 'skylake']
 
 FEATURES = ['adf', 'awery', 'enc10', 'enc3', 'enc4', 'enc8', 'enc9', 'gbonte', 'himem', 'mpi',
-            'postgresql', 'public', 'qdr', 'refremov', 'sc', 'vdetours']
+            'postgresql', 'public', 'qdr', 'refremov', 'sc', 'vdetours', 'intel', 'amd', 'gpgpu']
+
+ALLFEATURES = FEATURES + GPUFEATURES + CPUFEATURES
 
 MASTER_REGEXP = re.compile(r'(%s)' % '|'.join(CLUSTERDATA.keys()))
 

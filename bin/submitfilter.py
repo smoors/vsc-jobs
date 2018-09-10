@@ -42,7 +42,7 @@ import sys
 
 from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead
 from vsc.jobs.pbs.clusterdata import MASTER_REGEXP, DEFAULT_SERVER_CLUSTER, GPUFEATURES, CPUFEATURES, FEATURES
-from vsc.jobs.pbs.clusterdata import get_cluster_maxppn, get_cluster_maxgpus, FEATURECLUSTERS
+from vsc.jobs.pbs.clusterdata import get_cluster_maxppn, get_cluster_maxgpus, CLUSTERFEATURES, ALLFEATURES
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VMEM, abort
 from vsc.jobs.pbs.submitfilter import MEM, _parse_mem_units, FEATURE
 from vsc.utils import fancylogger
@@ -153,28 +153,23 @@ def make_new_header(sf):
 
     # check if requested features are valid
     feature_list = filter(None, state['l'].get(FEATURE, '').split(':'))
-    allfeatures = set(state['l']['_features'] + feature_list)
-    for feat in allfeatures:
-        if feat not in (GPUFEATURES + CPUFEATURES + FEATURES):
-            abort('feature %s is not valid, this job will never start.' % feat)
+    req_features = set(feature_list + state['l']['_features'])
+    invalid_features = [x for x in req_features if x not in ALLFEATURES]
+    if invalid_features:
+        abort('feature(s) not valid (%s).' % ', '.join(invalid_features))
 
-    cpufeat = allfeatures.intersection(CPUFEATURES)
+    cpufeat = req_features.intersection(CPUFEATURES)
     if len(cpufeat) > 1:
         abort('more than one CPU architecture requested (%s).' % ', '.join(cpufeat))
 
-    gpufeat = allfeatures.intersection(GPUFEATURES)
+    gpufeat = req_features.intersection(GPUFEATURES)
     if len(gpufeat) > 1:
         abort('more than one GPU architecture requested (%s).' % ', '.join(gpufeat))
 
-    if gpus > 0 and 'himem' in allfeatures:
-        abort('no himem node with GPUs available.')
-
     # add feature gpgpu and queue gpu if 1 or more gpus are requested
     if gpus > 0:
-        if not gpufeat:
-            gpufeat.add('gpgpu')
-            feature_list.append('gpgpu')
-            feature = ':'.join(feature_list)
+        if not gpufeat and 'gpgpu' not in req_features:
+            feature = ':'.join(feature_list + ['gpgpu'])
             state['l'].update({
                 FEATURE: "%s" % feature,
             })
@@ -187,12 +182,14 @@ def make_new_header(sf):
             make("-q", "gpu")
         ])
 
-    # select cluster corresponding to requested resources:
-    if gpus > 0:
-        gpufeat = list(gpufeat)[0]
-        cluster = FEATURECLUSTERS[gpufeat]
-    if 'himem' in allfeatures:
-        cluster = FEATURECLUSTERS['himem']
+    # check for mutually exclusive features
+    clusterfeat = [x for x in CLUSTERFEATURES if x in req_features]
+    if len(clusterfeat) > 1:
+        abort('requested combination of resources is not available (%s).' % ', '.join(feat_excl))
+
+    # select cluster corresponding to specific features:
+    if len(clusterfeat) == 1:
+        cluster = CLUSTERFEATURES['clusterfeat']
 
     # check that requested gpus is not more than available
     maxgpus = get_cluster_maxgpus(cluster)
@@ -203,7 +200,6 @@ def make_new_header(sf):
     maxppn = get_cluster_maxppn(cluster)
     if ppn > maxppn:
         abort('requested ppn (%s) is more than the maximum available (%s).' % (ppn, maxppn))
-
 
     # this is only for testing, should be removed in prod
     warn("cluster: %s" % cluster)
@@ -217,7 +213,7 @@ def make_new_header(sf):
     np_lcd = cl_data['NP_LCD']
 
     if ppn > np_lcd and ppn % np_lcd:
-        warn('The chosen ppn %s is not considered ideal: should use either lower than %s or a multiple of %s' %
+        warn('The chosen ppn (%s) is not considered ideal: should use either lower than %s or a multiple of %s' %
              (ppn, np_lcd, np_lcd))
 
     # vmem, mem, pmem too high: job will not start
