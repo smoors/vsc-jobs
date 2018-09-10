@@ -47,74 +47,6 @@ DEFAULT_SERVER = "default"
 # availmem has to be taken from an clean idle node
 # (i.e. no jobs in pbsnodes and right after reboot)
 CLUSTERDATA = {
-    'delcatty': {
-        'PHYSMEM': 66045320 << 10,  # ~62.9GB
-        'TOTMEM': 87016832 << 10,  # ~82.9GB
-        'AVAILMEM': 84240480 << 10, # (1GB pagepool)
-        'NP': 16,
-        'NP_LCD': 4,
-        },
-    'raichu': {
-        'PHYSMEM': 32973320 << 10,  # 31.4GB
-        'TOTMEM': 53944832 << 10,  # 51.4GB
-        'AVAILMEM': 53256304 << 10, # no pagepool
-        'NP': 16,
-        'NP_LCD': 4,
-        },
-    'muk': {
-        'PHYSMEM': 66068964 << 10,  # 63.0GB
-        'TOTMEM': 99623388 << 10,  # 95.0GB
-        'AVAILMEM': 84683080 << 10, # (1GB pagepool)
-        'NP': 16,
-        'NP_LCD': 4,
-        },
-    'phanpy': {
-        'PHYSMEM': 528271212 << 10,  # 503.7 GB
-        'TOTMEM':  549242728 << 10,  # 523.7 GB
-        'AVAILMEM': 528456608 << 10, # 504.0 GB (16GB pagepool)
-        'NP': 24,
-        'NP_LCD': 3,
-    },
-    'golett': {
-        'PHYSMEM': 65850124 << 10,
-        'TOTMEM':  86821640 << 10,
-        'AVAILMEM': 84123328 << 10, # 80.2GB (1GB pagepool)
-        'NP': 24,
-        'NP_LCD': 3,
-    },
-    'shuppet': {
-        'PHYSMEM': 4056736 << 10,
-        'TOTMEM':  12445340 << 10,
-        'NP': 2,
-        'NP_LCD': 2,
-    },
-    'swalot': {
-        'PHYSMEM': 131791292 << 10,
-        'TOTMEM': 152762808 << 10,
-        'AVAILMEM': 150549544 << 10, # (1GB pagepool)
-        'NP': 20,
-        'NP_LCD': 5,
-    },
-    'skitty': {
-        'PHYSMEM': 184300 << 20,
-        'TOTMEM': 184300 << 20,
-        'AVAILMEM': 184300 << 20,
-        'NP': 36,
-        'NP_LCD': 9,
-    },
-    'victini': {
-        'PHYSMEM': 92150 << 20,
-        'TOTMEM': 92150 << 20,
-        'AVAILMEM': 92150 << 20,
-        'NP': 36,
-        'NP_LCD': 9,
-    },
-    'banette': {
-        'PHYSMEM': 4056736 << 10,
-        'TOTMEM':  12445340 << 10,
-        'NP': 2,
-        'NP_LCD': 2,
-    },
     'hydra': {
         # this is the default if not specified: 2GB
         'PHYSMEM': DEFAULT_VMEM,
@@ -150,7 +82,7 @@ CLUSTERDATA = {
         'NP': 28,
         'NP_LCD': 14,
     },
-    'broadwell_himem': {
+    'broadwell+himem': {
         'PHYSMEM': 1585239396 << 10,  # GB
         'TOTMEM': 1586287968 << 10,  # GB
         'AVAILMEM': 1582000000 << 10, #rough estimation
@@ -158,7 +90,7 @@ CLUSTERDATA = {
         'NP_LCD': 20,
         'no_feature': True,
     },
-    'broadwell_pascal': {
+    'broadwell+pascal': {
         'PHYSMEM': 264020188 << 10,  # 251.8GB
         'TOTMEM': 265068760 << 10,  # 252.8GB
         'AVAILMEM': 261000000 << 10, #rough estimation
@@ -166,7 +98,7 @@ CLUSTERDATA = {
         'NP_LCD': 12,
         'no_feature': True,
     },
-    'broadwell_geforce': {
+    'broadwell+geforce': {
         'PHYSMEM': 528296028 << 10,  # GB
         'TOTMEM': 529344600 << 10,  # GB
         'AVAILMEM': 525000000 << 10, #rough estimation
@@ -176,7 +108,7 @@ CLUSTERDATA = {
     },
 }
 
-GPUFEATURES = ['geforce', 'pascal', 'kepler']
+GPUFEATURES = ['gpgpu', 'geforce', 'pascal', 'kepler']
 
 CPUFEATURES = ['intel', 'amd'] + [x for x in CLUSTERDATA.keys() if not CLUSTERDATA[x].get('no_feature')]
 

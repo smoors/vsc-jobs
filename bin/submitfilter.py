@@ -42,8 +42,8 @@ import sys
 
 from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead, get_cluster_maxppn
 from vsc.jobs.pbs.clusterdata import MASTER_REGEXP, DEFAULT_SERVER_CLUSTER, GPUFEATURES, CPUFEATURES, FEATURES
-from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VMEM
-from vsc.jobs.pbs.submitfilter import MEM, _parse_mem_units
+from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VMEM, abort
+from vsc.jobs.pbs.submitfilter import MEM, _parse_mem_units, FEATURE
 from vsc.utils import fancylogger
 
 fancylogger.setroot()
@@ -54,7 +54,7 @@ fancylogger.setLogLevelInfo()
 ENV_NODE_PARTITION = 'VSC_NODE_PARTITION'
 ENV_RESERVATION = 'VSC_RESERVATION'
 
-MIN_VMEM = 1 << 30  # minimum allowed requested memory
+MIN_MEM = MIN_VMEM = 1 << 30  # minimum allowed requested memory
 
 
 def make_new_header(sf):
@@ -106,7 +106,7 @@ def make_new_header(sf):
     else:
         try:
             requested_memory = (VMEM, state['l'][VMEM])
-            # force memory to be at least equal to MIN_VMEM
+            # force virtual memory to be at least equal to MIN_VMEM
             if _parse_mem_units(requested_memory[1]) < MIN_VMEM:
                 vmem = MIN_VMEM
                 state['l'].update({
@@ -114,8 +114,7 @@ def make_new_header(sf):
                     '_%s' % VMEM: vmem,
                 })
                 header.extend([
-                    "# Force vmem limit equal to MIN_VMEM - added by submitfilter (server found: %s)"
-                    % cluster,
+                    "# Force vmem limit equal to MIN_VMEM - added by submitfilter (server found: %s)" % cluster,
                     make("-l", "%s=%s" % (VMEM, vmem)),
                 ])
             # add mem equal to vmem
@@ -128,62 +127,91 @@ def make_new_header(sf):
                 requested_memory = (PMEM, state['l'][PMEM])
             except KeyError:
                 requested_memory = (MEM, state['l'][MEM])
+                # force memory to be at least equal to MIN_MEM
+                mem = _parse_mem_units(requested_memory[1])
+                if mem < MIN_MEM:
+                    mem = MIN_MEM
+                    state['l'].update({
+                        MEM: "%s" % mem,
+                        '_%s' % MEM: mem,
+                    })
+                    header.extend([
+                        "# Force mem limit equal to MIN_MEM - added by submitfilter (server found: %s)" % cluster,
+                        make("-l", "%s=%s" % (MEM, mem)),
+                    ])
                 # add vmem equal to mem
                 header.extend([
                     "# Force vmem limit equal to mem - added by submitfilter (server found: %s)" % cluster,
-                    make("-l", "%s=%s" % (VMEM, requested_memory[1])),
+                    make("-l", "%s=%s" % (VMEM, mem)),
                 ])
 
         logging.info("submitfilter - %s requested by user %s was %s",
                      requested_memory[0], current_user, requested_memory[1])
 
     # check if requested feature(s) are valid
-    warn('state_l: %s' % state['l'])
-    feature_list = filter(None, state['l'].get('feature').split(':'))
-    allfeatures = set(state['l']['_features'] + filter(None, [state['l'].get('feature')]))
+    feature_list = filter(None, state['l'].get(FEATURE, '').split(':'))
+    allfeatures = set(state['l']['_features'] + feature_list)
     for feat in allfeatures:
         if feat not in (GPUFEATURES + CPUFEATURES + FEATURES):
-            warn('Warning, feature %s is not valid, this job will never start.' % feat)
+            abort('feature %s is not valid, this job will never start.' % feat)
 
     cpufeat = allfeatures.intersection(CPUFEATURES)
     if len(cpufeat) > 1:
-        warn('Warning, more than one CPU architecture requested (%s), this job will never start.' % ', '.join(cpufeat))
+        abort('more than one CPU architecture requested (%s).' % ', '.join(cpufeat))
 
     gpufeat = allfeatures.intersection(GPUFEATURES)
     if len(gpufeat) > 1:
-        warn('Warning, more than one GPU architecture requested (%s), this job will never start.' % ', '.join(gpufeat))
+        abort('more than one GPU architecture requested (%s).' % ', '.join(gpufeat))
 
-    # select the correct cluster for broadwell nodes
-    if cluster == 'broadwell':
-        if gpufeat == {'pascal'}:
-            cluster = 'broadwell_pascal'
-        elif gpufeat == {'geforce'}:
-            cluster = 'broadwell_geforce'
-        elif 'himem' in allfeatures:
-            cluster = 'broadwell_himem'
+    if len(gpufeat) == 1 and 'himem' in allfeatures:
+        abort('no himem node with GPUs available.')
+
+    # select the corresponding cluster for given gpu:
+    gpuclusters = {
+        'gpu': 'hydra',  # discard any given cpu feature
+        'pascal': 'broadwell+pascal',
+        'geforce': 'broadwell+geforce',
+        'kepler': 'ivybridge'
+    }
+    if len(gpufeat) == 1:
+        gpufeat = list(gpufeat)[0]
+        cluster = gpuclusters[gpufeat]
+
+    if 'himem' in allfeatures:
+        cluster = 'broadwell+himem'
 
     # check that requested ppn is not more than available
-    warn("%s" % cluster)
     maxppn = get_cluster_maxppn(cluster)
     if ppn > maxppn:
-        warn(
-            'Warning, requested ppn (%s) is more than the maximum available (%s) %,'
-            ' this job will never start.' % (ppn, maxppn, cluster)
-        )
-        sys.exit(1)
+        abort('requested ppn (%s) is more than the maximum available (%s).' % (ppn, maxppn))
 
     # add feature gpgpu if 1 or more gpus is requested
     if state['l'].get('_nrgpus') > 0:
-        if 'gpgpu' not in gpufeat:
+        if not gpufeat:
             feature_list.append('gpgpu')
-            make("-l", "feature=%s" % ':'.join(feature_list))
-        make("-q", "gpu")
+            feature = ':'.join(feature_list)
+            state['l'].update({
+                FEATURE: "%s" % feature,
+                # do not update '_features'!
+            })
+            header.extend([
+                "# Add feature gpgpu",
+                make("-l", "%s=%s" % (FEATURE, feature)),
+            ])
+        header.extend([
+            "# Submit to gpu queue",
+            make("-q", "gpu")
+        ])
 
-    # test/warn:
-    cl_data = get_clusterdata(cluster)
+    # this is only for testing, should be removed in prod
+    warn("cluster: %s" % cluster)
+    warn('state_l: %s' % state['l'])
 
     if cluster == DEFAULT_SERVER_CLUSTER:
         return header
+
+    # test/warn:
+    cl_data = get_clusterdata(cluster)
 
     #    cores on cluster: warn when non-ideal number of cores is used (eg 8 cores on 6-core numa domain etc)
     #    ideal: either less than NP_LCD or multiple of NP_LCD
@@ -199,16 +227,14 @@ def make_new_header(sf):
     physmem = cl_data['PHYSMEM'] - overhead
     if state['l'].get('_%s' % VMEM) > availmem:
         requested = state['l'].get('_%s' % VMEM) or state['l'].get('_%s' % MEM)
-        warn("Warning, requested %sb vmem per node, this is more than the available vmem (%sb), this"
-             " job will never start." % (requested, availmem))
+        abort("requested %sb vmem per node, this is more than the available vmem (%sb)." % (requested, availmem))
     elif state['l'].get('_%s' % MEM) > physmem:
         requested = state['l'].get('_%s' % MEM)
-        warn("Warning, requested %sb mem per node, this is more than the available mem (%sb), this"
-             " job will never start." % (requested, physmem))
+        abort("requested %sb mem per node, this is more than the available mem (%sb)." % (requested, physmem))
     elif state['l'].get('_%s' % PMEM) > physmem / cl_data['NP']:
         requested = state['l'].get('_%s' % PMEM)
-        warn("Warning, requested %sb pmem per node, this is more than the available pmem (%sb), this"
-             " job will never start." % (requested, physmem / cl_data['NP']))
+        abort("requested %sb pmem per node, this is more than the available pmem (%sb)." %
+              (requested, physmem / cl_data['NP']))
 
     return header
 
@@ -231,8 +257,10 @@ def main(arguments=None):
     sf.parse_header()
 
     header = make_new_header(sf)
-    logging.info("\n".join(arguments) + "\n")
-    logging.info("\n".join(header + [sf.prebody]) + "\n")
+
+    # this is only for testing, should be removed in prod
+    sys.stderr.write("\n".join(arguments) + "\n")
+    sys.stderr.write("\n".join(header + [sf.prebody]) + "\n")
 
     # flush it so it doesn't get mixed with stderr
     sys.stdout.flush()

@@ -31,6 +31,7 @@ Module with submitfilter tools
 import logging
 import os
 import re
+import sys
 
 from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER
 from vsc.jobs.pbs.clusterdata import get_cluster_maxppn, get_cluster_mpp
@@ -49,6 +50,7 @@ MEM_VALUE_UNITS = ('', 'k', 'm', 'g', 't')
 PMEM = 'pmem'
 VMEM = 'vmem'
 MEM = 'mem'
+FEATURE = 'feature'
 
 _warnings = []
 
@@ -70,6 +72,11 @@ def warn(*txt):
     global _warnings
     _warnings.append(" ".join(txt))
 
+def abort(txt):
+    """Write error message and exit"""
+    sys.stderr.write('Error: ' + txt + '\n')
+    sys.stderr.flush()
+    sys.exit(1)
 
 class SubmitFilter(object):
     """PBS script processing"""
@@ -365,7 +372,6 @@ def parse_resources_nodes(txt, cluster, resources):
         props = node_spec.split(':')
 
         ppns = [(x.split('=')[1], idx) for idx, x in enumerate(props) if x.startswith('ppn=')] or [(1, None)]
-        warn("%s" % ppns)
 
         ppn = ppns[0][0]
         try:
