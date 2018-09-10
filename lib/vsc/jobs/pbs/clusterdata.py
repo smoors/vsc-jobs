@@ -53,6 +53,7 @@ CLUSTERDATA = {
         'TOTMEM': DEFAULT_VMEM,
         'NP_LCD': 1,
         'DEFMAXNP': 40,
+        'DEFMAXNGPU': 4,
     },
     'skylake': {
         'PHYSMEM': 196681412 << 10,  # ~187.6GB
@@ -67,6 +68,15 @@ CLUSTERDATA = {
         'AVAILMEM': 260773208 << 10, # 248.7GB
         'NP': 20,
         'NP_LCD': 10,
+    },
+    'ivybridge+kepler': {
+        'PHYSMEM': 264114416 << 10,  # 251.9GB
+        'TOTMEM': 265162988 << 10,  # 252.9GB
+        'AVAILMEM': 260773208 << 10, # 248.7GB
+        'NP': 20,
+        'NP_LCD': 10,
+        'NGPU': 2,
+        'no_feature': True,
     },
     'magnycours': {
         'PHYSMEM': 65940712 << 10,  # 62.9GB
@@ -96,6 +106,7 @@ CLUSTERDATA = {
         'AVAILMEM': 261000000 << 10, #rough estimation
         'NP': 24,
         'NP_LCD': 12,
+        'NGPU': 2,
         'no_feature': True,
     },
     'broadwell+geforce': {
@@ -104,8 +115,18 @@ CLUSTERDATA = {
         'AVAILMEM': 525000000 << 10, #rough estimation
         'NP': 32,
         'NP_LCD': 16,
+        'NGPU': 4,
         'no_feature': True,
     },
+}
+
+# clusters corresponding to features
+FEATURECLUSTERS = {
+    'gpgpu': 'hydra',
+    'pascal': 'broadwell+pascal',
+    'geforce': 'broadwell+geforce',
+    'kepler': 'ivybridge',
+    'himem': 'broadwell+himem',
 }
 
 GPUFEATURES = ['gpgpu', 'geforce', 'pascal', 'kepler']
@@ -138,6 +159,12 @@ def get_cluster_maxppn(cluster):
 
     c_d = get_clusterdata(cluster)
     return c_d.get('NP', c_d.get('DEFMAXNP', 1))
+
+def get_cluster_maxgpus(cluster):
+    """Return max gpus for a cluster"""
+
+    c_d = get_clusterdata(cluster)
+    return c_d.get('NGPU', c_d.get('DEFMAXNGPU', 0))
 
 
 def get_cluster_overhead(cluster):

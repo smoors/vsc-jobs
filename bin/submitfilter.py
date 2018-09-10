@@ -40,8 +40,9 @@ import logging
 import pwd
 import sys
 
-from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead, get_cluster_maxppn
+from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead
 from vsc.jobs.pbs.clusterdata import MASTER_REGEXP, DEFAULT_SERVER_CLUSTER, GPUFEATURES, CPUFEATURES, FEATURES
+from vsc.jobs.pbs.clusterdata import get_cluster_maxppn, get_cluster_maxgpus, FEATURECLUSTERS
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VMEM, abort
 from vsc.jobs.pbs.submitfilter import MEM, _parse_mem_units, FEATURE
 from vsc.utils import fancylogger
@@ -68,6 +69,8 @@ def make_new_header(sf):
 
     cluster = state['_cluster']
     ppn = state['l'].get('_ppn', 1)
+    gpus = state['l'].get('_nrgpus', 1)
+
     make = sf.make_header
 
     # make a copy, leave original untouched
@@ -148,7 +151,7 @@ def make_new_header(sf):
         logging.info("submitfilter - %s requested by user %s was %s",
                      requested_memory[0], current_user, requested_memory[1])
 
-    # check if requested feature(s) are valid
+    # check if requested features are valid
     feature_list = filter(None, state['l'].get(FEATURE, '').split(':'))
     allfeatures = set(state['l']['_features'] + feature_list)
     for feat in allfeatures:
@@ -163,36 +166,17 @@ def make_new_header(sf):
     if len(gpufeat) > 1:
         abort('more than one GPU architecture requested (%s).' % ', '.join(gpufeat))
 
-    if len(gpufeat) == 1 and 'himem' in allfeatures:
+    if gpus > 0 and 'himem' in allfeatures:
         abort('no himem node with GPUs available.')
 
-    # select the corresponding cluster for given gpu:
-    gpuclusters = {
-        'gpu': 'hydra',  # discard any requested cpu feature
-        'pascal': 'broadwell+pascal',
-        'geforce': 'broadwell+geforce',
-        'kepler': 'ivybridge'
-    }
-    if len(gpufeat) == 1:
-        gpufeat = list(gpufeat)[0]
-        cluster = gpuclusters[gpufeat]
-
-    if 'himem' in allfeatures:
-        cluster = 'broadwell+himem'  # discard any requested gpu or cpu feature
-
-    # check that requested ppn is not more than available
-    maxppn = get_cluster_maxppn(cluster)
-    if ppn > maxppn:
-        abort('requested ppn (%s) is more than the maximum available (%s).' % (ppn, maxppn))
-
-    # add feature gpgpu if 1 or more gpus is requested
-    if state['l'].get('_nrgpus') > 0:
+    # add feature gpgpu and queue gpu if 1 or more gpus are requested
+    if gpus > 0:
         if not gpufeat:
+            gpufeat.add('gpgpu')
             feature_list.append('gpgpu')
             feature = ':'.join(feature_list)
             state['l'].update({
                 FEATURE: "%s" % feature,
-                # do not update '_features'!
             })
             header.extend([
                 "# Add feature gpgpu",
@@ -203,12 +187,27 @@ def make_new_header(sf):
             make("-q", "gpu")
         ])
 
+    # select cluster corresponding to requested resources:
+    if gpus > 0:
+        gpufeat = list(gpufeat)[0]
+        cluster = FEATURECLUSTERS[gpufeat]
+    if 'himem' in allfeatures:
+        cluster = FEATURECLUSTERS['himem']
+
+    # check that requested gpus is not more than available
+    maxgpus = get_cluster_maxgpus(cluster)
+    if  gpus > maxgpus:
+        abort('requested gpus (%s) is more than the maximum available (%s).' % (gpus, maxgpus))
+
+    # check that requested ppn is not more than available
+    maxppn = get_cluster_maxppn(cluster)
+    if ppn > maxppn:
+        abort('requested ppn (%s) is more than the maximum available (%s).' % (ppn, maxppn))
+
+
     # this is only for testing, should be removed in prod
     warn("cluster: %s" % cluster)
     warn('state_l: %s' % state['l'])
-
-    if cluster == DEFAULT_SERVER_CLUSTER:
-        return header
 
     # test/warn:
     cl_data = get_clusterdata(cluster)

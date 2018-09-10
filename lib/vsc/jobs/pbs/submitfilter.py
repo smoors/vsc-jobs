@@ -73,7 +73,9 @@ def warn(*txt):
     _warnings.append(" ".join(txt))
 
 def abort(txt):
-    """Write error message and exit"""
+    """Write generated warning messages, followed by error message and exit"""
+    for warning in ["%s\n" % w for w in get_warnings()]:
+        sys.stderr.write(warning)
     sys.stderr.write('Error: ' + txt + '\n')
     sys.stderr.flush()
     sys.exit(1)
