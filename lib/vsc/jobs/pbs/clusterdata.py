@@ -47,7 +47,7 @@ DEFAULT_SERVER = "default"
 # availmem has to be taken from an clean idle node
 # (i.e. no jobs in pbsnodes and right after reboot)
 CLUSTERDATA = {
-    'hydra': {
+    DEFAULT_SERVER_CLUSTER: {
         # this is the default if not specified: 2GB
         'PHYSMEM': DEFAULT_VMEM,
         'TOTMEM': DEFAULT_VMEM,
@@ -65,14 +65,14 @@ CLUSTERDATA = {
     'ivybridge': {
         'PHYSMEM': 264114416 << 10,  # 251.9GB
         'TOTMEM': 265162988 << 10,  # 252.9GB
-        'AVAILMEM': 260773208 << 10, # 248.7GB
+        'AVAILMEM': 260773208 << 10,  # 248.7GB
         'NP': 20,
         'NP_LCD': 10,
     },
     'ivybridge-kepler': {
         'PHYSMEM': 264114416 << 10,  # 251.9GB
         'TOTMEM': 265162988 << 10,  # 252.9GB
-        'AVAILMEM': 260773208 << 10, # 248.7GB
+        'AVAILMEM': 260773208 << 10,  # 248.7GB
         'NP': 20,
         'NP_LCD': 10,
         'NGPU': 2,
@@ -80,28 +80,28 @@ CLUSTERDATA = {
     'magnycours': {
         'PHYSMEM': 65940712 << 10,  # 62.9GB
         'TOTMEM': 66989284 << 10,  # 63.9GB
-        'AVAILMEM': 63786500 << 10, # 60.8GB
+        'AVAILMEM': 63786500 << 10,  # 60.8GB
         'NP': 16,
         'NP_LCD': 4,
     },
     'broadwell': {
         'PHYSMEM': 264020188 << 10,  # 251.8GB
         'TOTMEM': 265068760 << 10,  # 252.8GB
-        'AVAILMEM': 261000000 << 10, #rough estimation
+        'AVAILMEM': 261000000 << 10,  # rough estimation
         'NP': 28,
         'NP_LCD': 14,
     },
     'broadwell-himem': {
         'PHYSMEM': 1585239396 << 10,  # GB
         'TOTMEM': 1586287968 << 10,  # GB
-        'AVAILMEM': 1582000000 << 10, #rough estimation
+        'AVAILMEM': 1582000000 << 10,  # rough estimation
         'NP': 40,
         'NP_LCD': 20,
     },
     'broadwell-pascal': {
         'PHYSMEM': 264020188 << 10,  # 251.8GB
         'TOTMEM': 265068760 << 10,  # 252.8GB
-        'AVAILMEM': 261000000 << 10, #rough estimation
+        'AVAILMEM': 261000000 << 10,  # rough estimation
         'NP': 24,
         'NP_LCD': 12,
         'NGPU': 2,
@@ -109,7 +109,7 @@ CLUSTERDATA = {
     'broadwell-geforce': {
         'PHYSMEM': 528296028 << 10,  # GB
         'TOTMEM': 529344600 << 10,  # GB
-        'AVAILMEM': 525000000 << 10, #rough estimation
+        'AVAILMEM': 525000000 << 10,  # rough estimation
         'NP': 32,
         'NP_LCD': 16,
         'NGPU': 4,
@@ -157,6 +157,7 @@ def get_cluster_maxppn(cluster):
 
     c_d = get_clusterdata(cluster)
     return c_d.get('NP', c_d.get('DEFMAXNP', 1))
+
 
 def get_cluster_maxgpus(cluster):
     """Return max gpus for a cluster"""

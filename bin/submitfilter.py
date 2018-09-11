@@ -41,8 +41,8 @@ import pwd
 import sys
 
 from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead
-from vsc.jobs.pbs.clusterdata import MASTER_REGEXP, DEFAULT_SERVER_CLUSTER, GPUFEATURES, CPUFEATURES, FEATURES
-from vsc.jobs.pbs.clusterdata import get_cluster_maxppn, get_cluster_maxgpus, CLUSTERFEATURES, ALLFEATURES
+from vsc.jobs.pbs.clusterdata import MASTER_REGEXP, GPUFEATURES, CPUFEATURES, CLUSTERFEATURES, ALLFEATURES
+from vsc.jobs.pbs.clusterdata import get_cluster_maxppn, get_cluster_maxgpus
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VMEM, abort
 from vsc.jobs.pbs.submitfilter import MEM, _parse_mem_units, FEATURE
 from vsc.utils import fancylogger
@@ -185,15 +185,17 @@ def make_new_header(sf):
     # check for mutually exclusive features
     clusterfeat = [x for x in CLUSTERFEATURES if x in req_features]
     if len(clusterfeat) > 1:
-        abort('requested combination of resources is not available (%s).' % ', '.join(feat_excl))
+        abort('requested combination of resources is not available (%s).' % ', '.join(clusterfeat))
 
     # select cluster corresponding to specific features:
     if len(clusterfeat) == 1:
         cluster = CLUSTERFEATURES['clusterfeat']
 
+    warn("Using cluster: %s." % cluster)
+
     # check that requested gpus is not more than available
     maxgpus = get_cluster_maxgpus(cluster)
-    if  gpus > maxgpus:
+    if gpus > maxgpus:
         abort('requested gpus (%s) is more than the maximum available (%s).' % (gpus, maxgpus))
 
     # check that requested ppn is not more than available
@@ -202,7 +204,6 @@ def make_new_header(sf):
         abort('requested ppn (%s) is more than the maximum available (%s).' % (ppn, maxppn))
 
     # this is only for testing, should be removed in prod
-    warn("cluster: %s" % cluster)
     warn('state_l: %s' % state['l'])
 
     # test/warn:

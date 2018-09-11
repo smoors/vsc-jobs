@@ -72,6 +72,7 @@ def warn(*txt):
     global _warnings
     _warnings.append(" ".join(txt))
 
+
 def abort(txt):
     """Write generated warning messages, followed by error message and exit"""
     for warning in ["%s\n" % w for w in get_warnings()]:
@@ -79,6 +80,7 @@ def abort(txt):
     sys.stderr.write('Error: ' + txt + '\n')
     sys.stderr.flush()
     sys.exit(1)
+
 
 class SubmitFilter(object):
     """PBS script processing"""
@@ -463,7 +465,6 @@ def cluster_from_options(opts, master_reg):
         if r:
             return r.group(1)
 
-    warn("Unable to determine clustername, using default %s (%s)" %
-         (DEFAULT_SERVER_CLUSTER, ', '.join(warntxt)))
+    warn("%s" % ', '.join(warntxt))
 
     return DEFAULT_SERVER_CLUSTER
