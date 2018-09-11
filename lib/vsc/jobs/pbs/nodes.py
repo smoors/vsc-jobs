@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2017 Ghent University
+# Copyright 2013-2018 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -72,6 +72,7 @@ TRANSLATE_STATE = {
     ND_down_on_error: 'x',
     ND_bad: 'b',
     ND_idle: 'i',  # same as free?
+    ND_offline_idle: '.',  # same as offline
 }
 
 NDST_OK = 'ok'

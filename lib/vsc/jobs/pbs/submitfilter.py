@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Ghent University
+# Copyright 2015-2018 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -28,8 +28,10 @@ Module with submitfilter tools
 
 @author: Stijn De Weirdt (Ghent University)
 """
+import logging
 import os
 import re
+import sys
 
 from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER
 from vsc.jobs.pbs.clusterdata import get_cluster_maxppn, get_cluster_mpp
@@ -48,6 +50,7 @@ MEM_VALUE_UNITS = ('', 'k', 'm', 'g', 't')
 PMEM = 'pmem'
 VMEM = 'vmem'
 MEM = 'mem'
+FEATURE = 'feature'
 
 _warnings = []
 
@@ -68,6 +71,15 @@ def warn(*txt):
     """Collect warning, not actually print anything"""
     global _warnings
     _warnings.append(" ".join(txt))
+
+
+def abort(txt):
+    """Write generated warning messages, followed by error message and exit"""
+    for warning in ["%s\n" % w for w in get_warnings()]:
+        sys.stderr.write(warning)
+    sys.stderr.write('Error: ' + txt + '\n')
+    sys.stderr.flush()
+    sys.exit(1)
 
 
 class SubmitFilter(object):
@@ -136,6 +148,7 @@ class SubmitFilter(object):
     def parse_header(self):
         """Parse the header (and add cmdline options too)"""
         for idx, line in enumerate(self.stdin):
+            logging.info("submitfilter: original header line %s", line)
             headeropts = self.parseline(line)
             if headeropts is None:
                 # keep this one line (don't strip newline)
@@ -198,6 +211,8 @@ def parse_commandline_list(args):
     """
     res = []
 
+    logging.info("submitfilter: commandline %s", " ".join(args))
+
     size = len(args)
     for idx, data in enumerate(args):
         if not data.startswith('-'):
@@ -230,7 +245,7 @@ def parse_resources(txt, cluster, resources, update=False):
     Returns string with resources (which might be different from original 'txt'
     due to templating, e.g. ppn=all -> ppn=16)
 
-    If update is True, resources will be updated with new values will be updated
+    If update is True, resources will be updated with new values
     """
     newtxt = []
 
@@ -334,7 +349,9 @@ def parse_resources_nodes(txt, cluster, resources):
     update resources instance with
         _nrnodes: number of nodes
         _nrcores: total cores
+        _nrgpus: number of GPUs
         _ppn: (avg) ppn
+        _features: optional features
         nodes: (possibly modified) resource text
 
     returns (possibly modified) resource text
@@ -347,10 +364,13 @@ def parse_resources_nodes(txt, cluster, resources):
     # id is integer (=number of nodes) or a single node name
     # property: either special ppn=integer or something else/arbitrary
 
+    logging.info("submitfilter: node resources requested %s", txt)
     maxppn = get_cluster_maxppn(cluster)
 
     nrnodes = 0
     nrcores = 0
+    nrgpus = 0
+    features = []
     newtxt = []
     for node_spec in txt.split('+'):
         props = node_spec.split(':')
@@ -383,6 +403,11 @@ def parse_resources_nodes(txt, cluster, resources):
             # some description
             nodes = 1
 
+        gpus = [x.split('=')[1] for x in props if x.startswith('gpus=')] or [0]
+
+        features.extend([x for x in props[1:] if '=' not in x])
+
+        nrgpus += int(gpus[0])
         nrnodes += nodes
         nrcores += nodes * ppn
 
@@ -392,6 +417,8 @@ def parse_resources_nodes(txt, cluster, resources):
     resources.update({
         '_nrnodes': nrnodes,
         '_nrcores': nrcores,
+        '_nrgpus': nrgpus,
+        '_features': features,
         '_ppn': max(1, int(nrcores / nrnodes)),
         NODES_PREFIX: '+'.join(newtxt),
     })
@@ -413,7 +440,15 @@ def cluster_from_options(opts, master_reg):
         else:
             warntxt.append('queue %s' % queues[-1])
 
-    server = os.environ.get('PBS_DEFAULT', None)
+    slurm_clusters = os.environ.get('SLURM_CLUSTERS')
+    if slurm_clusters:
+        try:
+            return slurm_clusters.split(',')[0]
+        except Exception:
+            server = None
+            warntxt.append('invalid SLURM_CLUSTERS %s' % slurm_clusters)
+    else:
+        server = os.environ.get('PBS_DEFAULT', None)
 
     if server:
         r = master_reg.search(server)
@@ -424,7 +459,10 @@ def cluster_from_options(opts, master_reg):
     else:
         warntxt.append('no PBS_DEFAULT')
 
-    warn("Unable to determine clustername, using default %s (%s)" %
-         (DEFAULT_SERVER_CLUSTER, ', '.join(warntxt)))
+    features = [val for opt, val in opts if opt == 'l']
+    if features:
+        r = master_reg.search(' '.join(features))
+        if r:
+            return r.group(1)
 
     return DEFAULT_SERVER_CLUSTER

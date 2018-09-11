@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 # #
-# Copyright 2009-2015 Ghent University
+# Copyright 2009-2018 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -22,7 +22,7 @@ vsc-jobs base distribution setup.py
 import vsc.install.shared_setup as shared_setup
 from vsc.install.shared_setup import ag, sdw, jt
 
-VERSION = '0.18'
+VERSION = '0.21.6'
 
 PACKAGE = {
     'version': VERSION,
@@ -37,14 +37,15 @@ PACKAGE = {
         # use local install from https://oss.trac.surfsara.nl/pbs_python/ticket/41#attachments
         # or rpms
         # 'pbs_python >= 4.6',
-        'vsc-administration >= 0.20.1',
+        'vsc-administration >= 1.1.0',
         'vsc-accountpage-clients >= 0.1.2',
-        'vsc-base >= 2.4.2',
-        'vsc-config >= 1.26',
         'vsc-ldap >= 1.3.4',
-        #'vsc-ldap-extension >= 1.10',
         'vsc-utils >= 1.4.6',
         'lxml',
+        # hack, work around unknown issue with defined dependency_links
+        'vsc-ldap-extension >= 1.3',
+        'vsc-filesystems >= 0.19',
+        'vsc-config',
     ],
     'tests_require': [
         'mock',

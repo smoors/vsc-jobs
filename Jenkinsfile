@@ -10,5 +10,5 @@ node {
     stage 'cleanup'
     sh "git clean -fd"
     stage 'test'
-    sh "python setup.py test"
+    sh "python setup.py -vv test"
 }

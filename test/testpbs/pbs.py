@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Ghent University
+# Copyright 2016-2018 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -24,6 +24,7 @@
 # along with vsc-jobs. If not, see <http://www.gnu.org/licenses/>.
 #
 # dummy pbs module
+""""""
 import os
 fn = 'fake_pbs_constants.py'
 absfn = os.path.join(os.path.dirname(__file__), fn)
