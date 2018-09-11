@@ -41,7 +41,7 @@ import pwd
 import sys
 
 from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead
-from vsc.jobs.pbs.clusterdata import MASTER_REGEXP, GPUFEATURES, CPUFEATURES, CLUSTERFEATURES, ALLFEATURES
+from vsc.jobs.pbs.clusterdata import MASTER_REGEXP, GPUFEATURES, CPUFEATURES, EXCLUSIVEFEATURES, ALLFEATURES
 from vsc.jobs.pbs.clusterdata import get_cluster_maxppn, get_cluster_maxgpus
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VMEM, abort
 from vsc.jobs.pbs.submitfilter import MEM, _parse_mem_units, FEATURE
@@ -108,7 +108,8 @@ def make_new_header(sf):
     if len(gpufeat_excl) > 1:
         abort('more than one GPU architecture requested (%s).' % ', '.join(gpufeat_excl))
 
-    # add feature gpgpu and queue gpu if 1 or more gpus are requested
+    # add feature 'gpgpu' and queue 'gpu'
+    # set general gpu cluster 'gpunode'
     if gpus > 0:
         cluster = 'gpunode'
         if not gpufeat:
@@ -130,13 +131,13 @@ def make_new_header(sf):
         abort('requested gpus (%s) should be at least 1 when requesting feature (%s).' % (gpus, ', '.join(gpufeat)))
 
     # check for mutually exclusive features
-    clusterfeat = [x for x in CLUSTERFEATURES if x in req_features]
+    clusterfeat = [x for x req_features if x in EXCLUSIVEFEATURES]
     if len(clusterfeat) > 1:
         abort('requested combination of resources is not available (%s).' % ', '.join(clusterfeat))
 
     # select cluster corresponding to specific features:
     if len(clusterfeat) == 1:
-        cluster = CLUSTERFEATURES[clusterfeat[0]]
+        cluster = clusterfeat[0]
 
     warn("Using server: %s" % cluster)
 
