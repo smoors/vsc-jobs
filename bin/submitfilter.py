@@ -101,7 +101,7 @@ def make_new_header(sf):
             '_%s' % VMEM: vmem,
         })
         header.extend([
-            "# No pmem or vmem limit specified - added by submitfilter (server found: %s)" % cluster,
+            "# No pmem or vmem limit specified - added by submitfilter",
             make("-l", "%s=%s" % (VMEM, vmem)),
             make("-l", "%s=%s" % (MEM, vmem)),
         ])
@@ -117,12 +117,12 @@ def make_new_header(sf):
                     '_%s' % VMEM: vmem,
                 })
                 header.extend([
-                    "# Force vmem limit equal to MIN_VMEM - added by submitfilter (server found: %s)" % cluster,
+                    "# Force vmem limit equal to MIN_VMEM - added by submitfilter",
                     make("-l", "%s=%s" % (VMEM, vmem)),
                 ])
             # force/add mem equal to vmem
             header.extend([
-                "# Force mem limit equal to vmem - added by submitfilter (server found: %s)" % cluster,
+                "# Force mem limit equal to vmem - added by submitfilter",
                 make("-l", "%s=%s" % (MEM, vmem)),
             ])
         except KeyError:
@@ -139,12 +139,12 @@ def make_new_header(sf):
                         '_%s' % MEM: mem,
                     })
                     header.extend([
-                        "# Force mem limit equal to MIN_MEM - added by submitfilter (server found: %s)" % cluster,
+                        "# Force mem limit equal to MIN_MEM - added by submitfilter",
                         make("-l", "%s=%s" % (MEM, mem)),
                     ])
                 # force/add vmem equal to mem
                 header.extend([
-                    "# Force vmem limit equal to mem - added by submitfilter (server found: %s)" % cluster,
+                    "# Force vmem limit equal to mem - added by submitfilter",
                     make("-l", "%s=%s" % (VMEM, mem)),
                 ])
 
@@ -163,24 +163,30 @@ def make_new_header(sf):
         abort('more than one CPU architecture requested (%s).' % ', '.join(cpufeat))
 
     gpufeat = req_features.intersection(GPUFEATURES)
-    if len(gpufeat) > 1:
-        abort('more than one GPU architecture requested (%s).' % ', '.join(gpufeat))
+    gpufeat_excl = gpufeat.difference({'gpgpu'})
+    if len(gpufeat_excl) > 1:
+        abort('more than one GPU architecture requested (%s).' % ', '.join(gpufeat_excl))
 
     # add feature gpgpu and queue gpu if 1 or more gpus are requested
     if gpus > 0:
-        if not gpufeat and 'gpgpu' not in req_features:
+        cluster = 'gpunode'
+        if not gpufeat:
             feature = ':'.join(feature_list + ['gpgpu'])
             state['l'].update({
                 FEATURE: "%s" % feature,
             })
             header.extend([
-                "# Add feature gpgpu",
+                "# Add feature gpgpu - added by submitfilter",
                 make("-l", "%s=%s" % (FEATURE, feature)),
             ])
         header.extend([
-            "# Submit to gpu queue",
+            "# Submit to gpu queue - added by submitfilter",
             make("-q", "gpu")
         ])
+
+    # make sure that gpu nodes are only used when gpus > 0
+    if gpus == 0 and gpufeat:
+        abort('requested gpus (%s) should be at least 1 when requesting feature (%s).' % (gpus, ', '.join(gpufeat)))
 
     # check for mutually exclusive features
     clusterfeat = [x for x in CLUSTERFEATURES if x in req_features]
@@ -189,9 +195,12 @@ def make_new_header(sf):
 
     # select cluster corresponding to specific features:
     if len(clusterfeat) == 1:
-        cluster = CLUSTERFEATURES['clusterfeat']
+        cluster = CLUSTERFEATURES[clusterfeat[0]]
 
-    warn("Using cluster: %s." % cluster)
+    warn("Using server: %s" % cluster)
+
+    # this is only for testing, should be removed in prod
+    warn('state_l: %s' % state['l'])
 
     # check that requested gpus is not more than available
     maxgpus = get_cluster_maxgpus(cluster)
@@ -202,9 +211,6 @@ def make_new_header(sf):
     maxppn = get_cluster_maxppn(cluster)
     if ppn > maxppn:
         abort('requested ppn (%s) is more than the maximum available (%s).' % (ppn, maxppn))
-
-    # this is only for testing, should be removed in prod
-    warn('state_l: %s' % state['l'])
 
     # test/warn:
     cl_data = get_clusterdata(cluster)

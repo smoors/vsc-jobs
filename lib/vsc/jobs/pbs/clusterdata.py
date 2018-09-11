@@ -53,6 +53,13 @@ CLUSTERDATA = {
         'TOTMEM': DEFAULT_VMEM,
         'NP_LCD': 1,
         'DEFMAXNP': 40,
+    },
+    'gpunode': {
+        # this is the default if not specified: 2GB
+        'PHYSMEM': DEFAULT_VMEM,
+        'TOTMEM': DEFAULT_VMEM,
+        'NP_LCD': 1,
+        'DEFMAXNP': 32,
         'DEFMAXNGPU': 4,
     },
     'skylake': {
@@ -125,12 +132,12 @@ CLUSTERFEATURES = {
     'himem': 'broadwell-himem',
 }
 
-GPUFEATURES = ['geforce', 'pascal', 'kepler']
+GPUFEATURES = ['gpgpu', 'geforce', 'pascal', 'kepler']
 
 CPUFEATURES = ['magnycours', 'ivybridge', 'broadwell', 'skylake']
 
 FEATURES = ['adf', 'awery', 'enc10', 'enc3', 'enc4', 'enc8', 'enc9', 'gbonte', 'himem', 'mpi',
-            'postgresql', 'public', 'qdr', 'refremov', 'sc', 'vdetours', 'intel', 'amd', 'gpgpu']
+            'postgresql', 'public', 'qdr', 'refremov', 'sc', 'vdetours', 'intel', 'amd']
 
 ALLFEATURES = FEATURES + GPUFEATURES + CPUFEATURES
 

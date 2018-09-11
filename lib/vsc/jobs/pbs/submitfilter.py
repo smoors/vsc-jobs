@@ -465,6 +465,4 @@ def cluster_from_options(opts, master_reg):
         if r:
             return r.group(1)
 
-    warn("%s" % ', '.join(warntxt))
-
     return DEFAULT_SERVER_CLUSTER
