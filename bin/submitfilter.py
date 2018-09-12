@@ -128,9 +128,9 @@ def make_new_header(sf):
         abort('requested gpus (%s) should be at least 1 when requesting feature (%s).' % (gpus, ', '.join(gpufeat)))
 
     # check for mutually exclusive features
-    excl_feat = [x for x req_features if x in EXCLUSIVEFEATURES]
+    excl_feat = [x for x in req_features if x in EXCLUSIVEFEATURES]
     if len(excl_feat) > 1:
-        abort('requested combination of features is not available (%s).' % ', '.join(excl_feat))
+        abort('requested combination of features is not possible (%s).' % ', '.join(excl_feat))
 
     # select cluster corresponding to specific features:
     if excl_feat:
