@@ -49,8 +49,8 @@ DEFAULT_SERVER = "default"
 CLUSTERDATA = {
     'himem': {
         # cpu = broadwell
-        'PHYSMEM': 1585239396 << 10,  # GB
-        'TOTMEM': 1586287968 << 10,  # GB
+        'PHYSMEM': 1585239396 << 10,  # 1511.8GB
+        'TOTMEM': 1586287968 << 10,  # 1512.8GB
         'AVAILMEM': 1582000000 << 10,  # rough estimation
         'NP': 40,
         'NP_LCD': 20,
@@ -66,8 +66,8 @@ CLUSTERDATA = {
     },
     'geforce': {
         # cpu = broadwell
-        'PHYSMEM': 528296028 << 10,  # GB
-        'TOTMEM': 529344600 << 10,  # GB
+        'PHYSMEM': 528296028 << 10,  # 503.8GB
+        'TOTMEM': 529344600 << 10,  # 504.8GB
         'AVAILMEM': 525000000 << 10,  # rough estimation
         'NP': 32,
         'NP_LCD': 16,
@@ -89,6 +89,13 @@ CLUSTERDATA = {
         'NP': 40,
         'NP_LCD': 20,
     },
+    'broadwell': {
+        'PHYSMEM': 264020188 << 10,  # 251.8GB
+        'TOTMEM': 265068760 << 10,  # 252.8GB
+        'AVAILMEM': 261000000 << 10,  # rough estimation
+        'NP': 28,
+        'NP_LCD': 14,
+    },
     'ivybridge': {
         'PHYSMEM': 264114416 << 10,  # 251.9GB
         'TOTMEM': 265162988 << 10,  # 252.9GB
@@ -102,13 +109,6 @@ CLUSTERDATA = {
         'AVAILMEM': 63786500 << 10,  # 60.8GB
         'NP': 16,
         'NP_LCD': 4,
-    },
-    'broadwell': {
-        'PHYSMEM': 264020188 << 10,  # 251.8GB
-        'TOTMEM': 265068760 << 10,  # 252.8GB
-        'AVAILMEM': 261000000 << 10,  # rough estimation
-        'NP': 28,
-        'NP_LCD': 14,
     },
     'gpgpu': {
         # general data for gpu nodes
