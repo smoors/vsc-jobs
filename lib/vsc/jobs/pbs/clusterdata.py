@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2017 Ghent University
+# Copyright 2015-2018 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -24,84 +24,123 @@
 # along with vsc-jobs. If not, see <http://www.gnu.org/licenses/>.
 #
 """
-Module with UGent cluster data
+Module with Hydra cluster data
 
 TODO: read this (once) from config file
 
 @author: Stijn De Weirdt (Ghent University)
 @author: Jens Timmerman (Ghent University)
+@author: Ward Poelmans (Vrije Universiteit Brussel)
+@author: Samuel Moors (Vrije Universiteit Brussel)
 """
 
 import copy
 import re
 
-MIN_VMEM = 1536 << 20  # minimum amount of ram in our machines.
+DEFAULT_VMEM = 2048 << 20  # minimum amount of ram in our machines.
 
-DEFAULT_SERVER_CLUSTER = 'delcatty'
+DEFAULT_SERVER_CLUSTER = 'hydra'
 
 DEFAULT_SERVER = "default"
-
-MASTER_REGEXP = re.compile(r'master[^.]*\.([^.]+)\.(?:[^.]+\.vsc|os)$')
 
 # these amounts are in kilobytes as reported by pbsnodes
 # availmem has to be taken from an clean idle node
 # (i.e. no jobs in pbsnodes and right after reboot)
 CLUSTERDATA = {
-    'delcatty': {
-        'PHYSMEM': 66045320 << 10,  # ~62.9GB
-        'TOTMEM': 87016832 << 10,  # ~82.9GB
-        'AVAILMEM': 84240480 << 10, # (1GB pagepool)
-        'NP': 16,
-        'NP_LCD': 4,
-        },
-    'raichu': {
-        'PHYSMEM': 32973320 << 10,  # 31.4GB
-        'TOTMEM': 53944832 << 10,  # 51.4GB
-        'AVAILMEM': 53256304 << 10, # no pagepool
-        'NP': 16,
-        'NP_LCD': 4,
-        },
-    'muk': {
-        'PHYSMEM': 66068964 << 10,  # 63.0GB
-        'TOTMEM': 99623388 << 10,  # 95.0GB
-        'AVAILMEM': 84683080 << 10, # (1GB pagepool)
-        'NP': 16,
-        'NP_LCD': 4,
-        },
-    'phanpy': {
-        'PHYSMEM': 528271212 << 10,  # 503.7 GB
-        'TOTMEM':  549242728 << 10,  # 523.7 GB
-        'AVAILMEM': 528456608 << 10, # 504.0 GB (16GB pagepool)
+    'himem': {
+        # cpu = broadwell
+        'PHYSMEM': 1585239396 << 10,  # 1511.8GB
+        'TOTMEM': 1586287968 << 10,  # 1512.8GB
+        'AVAILMEM': 1582000000 << 10,  # rough estimation
+        'NP': 40,
+        'NP_LCD': 20,
+    },
+    'pascal': {
+        # cpu = broadwell
+        'PHYSMEM': 264020188 << 10,  # 251.8GB
+        'TOTMEM': 265068760 << 10,  # 252.8GB
+        'AVAILMEM': 261000000 << 10,  # rough estimation
         'NP': 24,
-        'NP_LCD': 3,
+        'NP_LCD': 12,
+        'NGPU': 2,
     },
-    'golett': {
-        'PHYSMEM': 65850124 << 10,
-        'TOTMEM':  86821640 << 10,
-        'AVAILMEM': 84123328 << 10, # 80.2GB (1GB pagepool)
-        'NP': 24,
-        'NP_LCD': 3,
+    'geforce': {
+        # cpu = broadwell
+        'PHYSMEM': 528296028 << 10,  # 503.8GB
+        'TOTMEM': 529344600 << 10,  # 504.8GB
+        'AVAILMEM': 525000000 << 10,  # rough estimation
+        'NP': 32,
+        'NP_LCD': 16,
+        'NGPU': 4,
     },
-    'shuppet': {
-        'PHYSMEM': 4056736 << 10,
-        'TOTMEM':  12445340 << 10,
-        'NP': 2,
-        'NP_LCD': 2,
-    },
-    'swalot': {
-        'PHYSMEM': 131791292 << 10,
-        'TOTMEM': 152762808 << 10,
-        'AVAILMEM': 150549544 << 10, # (1GB pagepool)
+    'kepler': {
+        # cpu = ivybridge
+        'PHYSMEM': 264114416 << 10,  # 251.9GB
+        'TOTMEM': 265162988 << 10,  # 252.9GB
+        'AVAILMEM': 260773208 << 10,  # 248.7GB
         'NP': 20,
-        'NP_LCD': 5,
+        'NP_LCD': 10,
+        'NGPU': 2,
     },
-    'banette': {
-        'PHYSMEM': 4056736 << 10,
-        'TOTMEM':  12445340 << 10,
-        'NP': 2,
-        'NP_LCD': 2,
+    'skylake': {
+        'PHYSMEM': 196681412 << 10,  # ~187.6GB
+        'TOTMEM': 197729984 << 10,  # ~188.6GB
+        'AVAILMEM': 193907328 << 10,  # (1GB pagepool)
+        'NP': 40,
+        'NP_LCD': 20,
+    },
+    'broadwell': {
+        'PHYSMEM': 264020188 << 10,  # 251.8GB
+        'TOTMEM': 265068760 << 10,  # 252.8GB
+        'AVAILMEM': 261000000 << 10,  # rough estimation
+        'NP': 28,
+        'NP_LCD': 14,
+    },
+    'ivybridge': {
+        'PHYSMEM': 264114416 << 10,  # 251.9GB
+        'TOTMEM': 265162988 << 10,  # 252.9GB
+        'AVAILMEM': 260773208 << 10,  # 248.7GB
+        'NP': 20,
+        'NP_LCD': 10,
+    },
+    'magnycours': {
+        'PHYSMEM': 65940712 << 10,  # 62.9GB
+        'TOTMEM': 66989284 << 10,  # 63.9GB
+        'AVAILMEM': 63786500 << 10,  # 60.8GB
+        'NP': 16,
+        'NP_LCD': 4,
+    },
+    'gpgpu': {
+        # general data for gpu nodes
+        'PHYSMEM': DEFAULT_VMEM,
+        'TOTMEM': DEFAULT_VMEM,
+        'NP_LCD': 1,
+        'DEFMAXNP': 32,
+        'DEFMAXNGPU': 4,
+    },
+    DEFAULT_SERVER_CLUSTER: {
+        # this is the default if not specified: 2GB
+        'PHYSMEM': DEFAULT_VMEM,
+        'TOTMEM': DEFAULT_VMEM,
+        'NP_LCD': 1,
+        'DEFMAXNP': 40,
     },
 }
+
+# features corresponding to specific clusters
+# these features are mutually exclusive
+EXCLUSIVEFEATURES = ['pascal', 'geforce', 'kepler', 'himem']
+
+GPUFEATURES = ['gpgpu', 'geforce', 'pascal', 'kepler']
+
+CPUFEATURES = ['magnycours', 'ivybridge', 'broadwell', 'skylake']
+
+FEATURES = ['adf', 'awery', 'enc10', 'enc3', 'enc4', 'enc8', 'enc9', 'gbonte', 'himem', 'mpi',
+            'postgresql', 'public', 'qdr', 'refremov', 'sc', 'vdetours', 'intel', 'amd']
+
+ALLFEATURES = FEATURES + GPUFEATURES + CPUFEATURES
+
+MASTER_REGEXP = re.compile(r'(%s)' % '|'.join(CLUSTERDATA.keys()))
 
 
 def get_clusterdata(name, make_copy=True):
@@ -124,6 +163,13 @@ def get_cluster_maxppn(cluster):
 
     c_d = get_clusterdata(cluster)
     return c_d.get('NP', c_d.get('DEFMAXNP', 1))
+
+
+def get_cluster_maxgpus(cluster):
+    """Return max gpus for a cluster"""
+
+    c_d = get_clusterdata(cluster)
+    return c_d.get('NGPU', c_d.get('DEFMAXNGPU', 0))
 
 
 def get_cluster_overhead(cluster):

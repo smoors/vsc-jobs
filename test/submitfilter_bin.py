@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Ghent University
+# Copyright 2016-2018 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -31,19 +31,20 @@ import glob
 import os
 import sys
 import re
+import mock
 
 import submitfilter
 
-#from vsc.install.shared_setup import REPO_BASE_DIR
 from vsc.install.shared_setup import vsc_setup
 from vsc.install.testing import TestCase
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, reset_warnings, MEM_REGEXP
-from vsc.jobs.pbs.clusterdata import DEFAULT_SERVER_CLUSTER
 from vsc.utils.run import run_simple
 
 REPO_BASE_DIR = vsc_setup().REPO_BASE_DIR
 
-SCRIPTS = ["""#!/bin/sh
+SCRIPTS = [
+# 0
+"""#!/bin/sh
 #
 #
 #PBS -N testrun
@@ -58,9 +59,13 @@ cd $VSC_HOME
 ##logs to stderr by default, redirect this to stdout
 ./pfgw64s 42424242_1t.txt 2>> $VSC_SCRATCH/testrun.42424242.out
 """,
+
+# 1
 """#!/bin/bash
 hostname
 """,
+
+# 2
 """#!/bin/bash
 #PBS -l nodes=3:ppn=half
 #PBS -l vmem=full
@@ -68,6 +73,8 @@ hostname
 #PBS -m n
 whatever
 """,
+
+# 3
 """#!/bin/bash
 #PBS -q short@master19.golett.gent.vsc
 #PBS -l nodes=1:ppn=4
@@ -75,16 +82,29 @@ whatever
 #PBS -m bea
 whatever
 """,
+
+# 4  -- requesting mem
 """ #!/bin/bash
 #PBS -l nodes=1:ppn=4
-#PBS -l mem=10g
+#PBS -l mem=4g
 #PBS -m n
 """,
+
+# 5
 """ #!/bin/bash
         #PBS -l nodes=1:ppn=4
 #PBS -l vmem=1g
 #PBS -m n
 """,
+
+# 6  -- requesting pmem
+""" #!/bin/bash
+#PBS -l nodes=1:ppn=4
+#PBS -l pmem=1g
+#PBS -m n
+""",
+
+
 ]
 
 
@@ -92,7 +112,8 @@ class TestSubmitfilter(TestCase):
 
     def setUp(self):
         reset_warnings()
-        for env in ['PBS_DEFAULT', 'PBS_DPREFIX', 'VSC_NODE_PARTITION']:
+        for env in ['PBS_DEFAULT', 'PBS_DPREFIX',
+                    submitfilter.ENV_NODE_PARTITION, submitfilter.ENV_RESERVATION]:
             if env in os.environ:
                 del os.environ[env]
         super(TestSubmitfilter, self).setUp()
@@ -127,7 +148,11 @@ class TestSubmitfilter(TestCase):
         """
 
         partname = 'mypartition'
-        os.environ['VSC_NODE_PARTITION'] = partname
+        os.environ[submitfilter.ENV_NODE_PARTITION] = partname
+
+        reserv = 'magicreserv'
+        os.environ[submitfilter.ENV_RESERVATION] = reserv
+
         sf = SubmitFilter(
             [],
             [x + "\n" for x in SCRIPTS[1].split("\n")]
@@ -144,9 +169,12 @@ class TestSubmitfilter(TestCase):
             '#PBS -l vmem=4720302336',
             '# Adding PARTITION as specified in VSC_NODE_PARTITION',
             '#PBS -W x=PARTITION:%s' % partname,
+            '# Adding reservation as specified in VSC_RESERVATION',
+            '#PBS -W x=FLAGS:ADVRES:%s' % reserv,
         ], msg='added missing defaults and pratiton information to header')
 
-        del os.environ['VSC_NODE_PARTITION']
+        del os.environ[submitfilter.ENV_NODE_PARTITION]
+        del os.environ[submitfilter.ENV_RESERVATION]
 
     def test_make_new_header(self):
         """Test make_new_header resource replacement"""
@@ -175,11 +203,76 @@ class TestSubmitfilter(TestCase):
         self.assertEqual(header, [
             '#!/bin/bash',
             '#PBS -l nodes=1:ppn=4',
-            '#PBS -l mem=10g',
+            '#PBS -l mem=4g',
             '#PBS -m n'
             '',
             '',
         ], msg='header with existing mem set')
+
+    @mock.patch('submitfilter.get_clusterdata')
+    @mock.patch('submitfilter.get_cluster_overhead')
+    def test_make_new_header_mem_limits(self, mock_cluster_overhead, mock_clusterdata):
+        reset_warnings()
+        sf = SubmitFilter(
+            [],
+            [x + "\n" for x in SCRIPTS[4].split("\n")]  # requesting mem example
+        )
+
+        mock_clusterdata.return_value = {
+            'TOTMEM': 4 << 30,
+            'PHYSMEM': 1024 << 20,
+            'NP': 8,
+            'NP_LCD': 2,
+        }
+        mock_cluster_overhead.return_value = 0
+
+        sf.parse_header()
+        header = submitfilter.make_new_header(sf)
+
+        # header should not change
+        self.assertEqual(header, [
+            '#!/bin/bash',
+            '#PBS -l nodes=1:ppn=4',
+            '#PBS -l mem=4g',
+            '#PBS -m n'
+            '',
+            '',
+        ], msg='header with existing mem set')
+        self.assertEqual(get_warnings(), [
+            "Unable to determine clustername, using default delcatty (no PBS_DEFAULT)",
+            "Warning, requested %sb mem per node, this is more than the available mem (%sb), this job will never start." % (4 << 30, 1024 << 20 )
+        ])
+
+    @mock.patch('submitfilter.get_clusterdata')
+    @mock.patch('submitfilter.get_cluster_overhead')
+    def test_make_new_header_pmem_limits(self, mock_cluster_overhead, mock_clusterdata):
+        sf = SubmitFilter(
+            [],
+            [x + "\n" for x in SCRIPTS[6].split("\n")]
+        )
+
+        mock_clusterdata.return_value = {
+            'TOTMEM': 4096 << 20,
+            'PHYSMEM': 3072 << 20,
+            'NP': 8,
+            'NP_LCD': 2,
+        }
+        mock_cluster_overhead.return_value = 0
+
+        sf.parse_header()
+        header = submitfilter.make_new_header(sf)
+        self.assertEqual(header, [
+            '#!/bin/bash',
+            '#PBS -l nodes=1:ppn=4',
+            '#PBS -l pmem=1g',
+            '#PBS -m n'
+            '',
+            '',
+        ], msg='header with existing mem set')
+        self.assertEqual(get_warnings(), [
+            "Unable to determine clustername, using default delcatty (no PBS_DEFAULT)",
+            "Warning, requested %sb pmem per node, this is more than the available pmem (%sb), this job will never start." % (1 << 30, (3072 << 20) / 8 )
+        ])
 
     def test_make_new_header_ignore_indentation(self):
         sf = SubmitFilter(
@@ -232,8 +325,8 @@ class TestSubmitfilter(TestCase):
             cmdline = os.path.join(testdir, "%s.cmdline" % name)
 
             # avoid pyc files in e.g. bin
-            cmd = 'PYTHONPATH=%s:$PYTHONPATH ' % os.pathsep.join([p for p in sys.path if p.startswith(REPO_BASE_DIR)])
-            cmd += "python -B %s" % submitfilter.__file__
+            cmd = 'PYTHONPATH="%s:$PYTHONPATH" ' % os.pathsep.join([p for p in sys.path if p.startswith(REPO_BASE_DIR)])
+            cmd += "python -B '%s'" % submitfilter.__file__
             if os.path.exists(cmdline):
                 cmd += " " + open(cmdline).readline().strip()
 
@@ -241,7 +334,7 @@ class TestSubmitfilter(TestCase):
             # get output, and exitcode
             ec, output = run_simple(cmd, input=open(script).read())
 
-            self.assertEqual(ec, 0, msg="submitfiler ended with ec 0 for script %s and cmdline %s" % (name, cmd))
+            self.assertEqual(ec, 0, msg="submitfilter ended with ec 0 for script %s and cmdline %s" % (name, cmd))
 
             res = ''
             if os.path.exists(log):

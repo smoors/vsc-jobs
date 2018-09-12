@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2017 Ghent University
+# Copyright 2016-2018 Ghent University
 #
 # This file is part of vsc-jobs,
 # originally created by the HPC team of Ghent University (http://ugent.be/hpc/en),
@@ -178,7 +178,7 @@ class TestSubmitfilter(TestCase):
 
     def setUp(self):
         reset_warnings()
-        for env in ['PBS_DEFAULT', 'PBS_DPREFIX', 'VSC_NODE_PARTITION']:
+        for env in ['PBS_DEFAULT', 'PBS_DPREFIX', 'VSC_NODE_PARTITION', 'VSC_RESERVATION']:
             if env in os.environ:
                 del os.environ[env]
 
