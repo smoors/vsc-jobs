@@ -104,14 +104,11 @@ def make_new_header(sf):
         abort('more than one CPU architecture requested (%s).' % ', '.join(cpufeat))
 
     gpufeat = req_features.intersection(GPUFEATURES)
-    gpufeat_excl = gpufeat.difference({'gpgpu'})
-    if len(gpufeat_excl) > 1:
-        abort('more than one GPU architecture requested (%s).' % ', '.join(gpufeat_excl))
 
     # add feature 'gpgpu' and queue 'gpu'
-    # set general gpu cluster 'gpunode'
+    # set cluster to 'gpgpu'
     if gpus > 0:
-        cluster = 'gpunode'
+        cluster = 'gpgpu'
         if not gpufeat:
             feature = ':'.join(feature_list + ['gpgpu'])
             state['l'].update({
@@ -126,18 +123,18 @@ def make_new_header(sf):
             make("-q", "gpu")
         ])
 
-    # make sure that gpu nodes are only used when gpus > 0
+    # make sure that gpu nodes are only requested when gpus > 0
     if gpus == 0 and gpufeat:
         abort('requested gpus (%s) should be at least 1 when requesting feature (%s).' % (gpus, ', '.join(gpufeat)))
 
     # check for mutually exclusive features
-    clusterfeat = [x for x req_features if x in EXCLUSIVEFEATURES]
-    if len(clusterfeat) > 1:
-        abort('requested combination of resources is not available (%s).' % ', '.join(clusterfeat))
+    excl_feat = [x for x in req_features if x in EXCLUSIVEFEATURES]
+    if len(excl_feat) > 1:
+        abort('requested combination of features is not possible (%s).' % ', '.join(excl_feat))
 
     # select cluster corresponding to specific features:
-    if len(clusterfeat) == 1:
-        cluster = clusterfeat[0]
+    if excl_feat:
+        cluster = excl_feat[0]
 
     warn("Using server: %s" % cluster)
 
@@ -203,12 +200,12 @@ def make_new_header(sf):
     # this is only for testing, should be removed in prod
     warn('state_l: %s' % state['l'])
 
-    # check that requested gpus is not more than available
+    # check that gpus is not more than available
     maxgpus = get_cluster_maxgpus(cluster)
     if gpus > maxgpus:
         abort('requested gpus (%s) is more than the maximum available (%s).' % (gpus, maxgpus))
 
-    # check that requested ppn is not more than available
+    # check that ppn is not more than available
     maxppn = get_cluster_maxppn(cluster)
     if ppn > maxppn:
         abort('requested ppn (%s) is more than the maximum available (%s).' % (ppn, maxppn))
