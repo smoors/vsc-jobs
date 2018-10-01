@@ -103,7 +103,6 @@ CLUSTERDATA = {
         'NP': 20,
         'NP_LCD': 10,
     },
->>>>>>> e9c02457efe62fa5da656ca233d19b8f334d1bb5
     'magnycours': {
         'PHYSMEM': 65940712 << 10,  # 62.9GB
         'TOTMEM': 66989284 << 10,  # 63.9GB
