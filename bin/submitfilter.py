@@ -41,7 +41,7 @@ import pwd
 import sys
 
 from vsc.jobs.pbs.clusterdata import get_clusterdata, get_cluster_mpp, get_cluster_overhead
-from vsc.jobs.pbs.clusterdata import MASTER_REGEXP, GPUFEATURES, CPUFEATURES, CLUSTERFEATURES, ALLFEATURES
+from vsc.jobs.pbs.clusterdata import MASTER_REGEXP, GPUFEATURES, CPUFEATURES, EXCLUSIVEFEATURES, ALLFEATURES
 from vsc.jobs.pbs.clusterdata import get_cluster_maxppn, get_cluster_maxgpus
 from vsc.jobs.pbs.submitfilter import SubmitFilter, get_warnings, warn, PMEM, VMEM, abort
 from vsc.jobs.pbs.submitfilter import MEM, _parse_mem_units, FEATURE
@@ -91,6 +91,52 @@ def make_new_header(sf):
         ])
 
     current_user = pwd.getpwuid(os.getuid()).pw_name
+
+    # check if requested features are valid
+    feature_list = filter(None, state['l'].get(FEATURE, '').split(':'))
+    req_features = set(feature_list + state['l']['_features'])
+    invalid_features = [x for x in req_features if x not in ALLFEATURES]
+    if invalid_features:
+        abort('feature(s) not valid (%s).' % ', '.join(invalid_features))
+
+    cpufeat = req_features.intersection(CPUFEATURES)
+    if len(cpufeat) > 1:
+        abort('more than one CPU architecture requested (%s).' % ', '.join(cpufeat))
+
+    gpufeat = req_features.intersection(GPUFEATURES)
+
+    # add feature 'gpgpu' and queue 'gpu'
+    # set cluster to 'gpgpu'
+    if gpus > 0:
+        cluster = 'gpgpu'
+        if not gpufeat:
+            feature = ':'.join(feature_list + ['gpgpu'])
+            state['l'].update({
+                FEATURE: "%s" % feature,
+            })
+            header.extend([
+                "# Add feature gpgpu - added by submitfilter",
+                make("-l", "%s=%s" % (FEATURE, feature)),
+            ])
+        header.extend([
+            "# Submit to gpu queue - added by submitfilter",
+            make("-q", "gpu")
+        ])
+
+    # make sure that gpu nodes are only requested when gpus > 0
+    if gpus == 0 and gpufeat:
+        abort('requested gpus (%s) should be at least 1 when requesting feature (%s).' % (gpus, ', '.join(gpufeat)))
+
+    # check for mutually exclusive features
+    excl_feat = [x for x in req_features if x in EXCLUSIVEFEATURES]
+    if len(excl_feat) > 1:
+        abort('requested combination of features is not possible (%s).' % ', '.join(excl_feat))
+
+    # select cluster corresponding to specific features:
+    if excl_feat:
+        cluster = excl_feat[0]
+
+    warn("Using server: %s" % cluster)
 
     # vmem: add default when not specified
     if VMEM not in state['l'] and PMEM not in state['l'] and MEM not in state['l']:
@@ -151,63 +197,15 @@ def make_new_header(sf):
         logging.info("submitfilter - %s requested by user %s was %s",
                      requested_memory[0], current_user, requested_memory[1])
 
-    # check if requested features are valid
-    feature_list = filter(None, state['l'].get(FEATURE, '').split(':'))
-    req_features = set(feature_list + state['l']['_features'])
-    invalid_features = [x for x in req_features if x not in ALLFEATURES]
-    if invalid_features:
-        abort('feature(s) not valid (%s).' % ', '.join(invalid_features))
-
-    cpufeat = req_features.intersection(CPUFEATURES)
-    if len(cpufeat) > 1:
-        abort('more than one CPU architecture requested (%s).' % ', '.join(cpufeat))
-
-    gpufeat = req_features.intersection(GPUFEATURES)
-    gpufeat_excl = gpufeat.difference({'gpgpu'})
-    if len(gpufeat_excl) > 1:
-        abort('more than one GPU architecture requested (%s).' % ', '.join(gpufeat_excl))
-
-    # add feature gpgpu and queue gpu if 1 or more gpus are requested
-    if gpus > 0:
-        cluster = 'gpunode'
-        if not gpufeat:
-            feature = ':'.join(feature_list + ['gpgpu'])
-            state['l'].update({
-                FEATURE: "%s" % feature,
-            })
-            header.extend([
-                "# Add feature gpgpu - added by submitfilter",
-                make("-l", "%s=%s" % (FEATURE, feature)),
-            ])
-        header.extend([
-            "# Submit to gpu queue - added by submitfilter",
-            make("-q", "gpu")
-        ])
-
-    # make sure that gpu nodes are only used when gpus > 0
-    if gpus == 0 and gpufeat:
-        abort('requested gpus (%s) should be at least 1 when requesting feature (%s).' % (gpus, ', '.join(gpufeat)))
-
-    # check for mutually exclusive features
-    clusterfeat = [x for x in CLUSTERFEATURES if x in req_features]
-    if len(clusterfeat) > 1:
-        abort('requested combination of resources is not available (%s).' % ', '.join(clusterfeat))
-
-    # select cluster corresponding to specific features:
-    if len(clusterfeat) == 1:
-        cluster = CLUSTERFEATURES[clusterfeat[0]]
-
-    warn("Using server: %s" % cluster)
-
     # this is only for testing, should be removed in prod
     warn('state_l: %s' % state['l'])
 
-    # check that requested gpus is not more than available
+    # check that gpus is not more than available
     maxgpus = get_cluster_maxgpus(cluster)
     if gpus > maxgpus:
         abort('requested gpus (%s) is more than the maximum available (%s).' % (gpus, maxgpus))
 
-    # check that requested ppn is not more than available
+    # check that ppn is not more than available
     maxppn = get_cluster_maxppn(cluster)
     if ppn > maxppn:
         abort('requested ppn (%s) is more than the maximum available (%s).' % (ppn, maxppn))

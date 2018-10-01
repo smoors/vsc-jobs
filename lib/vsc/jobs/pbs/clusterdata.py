@@ -47,20 +47,40 @@ DEFAULT_SERVER = "default"
 # availmem has to be taken from an clean idle node
 # (i.e. no jobs in pbsnodes and right after reboot)
 CLUSTERDATA = {
-    DEFAULT_SERVER_CLUSTER: {
-        # this is the default if not specified: 2GB
-        'PHYSMEM': DEFAULT_VMEM,
-        'TOTMEM': DEFAULT_VMEM,
-        'NP_LCD': 1,
-        'DEFMAXNP': 40,
+    'himem': {
+        # cpu = broadwell
+        'PHYSMEM': 1585239396 << 10,  # 1511.8GB
+        'TOTMEM': 1586287968 << 10,  # 1512.8GB
+        'AVAILMEM': 1582000000 << 10,  # rough estimation
+        'NP': 40,
+        'NP_LCD': 20,
     },
-    'gpunode': {
-        # this is the default if not specified: 2GB
-        'PHYSMEM': DEFAULT_VMEM,
-        'TOTMEM': DEFAULT_VMEM,
-        'NP_LCD': 1,
-        'DEFMAXNP': 32,
-        'DEFMAXNGPU': 4,
+    'pascal': {
+        # cpu = broadwell
+        'PHYSMEM': 264020188 << 10,  # 251.8GB
+        'TOTMEM': 265068760 << 10,  # 252.8GB
+        'AVAILMEM': 261000000 << 10,  # rough estimation
+        'NP': 24,
+        'NP_LCD': 12,
+        'NGPU': 2,
+    },
+    'geforce': {
+        # cpu = broadwell
+        'PHYSMEM': 528296028 << 10,  # 503.8GB
+        'TOTMEM': 529344600 << 10,  # 504.8GB
+        'AVAILMEM': 525000000 << 10,  # rough estimation
+        'NP': 32,
+        'NP_LCD': 16,
+        'NGPU': 4,
+    },
+    'kepler': {
+        # cpu = ivybridge
+        'PHYSMEM': 264114416 << 10,  # 251.9GB
+        'TOTMEM': 265162988 << 10,  # 252.9GB
+        'AVAILMEM': 260773208 << 10,  # 248.7GB
+        'NP': 20,
+        'NP_LCD': 10,
+        'NGPU': 2,
     },
     'skylake': {
         'PHYSMEM': 196681412 << 10,  # ~187.6GB
@@ -69,20 +89,19 @@ CLUSTERDATA = {
         'NP': 40,
         'NP_LCD': 20,
     },
+    'broadwell': {
+        'PHYSMEM': 264020188 << 10,  # 251.8GB
+        'TOTMEM': 265068760 << 10,  # 252.8GB
+        'AVAILMEM': 261000000 << 10,  # rough estimation
+        'NP': 28,
+        'NP_LCD': 14,
+    },
     'ivybridge': {
         'PHYSMEM': 264114416 << 10,  # 251.9GB
         'TOTMEM': 265162988 << 10,  # 252.9GB
         'AVAILMEM': 260773208 << 10,  # 248.7GB
         'NP': 20,
         'NP_LCD': 10,
-    },
-    'ivybridge-kepler': {
-        'PHYSMEM': 264114416 << 10,  # 251.9GB
-        'TOTMEM': 265162988 << 10,  # 252.9GB
-        'AVAILMEM': 260773208 << 10,  # 248.7GB
-        'NP': 20,
-        'NP_LCD': 10,
-        'NGPU': 2,
     },
     'magnycours': {
         'PHYSMEM': 65940712 << 10,  # 62.9GB
@@ -91,46 +110,26 @@ CLUSTERDATA = {
         'NP': 16,
         'NP_LCD': 4,
     },
-    'broadwell': {
-        'PHYSMEM': 264020188 << 10,  # 251.8GB
-        'TOTMEM': 265068760 << 10,  # 252.8GB
-        'AVAILMEM': 261000000 << 10,  # rough estimation
-        'NP': 28,
-        'NP_LCD': 14,
+    'gpgpu': {
+        # general data for gpu nodes
+        'PHYSMEM': DEFAULT_VMEM,
+        'TOTMEM': DEFAULT_VMEM,
+        'NP_LCD': 1,
+        'DEFMAXNP': 32,
+        'DEFMAXNGPU': 4,
     },
-    'broadwell-himem': {
-        'PHYSMEM': 1585239396 << 10,  # GB
-        'TOTMEM': 1586287968 << 10,  # GB
-        'AVAILMEM': 1582000000 << 10,  # rough estimation
-        'NP': 40,
-        'NP_LCD': 20,
-    },
-    'broadwell-pascal': {
-        'PHYSMEM': 264020188 << 10,  # 251.8GB
-        'TOTMEM': 265068760 << 10,  # 252.8GB
-        'AVAILMEM': 261000000 << 10,  # rough estimation
-        'NP': 24,
-        'NP_LCD': 12,
-        'NGPU': 2,
-    },
-    'broadwell-geforce': {
-        'PHYSMEM': 528296028 << 10,  # GB
-        'TOTMEM': 529344600 << 10,  # GB
-        'AVAILMEM': 525000000 << 10,  # rough estimation
-        'NP': 32,
-        'NP_LCD': 16,
-        'NGPU': 4,
+    DEFAULT_SERVER_CLUSTER: {
+        # this is the default if not specified: 2GB
+        'PHYSMEM': DEFAULT_VMEM,
+        'TOTMEM': DEFAULT_VMEM,
+        'NP_LCD': 1,
+        'DEFMAXNP': 40,
     },
 }
 
 # features corresponding to specific clusters
 # these features are mutually exclusive
-CLUSTERFEATURES = {
-    'pascal': 'broadwell-pascal',
-    'geforce': 'broadwell-geforce',
-    'kepler': 'ivybridge-kepler',
-    'himem': 'broadwell-himem',
-}
+EXCLUSIVEFEATURES = ['pascal', 'geforce', 'kepler', 'himem']
 
 GPUFEATURES = ['gpgpu', 'geforce', 'pascal', 'kepler']
 
