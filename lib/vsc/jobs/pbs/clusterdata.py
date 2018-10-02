@@ -37,7 +37,7 @@ TODO: read this (once) from config file
 import copy
 import re
 
-DEFAULT_VMEM = 2048 << 20  # minimum amount of ram in our machines.
+DEFAULT_VMEM = 2048 << 20  # minimum amount of ram per core in our machines.
 
 DEFAULT_SERVER_CLUSTER = 'hydra'
 
@@ -112,16 +112,11 @@ CLUSTERDATA = {
     },
     'gpgpu': {
         # general data for gpu nodes
-        'PHYSMEM': DEFAULT_VMEM,
-        'TOTMEM': DEFAULT_VMEM,
         'NP_LCD': 1,
         'DEFMAXNP': 32,
         'DEFMAXNGPU': 4,
     },
     DEFAULT_SERVER_CLUSTER: {
-        # this is the default if not specified: 2GB
-        'PHYSMEM': DEFAULT_VMEM,
-        'TOTMEM': DEFAULT_VMEM,
         'NP_LCD': 1,
         'DEFMAXNP': 40,
     },
@@ -199,10 +194,14 @@ def get_cluster_mpp(cluster):
 
     overhead = get_cluster_overhead(cluster)
 
-    physmem = c_d['PHYSMEM'] - overhead
-    totmem = c_d['TOTMEM'] - overhead
+    try:
+        physmem = c_d['PHYSMEM'] - overhead
+        totmem = c_d['TOTMEM'] - overhead
 
-    ppp = int(physmem / maxppn)
-    vpp = int((physmem + (totmem - physmem) / 2) / maxppn)
+        ppp = int(physmem / maxppn)
+        vpp = int((physmem + (totmem - physmem) / 2) / maxppn)
+
+    except:
+        ppp = vpp = DEFAULT_VMEM
 
     return (ppp, vpp)
