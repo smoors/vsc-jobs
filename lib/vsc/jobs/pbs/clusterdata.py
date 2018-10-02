@@ -201,7 +201,7 @@ def get_cluster_mpp(cluster):
         ppp = int(physmem / maxppn)
         vpp = int((physmem + (totmem - physmem) / 2) / maxppn)
 
-    except:
+    except KeyError:
         ppp = vpp = DEFAULT_VMEM
 
     return (ppp, vpp)

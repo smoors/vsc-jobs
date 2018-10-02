@@ -69,7 +69,7 @@ def make_new_header(sf):
 
     cluster = state['_cluster']
     ppn = state['l'].get('_ppn', 1)
-    gpus = state['l'].get('_nrgpus', 1)
+    gpus = state['l'].get('_nrgpus', 0)
 
     make = sf.make_header
 
@@ -94,7 +94,7 @@ def make_new_header(sf):
 
     # check if requested features are valid
     feature_list = filter(None, state['l'].get(FEATURE, '').split(':'))
-    req_features = set(feature_list + state['l']['_features'])
+    req_features = set(feature_list + state['l'].get('_features', []))
     invalid_features = [x for x in req_features if x not in ALLFEATURES]
     if invalid_features:
         abort('feature(s) not valid (%s).' % ', '.join(invalid_features))
@@ -223,8 +223,12 @@ def make_new_header(sf):
 
     # vmem, mem, pmem too high: job will not start
     overhead = get_cluster_overhead(cluster)
-    availmem = cl_data['TOTMEM'] - overhead
-    physmem = cl_data['PHYSMEM'] - overhead
+    try:
+        availmem = cl_data['TOTMEM'] - overhead
+        physmem = cl_data['PHYSMEM'] - overhead
+    except KeyError:
+        return header
+
     if state['l'].get('_%s' % VMEM) > availmem:
         requested = state['l'].get('_%s' % VMEM) or state['l'].get('_%s' % MEM)
         abort("requested %sb vmem per node, this is more than the available vmem (%sb)." % (requested, availmem))
